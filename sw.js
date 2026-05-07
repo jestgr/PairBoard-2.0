@@ -13,7 +13,7 @@
 // deletes the old one, and notifies the user to refresh.
 // ============================================================
 
-const CACHE_VERSION  = 'v1';
+const CACHE_VERSION  = 'v2';
 const SHELL_CACHE    = 'pb-shell-'   + CACHE_VERSION;
 const RUNTIME_CACHE  = 'pb-runtime-' + CACHE_VERSION;
 
