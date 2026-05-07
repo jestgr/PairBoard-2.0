@@ -6,13 +6,6 @@
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PairBoard">
-<meta name="theme-color" content="#0d0f14" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f5f5f0" media="(prefers-color-scheme: light)">
-<meta name="mobile-web-app-capable" content="yes">
-<!-- PWA manifest -->
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>PairBoard Tools</title>
 
 <!-- ============================================================
@@ -9447,12 +9440,14 @@ function renderDayPairingsPanel(dk) {
     var list = buildDayList(s);
     if (list.length === 0) return { ok: true, errors: [] };
 
-    // Build per-day schedule code: 'X' = X-day, 'A' = absence (vac/cq/qual/leave/other), 'W' = work
+    // Build per-day schedule code: 'X' = X-day, 'A' = absence (vac/cq/qual/leave/other/pre-award), 'W' = work
+    var preAwards = (window._appStateRef && window._appStateRef.preAwards) || new Map();
     var sched = list.map(function(d) {
       if (simState.days.xday.has(d.key)) return 'X';
       for (var i = 0; i < DAY_TYPES.length; i++) {
         if (DAY_TYPES[i].k !== 'xday' && simState.days[DAY_TYPES[i].k].has(d.key)) return 'A';
       }
+      if (preAwards.has(d.key)) return 'A'; // pre-award counts as absence
       return 'W';
     });
 
@@ -9472,14 +9467,21 @@ function renderDayPairingsPanel(dk) {
     }
 
     // Min work-row check (interior runs only — orphans at start/end are OK)
+    // Only fires when the run is bounded by X-days on BOTH sides.
+    // Any non-X absence (CQ, vacation, leave, pre-award, etc.) on either
+    // boundary satisfies the scheduling rule — no violation.
     workRuns.forEach(function(r) {
       var isFirst = (r.start === 0);
       var isLast  = (r.end === sched.length - 1);
-      if (!isFirst && !isLast && r.length < rule.minWorkRow) {
-        errors.push('Work run on days ' + (r.start + 1) + '–' + (r.end + 1) +
-          ' is ' + r.length + ' day' + (r.length !== 1 ? 's' : '') +
-          ', minimum is ' + rule.minWorkRow + '. Surround it with absences/X-days or extend it.');
-      }
+      if (isFirst || isLast) return;
+      if (r.length >= rule.minWorkRow) return;
+      // Only error if surrounded by X-days on both sides
+      if (sched[r.start - 1] !== 'X' || sched[r.end + 1] !== 'X') return;
+      var dayStart = list[r.start].date.getDate();
+      var dayEnd   = list[r.end].date.getDate();
+      errors.push('Work run on days ' + dayStart + '–' + dayEnd +
+        ' is ' + r.length + ' day' + (r.length !== 1 ? 's' : '') +
+        ', minimum is ' + rule.minWorkRow + '. Surround it with absences/X-days or extend it.');
     });
 
     // Count X-day groupings
@@ -13535,39 +13537,6 @@ function formatBytes(bytes) {
 window.addEventListener('online',  () => {});
 window.addEventListener('offline', () => {});
 
-</script>
-<!-- ── Service Worker registration ─────────────────────────── -->
-<script>
-(function() {
-  'use strict';
-  if (!('serviceWorker' in navigator)) return;
-
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .then(function(reg) {
-        // Watch for a new SW waiting to activate (= update available)
-        function checkWaiting(sw) {
-          if (!sw) return;
-          sw.addEventListener('statechange', function() {
-            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-              // New version cached and waiting — notify user
-              if (window.toast) {
-                toast('Update available — reload to apply', 'info');
-              }
-            }
-          });
-        }
-        checkWaiting(reg.installing || reg.waiting);
-        reg.addEventListener('updatefound', function() {
-          checkWaiting(reg.installing);
-        });
-      })
-      .catch(function(e) {
-        // SW failed to register — app still works, just without offline cache
-        if (window.PB && PB.log) PB.log.warn('Service worker registration failed', { error: String(e) });
-      });
-  });
-}());
 </script>
 </body>
 </html>
