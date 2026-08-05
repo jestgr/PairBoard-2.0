@@ -13422,6 +13422,11 @@ function parsePairings(fullText, seat) {
       const firstCode = p.tripDays[0].letter.charCodeAt(0);
       const lastCode  = p.tripDays[p.tripDays.length - 1].letter.charCodeAt(0);
       p.days = lastCode - firstCode + 1;
+      // Trip ends in a redeye: final leg lands on an unlettered next calendar
+      // day, so it impacts one more day than the letter span shows.
+      var _lastDay = p.tripDays[p.tripDays.length - 1];
+      var _lastLeg = _lastDay.legs.length ? _lastDay.legs[_lastDay.legs.length - 1] : null;
+      if (_lastLeg && _lastLeg.isRedeye) p.days += 1;
     } else {
       p.days = 0;
     }
