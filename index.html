@@ -837,12 +837,12 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
 
 .topbar {
   flex: 0 0 auto;
-  height: var(--topbar-h);
+  height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--s-5);
-  padding-top: env(safe-area-inset-top, 0);
+  padding-top: env(safe-area-inset-top, 0px);
   background: #FFFFFF;                          /* fallback */
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
@@ -7726,6 +7726,19 @@ function loadAllData() {
         } catch (e) { PB.log.warn('Failed to parse favorites', { error: String(e) }); }
       }
       appState.pairings = results[7] || [];
+      // One-time reclassification for pairings persisted before the redeye-day
+      // fix. Re-derives p.days from letter span (+1 if trip ends in a redeye);
+      // idempotent, so safe on both pre-fix and post-fix stored data.
+      (function migrateRedeyeDays(list) {
+        (list || []).forEach(function(p) {
+          var td = p.tripDays;
+          if (!td || !td.length) return;
+          var span = td[td.length-1].letter.charCodeAt(0) - td[0].letter.charCodeAt(0) + 1;
+          var last = td[td.length-1].legs;
+          var redeye = last.length && last[last.length-1].isRedeye;
+          p.days = span + (redeye ? 1 : 0);
+        });
+      })(appState.pairings);
       if (results[8])  appState.categoryALV  = results[8].value;
       if (results[9])  appState.resGuarantee = results[9].value;
       if (results[10]) appState.resRule      = results[10].value;
