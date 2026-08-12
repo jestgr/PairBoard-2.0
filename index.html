@@ -837,12 +837,12 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
 
 .topbar {
   flex: 0 0 auto;
-  height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
+  height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px) + 6px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--s-5);
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
   background: #FFFFFF;                          /* fallback */
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
@@ -1756,6 +1756,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     z-index: 1000;
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
+    padding-top: env(safe-area-inset-top, 0px);
   }
   .sidebar[data-open="true"] {
     transform: translateX(0);
