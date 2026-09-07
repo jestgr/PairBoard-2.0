@@ -4755,19 +4755,57 @@ PB.legacy.far117 = (function() {
     return result;
   }
 
+  function preprocessOcrImage(file) {
+    return new Promise(function(resolve) {
+      if (!file || !file.type || !file.type.startsWith('image/')) return resolve(file);
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function() {
+        URL.revokeObjectURL(url);
+        var maxW = 1200;
+        if (img.width <= maxW) return resolve(file);
+        var scale = maxW / img.width;
+        var canvas = document.createElement('canvas');
+        canvas.width = maxW;
+        canvas.height = Math.round(img.height * scale);
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function(blob) {
+          resolve(blob || file);
+        }, 'image/jpeg', 0.85);
+      };
+      img.onerror = function() {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+      img.src = url;
+    });
+  }
+
   function handleFar117OCR(root, file) {
-    setOcrStatus(root, 'Loading OCR engine…');
-    loadTesseract().then(function() {
-      setOcrStatus(root, 'Recognising text…');
-      return Tesseract.recognize(file, 'eng', {
-        logger: function(m) {
-          if (m.status === 'recognizing text')
-            setOcrStatus(root, 'Recognising text… ' + Math.round((m.progress || 0) * 100) + '%');
-        }
+    setOcrStatus(root, 'Preparing image…');
+    preprocessOcrImage(file).then(function(processedFile) {
+      setOcrStatus(root, 'Loading OCR engine…');
+      return loadTesseract().then(function() {
+        setOcrStatus(root, 'Recognising text…');
+        return Tesseract.recognize(processedFile, 'eng', {
+          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v2.1.5/dist/worker.min.js',
+          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v2.2.0/tesseract-core.wasm.js',
+          langPath: 'https://cdn.jsdelivr.net/gh/naptha/tessdata_fast@main',
+          logger: function(m) {
+            if (m.status === 'recognizing text') {
+              setOcrStatus(root, 'Recognising text… ' + Math.round((m.progress || 0) * 100) + '%');
+            } else if (m.status) {
+              var label = String(m.status).replace(/_/g, ' ');
+              setOcrStatus(root, 'OCR: ' + label + '…');
+            }
+          }
+        });
       });
     }).catch(function(err) {
       console.warn('[PB] Tesseract OCR failed:', err);
-      setOcrStatus(root, '⚠️ Image OCR engine offline or blocked. Tap <button class="btn btn--xs btn--primary" style="margin-left:6px;" onclick="window.pbOpenFar117PasteModal()">📝 Paste Rotation Text</button> to paste schedule text directly.');
+      var errMsg = (err && err.message) ? err.message : String(err || 'Network block');
+      setOcrStatus(root, '⚠️ OCR Engine error (' + PB.escapeHtml(errMsg) + '). Tap <button class="btn btn--xs btn--primary" style="margin-left:6px;" onclick="window.pbOpenFar117PasteModal()">📝 Paste Rotation Text</button> to paste schedule text directly.');
       return null;
     }).then(function(r) {
       if (!r || !r.data) return;
