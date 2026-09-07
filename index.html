@@ -4327,183 +4327,71 @@ PB.legacy.far117 = (function() {
     _countdownTimer: null
   };
 
-  function saveState() {
-    PB.storage.set('far117.state', {
-      reportRaw: F.reportRaw,
-      depApt: F.depApt,
-      segments: F.segments,
-      crewType: F.crewType,
-      restClass: F.restClass,
-      baseCity: F.baseCity,
-      dutyDate: F.dutyDate,
-      tzMode: F.tzMode,
-      tzManualZone: F.tzManualZone,
-      legs: F.legs,
-      rapEnabled: F.rapEnabled,
-      rapStartRaw: F.rapStartRaw,
-      latt: F.latt
-    });
-  }
-  function loadState() {
-    var saved = PB.storage.get('far117.state', null);
-    if (saved) Object.assign(F, saved);
-  }
-
-  // ============================================================
-  // Module registration
-  // ============================================================
-  var _activeTab = PB.storage.get('far117.tab', 'duty');
-
-  PB.modules.register({
-    id: 'far117',
-    title: 'FAR 117',
-    icon: 'clock',
-
-    init: function() {
-      loadState();
-      if (!F.baseCity) F.baseCity = PB.settings.get('baseCity', '');
-      if (F.crewType === '2pilot') F.crewType = PB.settings.get('defaultCrewType', '2pilot');
-      if (F.restClass === '1') {
-        var defT = PB.settings.get('defaultTable', 'A');
-        F.restClass = defT === 'C' ? '3' : defT === 'B' ? '2' : '1';
-      }
-      if (!F.dutyDate) F.dutyDate = todayISO();
-      if (window.pb168Module) window.pb168Module.init();
-    },
-
-    render: function(root) {
-      renderCombined(root);
-    },
-
-    destroy: function() {
-      if (F._countdownTimer) {
-        clearInterval(F._countdownTimer);
-        F._countdownTimer = null;
-      }
-      if (window.pb168Module) window.pb168Module.destroy();
-    }
-  });
-
-  function renderCombined(root) {
-    // Tab bar wrapper
-    root.innerHTML =
-      '<div class="page-header">' +
-        '<h2 class="page-title">FAR 117</h2>' +
-        '<p class="page-subtitle">Duty period limits and rest calculations under 14 CFR 117.</p>' +
-      '</div>' +
-      '<div class="segmented" id="far117-tabs" role="group" style="margin-bottom:16px;">' +
-        '<button class="segmented__item" data-v="duty"   aria-pressed="' + (_activeTab==='duty'   ? 'true':'false') + '">Duty Day</button>' +
-        '<button class="segmented__item" data-v="rest168" aria-pressed="' + (_activeTab==='rest168'? 'true':'false') + '">30 / 168 Rest</button>' +
-      '</div>' +
-      '<div id="far117-tab-body"></div>';
-
-    var body = root.querySelector('#far117-tab-body');
-
-    root.querySelector('#far117-tabs').querySelectorAll('.segmented__item').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        _activeTab = btn.getAttribute('data-v');
-        PB.storage.set('far117.tab', _activeTab);
-        root.querySelector('#far117-tabs').querySelectorAll('.segmented__item').forEach(function(b) {
-          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-        });
-        // Destroy rest tick if switching away
-        if (_activeTab !== 'rest168' && window.pb168Module) window.pb168Module.destroy();
-        renderTab(body);
-      });
-    });
-
-    renderTab(body);
-  }
-
-  function renderTab(body) {
-    if (_activeTab === 'rest168' && window.pb168Module) {
-      window.pb168Module.render(body);
-    } else {
-      render(body);
-    }
-  }
-
   function render(root) {
     var tzInfo = resolveTz();
 
     root.innerHTML = [
       '<div class="card">',
-        '<div class="card__header" style="flex-wrap:wrap;gap:8px;">',
-          '<h3 class="card__title">Duty day</h3>',
+        '<div class="card__header" style="flex-wrap:wrap;gap:8px;padding:12px 16px;">',
+          '<h3 class="card__title" style="font-size:15px;font-weight:700;">Duty Day Parameters</h3>',
           '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto;">',
-            '<button class="btn btn--primary btn--sm" id="f117-calc">',
-              '<span data-icon="calculator"></span> Calculate</button>',
-            '<button class="btn btn--ghost btn--sm" id="f117-ocr-btn" title="Import duty period from a screenshot">',
-              '<span data-icon="upload"></span> Import Screenshot</button>',
+            '<button class="btn btn--primary btn--sm" id="f117-calc" style="font-weight:600;"><span data-icon="calculator"></span> Calculate</button>',
+            '<button class="btn btn--ghost btn--sm" id="f117-ocr-btn" title="Import duty period from a screenshot">📸 Screenshot</button>',
+            '<button class="btn btn--ghost btn--sm" id="f117-paste-btn" title="Paste schedule text directly">📝 Paste Text</button>',
             '<input type="file" id="f117-ocr-file" accept="image/*" style="display:none;">',
-            '<button class="btn btn--ghost btn--sm" id="f117-raw-toggle">',
-              'Raw OCR</button>',
-            '<button class="btn btn--ghost btn--sm" id="f117-reset" title="Reset all inputs">',
-              '<span data-icon="refresh"></span> Reset</button>',
+            '<button class="btn btn--ghost btn--sm" id="f117-reset" title="Reset all inputs">↺</button>',
           '</div>',
         '</div>',
-        '<div class="card__body">',
+        '<div class="card__body" style="padding:12px 16px;">',
 
-          // Row 1: Base city | Departure airport
-          '<div class="field-row">',
-            fieldHtml('Base city',
-              '<input class="input" id="f117-base" placeholder="ATL" maxlength="4" value="' + escapeHtml(F.baseCity) + '" style="text-transform:uppercase;">',
-              'IATA. Table lookup & WOCL.'),
-            fieldHtml('Departure airport',
-              '<input class="input" id="f117-depApt" placeholder="ATL" maxlength="4" value="' + escapeHtml(F.depApt) + '" style="text-transform:uppercase;">',
-              'IATA of first dep. Used for Z conversion.'),
+          // Row 1: Report time | Departure airport
+          '<div class="field-row" style="margin-bottom:8px;">',
+            fieldHtml('Report Time (local)',
+              '<input class="input input--mono" id="f117-report" placeholder="HHMM" maxlength="5" inputmode="numeric" value="' + escapeHtml(F.reportRaw) + '">'),
+            fieldHtml('Departure Airport',
+              '<input class="input" id="f117-depApt" placeholder="ATL" maxlength="4" value="' + escapeHtml(F.depApt) + '" style="text-transform:uppercase;">'),
           '</div>',
 
-          // Row 2: Duty date | Report time
-          '<div class="field-row">',
-            fieldHtml('Duty date',
-              '<input class="input input--mono" id="f117-date" type="date" value="' + escapeHtml(F.dutyDate || '') + '">',
-              'For DST-correct offset.'),
-            fieldHtml('Report time (local)',
-              '<input class="input input--mono" id="f117-report" placeholder="HHMM" maxlength="5" inputmode="numeric" value="' + escapeHtml(F.reportRaw) + '">',
-              '24-hour at departure airport.'),
+          // Row 2: Duty date | Segments
+          '<div class="field-row" style="margin-bottom:8px;">',
+            fieldHtml('Duty Date',
+              '<input class="input input--mono" id="f117-date" type="date" value="' + escapeHtml(F.dutyDate || '') + '">'),
+            fieldHtml('Segments',
+              '<input class="input u-mono" id="f117-segs" type="number" min="1" max="10" value="' + F.segments + '">'),
           '</div>',
 
           // Row 3: Crew type | Rest class
-          '<div class="field-row">',
-            fieldHtml('Crew type',
+          '<div class="field-row" style="margin-bottom:8px;">',
+            fieldHtml('Crew Type',
               segmented('f117-crew', [
                 { v: '2pilot', l: '2-Pilot' },
                 { v: '3pilot', l: '3-Pilot' },
                 { v: '4pilot', l: '4-Pilot' }
-              ], F.crewType),
-              '3/4-pilot uses Table C.'),
-            fieldHtml('Rest class',
+              ], F.crewType)),
+            fieldHtml('Rest Class',
               segmented('f117-rest', [
                 { v: '1', l: 'Class 1' },
                 { v: '2', l: 'Class 2' },
                 { v: '3', l: 'Class 3' }
-              ], F.restClass),
-              'Only applies to 3/4-pilot.'),
+              ], F.restClass)),
           '</div>',
 
-          // Row 4: Segments | RAP
-          '<div class="field-row">',
-            fieldHtml('Segments',
-              '<input class="input u-mono" id="f117-segs" type="number" min="1" max="10" value="' + F.segments + '">',
-              'Flight legs this duty period.'),
-            '<div style="display:flex;flex-direction:column;gap:6px;">' +
-              fieldHtml('Reserve (RAP)',
-                '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">' +
-                  '<input type="checkbox" id="f117-rap-on"' + (F.rapEnabled ? ' checked' : '') + '>' +
-                  'On RAP (§117.21)</label>',
-                'Secondary FDP limit applies.') +
-              '<div id="f117-rap-time-wrap" style="' + (F.rapEnabled ? '' : 'display:none;') + '">' +
-                fieldHtml('RAP start (local)',
-                  '<input class="input input--mono" id="f117-rap-start" placeholder="HHMM" maxlength="5" inputmode="numeric" value="' + escapeHtml(F.rapStartRaw) + '">',
-                  'Local time availability period began.') +
-              '</div>' +
+          // Row 4: Base city & RAP Option
+          '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border-subtle);">',
+            '<div style="display:flex;align-items:center;gap:6px;min-width:140px;">',
+              '<span style="font-size:11px;color:var(--text-tertiary);">Base City:</span>',
+              '<input class="input" id="f117-base" placeholder="ATL" maxlength="4" value="' + escapeHtml(F.baseCity) + '" style="text-transform:uppercase;width:60px;padding:3px 6px;font-size:12px;">',
+            '</div>',
+            '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--text-secondary);">',
+              '<input type="checkbox" id="f117-rap-on"' + (F.rapEnabled ? ' checked' : '') + '> On RAP (§117.21)',
+            '</label>',
+            '<div id="f117-rap-time-wrap" style="' + (F.rapEnabled ? '' : 'display:none;') + 'display:flex;align-items:center;gap:6px;">',
+              '<span style="font-size:11px;color:var(--text-tertiary);">RAP Start:</span>',
+              '<input class="input input--mono" id="f117-rap-start" placeholder="HHMM" maxlength="5" inputmode="numeric" value="' + escapeHtml(F.rapStartRaw) + '" style="width:70px;padding:3px 6px;font-size:12px;">',
             '</div>',
           '</div>',
 
-          '<div class="u-spacer"></div>',
-          tzBar(tzInfo),
-          '<div id="f117-ocr-status" style="display:none;margin-top:8px;font-size:12px;color:var(--text-muted);font-family:var(--font-mono);"></div>',
+          '<div id="f117-ocr-status" style="display:none;margin-top:10px;padding:8px 12px;border-radius:6px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);font-size:12px;color:var(--text-secondary);"></div>',
 
           F.legs.length ? renderLegsDisplay() : '',
         '</div>',
@@ -4512,36 +4400,22 @@ PB.legacy.far117 = (function() {
       '<div id="f117-results"></div>',
 
       '<div class="card">',
-        '<div class="card__header">',
+        '<div class="card__header" style="padding:12px 16px;">',
           '<div>',
-            '<h3 class="card__title">LATT — Latest Acceptable Takeoff</h3>',
-            '<p class="card__subtitle">Enter block and taxi times to compute your latest legal pushback and takeoff.</p>',
+            '<h3 class="card__title" style="font-size:15px;font-weight:700;">LATT — Latest Acceptable Takeoff</h3>',
           '</div>',
         '</div>',
-        '<div class="card__body">',
-          '<div class="field-row">',
+        '<div class="card__body" style="padding:12px 16px;">',
+          '<div class="field-row" style="margin-bottom:8px;">',
             fieldHtml('Block (scheduled)',
-              '<input class="input input--mono" id="f117-latt-block" placeholder="H:MM" maxlength="6" value="' + escapeHtml(F.latt.blockRaw) + '">',
-              'Airborne only (wheels-up to wheels-down).'),
-            fieldHtml('Taxi out',
-              '<input class="input input--mono" id="f117-latt-txout" placeholder="MM or H:MM" maxlength="6" value="' + escapeHtml(F.latt.taxiOutRaw) + '">',
-              'Minutes accepted.'),
-            fieldHtml('Taxi in',
-              '<input class="input input--mono" id="f117-latt-txin" placeholder="MM or H:MM" maxlength="6" value="' + escapeHtml(F.latt.taxiInRaw) + '">',
-              'Minutes accepted.'),
+              '<input class="input input--mono" id="f117-latt-block" placeholder="H:MM" maxlength="6" value="' + escapeHtml(F.latt.blockRaw) + '">'),
+            fieldHtml('Taxi out (mins)',
+              '<input class="input input--mono" id="f117-latt-txout" placeholder="MM" maxlength="6" value="' + escapeHtml(F.latt.taxiOutRaw) + '">'),
+            fieldHtml('Taxi in (mins)',
+              '<input class="input input--mono" id="f117-latt-txin" placeholder="MM" maxlength="6" value="' + escapeHtml(F.latt.taxiInRaw) + '">'),
           '</div>',
-          '<div class="u-spacer"></div>',
-          '<button class="btn btn--secondary" id="f117-latt-calc">Calculate LATT</button>',
-          '<div id="f117-latt-results" style="margin-top:16px;"></div>',
-        '</div>',
-      '</div>',
-
-      '<div class="card u-hidden" id="f117-raw-card">',
-        '<div class="card__header"><h3 class="card__title">Raw OCR text</h3>',
-          '<span style="font-size:11px;color:var(--text-muted);">Last screenshot import</span>',
-        '</div>',
-        '<div class="card__body">',
-          '<pre class="diag-entry__raw u-mono" id="f117-raw-dump" style="max-height:300px;white-space:pre-wrap;word-break:break-all;font-size:11px;">No OCR run yet.</pre>',
+          '<button class="btn btn--secondary btn--sm" id="f117-latt-calc" style="margin-top:4px;">Calculate LATT</button>',
+          '<div id="f117-latt-results" style="margin-top:10px;"></div>',
         '</div>',
       '</div>'
 
@@ -4555,7 +4429,6 @@ PB.legacy.far117 = (function() {
       if (rm != null) {
         F.reportMins = rm;
         doCalc(root, { silent: true });
-        if (F.latt.blockRaw) doLATT(root, { silent: true });
       }
     }
   }
@@ -4618,42 +4491,47 @@ PB.legacy.far117 = (function() {
   // ============================================================
   function wireInputs(root) {
     var $ = function(id) { return root.querySelector('#' + id); };
+    var bind = function(id, evt, fn) {
+      var el = $(id);
+      if (el) el.addEventListener(evt, fn);
+    };
 
-    $('f117-report').addEventListener('input', function(e) {
+    bind('f117-report', 'input', function(e) {
       F.reportRaw = e.target.value.replace(/[^0-9:]/g, '').slice(0, 5);
       e.target.value = F.reportRaw;
       saveState();
     });
-    $('f117-report').addEventListener('blur', function() {
+    bind('f117-report', 'blur', function() {
       var mins = PB.legacy.far117.parseFlexMins(F.reportRaw, false);
       if (mins != null) {
         F.reportMins = mins;
         F.reportRaw = pad2(Math.floor(mins / 60)) + pad2(mins % 60);
-        $('f117-report').value = F.reportRaw;
+        var rEl = $('f117-report');
+        if (rEl) rEl.value = F.reportRaw;
       } else { F.reportMins = null; }
       saveState();
     });
 
-    $('f117-depApt').addEventListener('input', function(e) {
+    bind('f117-depApt', 'input', function(e) {
       F.depApt = e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
       e.target.value = F.depApt;
       saveState();
     });
 
-    $('f117-date').addEventListener('change', function(e) {
+    bind('f117-date', 'change', function(e) {
       F.dutyDate = e.target.value || null;
       saveState();
       refreshTzBar(root);
     });
 
-    $('f117-base').addEventListener('input', function(e) {
+    bind('f117-base', 'input', function(e) {
       F.baseCity = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
       e.target.value = F.baseCity;
       saveState();
       refreshTzBar(root);
     });
 
-    $('f117-segs').addEventListener('input', function(e) {
+    bind('f117-segs', 'input', function(e) {
       F.segments = Math.max(1, Math.min(10, parseInt(e.target.value, 10) || 1));
       saveState();
     });
@@ -4681,18 +4559,18 @@ PB.legacy.far117 = (function() {
 
     wireTzBar(root);
 
-    $('f117-latt-block').addEventListener('input', function(e) { F.latt.blockRaw = e.target.value; saveState(); });
-    $('f117-latt-txout').addEventListener('input', function(e) { F.latt.taxiOutRaw = e.target.value; saveState(); });
-    $('f117-latt-txin').addEventListener('input',  function(e) { F.latt.taxiInRaw  = e.target.value; saveState(); });
+    bind('f117-latt-block', 'input', function(e) { F.latt.blockRaw = e.target.value; saveState(); });
+    bind('f117-latt-txout', 'input', function(e) { F.latt.taxiOutRaw = e.target.value; saveState(); });
+    bind('f117-latt-txin',  'input', function(e) { F.latt.taxiInRaw  = e.target.value; saveState(); });
 
-    $('f117-calc').addEventListener('click', function() { doCalc(root); });
-    $('f117-latt-calc').addEventListener('click', function() { doLATT(root); });
-    $('f117-reset').addEventListener('click', function() { resetAll(root); });
-    $('f117-raw-toggle').addEventListener('click', function() {
+    bind('f117-calc', 'click', function() { doCalc(root); });
+    bind('f117-latt-calc', 'click', function() { doLATT(root); });
+    bind('f117-reset', 'click', function() { resetAll(root); });
+    bind('f117-raw-toggle', 'click', function() {
       var card = $('f117-raw-card');
-      card.classList.toggle('u-hidden');
+      if (card) card.classList.toggle('u-hidden');
       var dump = $('f117-raw-dump');
-      if (dump && !card.classList.contains('u-hidden')) {
+      if (dump && card && !card.classList.contains('u-hidden')) {
         dump.textContent = window._f117LastOcrText || 'No OCR run yet.';
       }
     });
@@ -4704,20 +4582,85 @@ PB.legacy.far117 = (function() {
       render(root);
     });
 
-    var ocrBtn  = $('f117-ocr-btn');
-    var ocrFile = $('f117-ocr-file');
+    var ocrBtn   = $('f117-ocr-btn');
+    var ocrFile  = $('f117-ocr-file');
+    var pasteBtn = $('f117-paste-btn');
+
     if (ocrBtn && ocrFile) {
       ocrBtn.addEventListener('click', function() { ocrFile.click(); });
       ocrFile.addEventListener('change', function(e) {
         if (e.target.files[0]) handleFar117OCR(root, e.target.files[0]);
       });
     }
+    if (pasteBtn) {
+      pasteBtn.addEventListener('click', function() {
+        window.pbOpenFar117PasteModal(root);
+      });
+    }
   }
+
+  window.pbOpenFar117PasteModal = function(rootNode) {
+    var mo = ensureModal();
+    mo.innerHTML =
+      '<div class="pb-port-modal__inner" style="max-width:520px;">' +
+        '<div class="pb-port-modal__header" style="padding:12px 16px;">' +
+          '<div class="pb-port-modal__title" style="font-weight:700;">📝 Paste Rotation / Schedule Text</div>' +
+          '<button class="pb-port-modal__close" onclick="this.closest(\'.pb-port-modal\').removeAttribute(\'data-open\');">✕</button>' +
+        '</div>' +
+        '<div class="pb-port-modal__body" style="padding:14px 16px;">' +
+          '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Paste text copied from your airline mobile app (FlyDelta, Ezio, iCrew, etc.) below:</div>' +
+          '<textarea id="f117-paste-input" class="input u-mono" style="width:100%;height:160px;font-size:12px;padding:8px;box-sizing:border-box;" placeholder="e.g.\n06Sep NYC 3573\nRpt- 1439 06SEP\nDL2404 : LGA-TPA\nDep- 1555 06SEP  Arr- 1852 06SEP  Blk- 2:57\nDL2095 : TPA-JFK\nDep- 1952 06SEP  Arr- 2252 06SEP  Blk- 3:00"></textarea>' +
+          '<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">' +
+            '<button class="btn btn--ghost btn--sm" onclick="this.closest(\'.pb-port-modal\').removeAttribute(\'data-open\');">Cancel</button>' +
+            '<button class="btn btn--primary btn--sm" onclick="window.pbProcessFar117PastedText()">Import Rotation Text</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    mo.setAttribute('data-open', 'true');
+  };
+
+  window.pbProcessFar117PastedText = function() {
+    var txtEl = document.getElementById('f117-paste-input');
+    var txt = txtEl ? txtEl.value : '';
+    if (!txt || !txt.trim()) { toast('Please paste rotation text first', 'error'); return; }
+    var modal = document.getElementById('pb-fb-modal');
+    if (modal) modal.removeAttribute('data-open');
+
+    window._f117LastOcrText = txt;
+    var parsed = parseEzioText(txt);
+    if (!parsed) return;
+
+    if (parsed.schedReport || parsed.actualReport) {
+      var rptSrc = parsed.actualReport || parsed.schedReport;
+      F.reportRaw = rptSrc;
+      F.reportMins = PB.legacy.far117.parseFlexMins(rptSrc, false);
+    }
+
+    if (parsed.legs && parsed.legs.length > 0) {
+      F.legs = parsed.legs;
+      F.depApt = parsed.legs[0].depApt;
+      F.segments = parsed.legs.length;
+
+      var totBlk = 0;
+      parsed.legs.forEach(function(l) { if (l.blockMins) totBlk += l.blockMins; });
+      if (totBlk > 0) {
+        var bh = Math.floor(totBlk / 60), bm = totBlk % 60;
+        F.latt.blockRaw = bh + ':' + String(bm).padStart(2, '0');
+      }
+    }
+
+    saveState();
+    var node = document.getElementById('pb-module-root') || document.body;
+    render(node);
+    doCalc(node, { silent: false });
+    if (F.latt.blockRaw) doLATT(node, { silent: true });
+    toast('Imported ' + (parsed.legs ? parsed.legs.length : 0) + ' legs from rotation text', 'success');
+  };
 
   function setOcrStatus(root, text, hide) {
     var el = root.querySelector('#f117-ocr-status');
     if (!el) return;
-    el.textContent = text || '';
+    el.innerHTML = text || '';
     el.style.display = hide ? 'none' : 'block';
   }
 
@@ -4822,7 +4765,12 @@ PB.legacy.far117 = (function() {
             setOcrStatus(root, 'Recognising text… ' + Math.round((m.progress || 0) * 100) + '%');
         }
       });
+    }).catch(function(err) {
+      console.warn('[PB] Tesseract OCR failed:', err);
+      setOcrStatus(root, '⚠️ Image OCR engine offline or blocked. Tap <button class="btn btn--xs btn--primary" style="margin-left:6px;" onclick="window.pbOpenFar117PasteModal()">📝 Paste Rotation Text</button> to paste schedule text directly.');
+      return null;
     }).then(function(r) {
+      if (!r || !r.data) return;
       var text = (r.data.text || '').trim();
       window._f117LastOcrText = text;   // store for Raw OCR display
 
@@ -5846,6 +5794,38 @@ PB.legacy.far117 = (function() {
     var tH = Math.floor(toMins / 60),  tM = toMins % 60;
     return pad2(fH) + pad2(fM) + '–' + pad2(tH) + pad2(tM);
   }
+
+  function saveState() {
+    PB.storage.set('far117.state', {
+      reportRaw: F.reportRaw,
+      reportMins: F.reportMins,
+      depApt: F.depApt,
+      segments: F.segments,
+      crewType: F.crewType,
+      restClass: F.restClass,
+      baseCity: F.baseCity,
+      dutyDate: F.dutyDate,
+      tzMode: F.tzMode,
+      tzManualZone: F.tzManualZone,
+      rapEnabled: F.rapEnabled,
+      rapStartRaw: F.rapStartRaw,
+      legs: F.legs,
+      latt: F.latt
+    });
+  }
+
+  function loadState() {
+    var saved = PB.storage.get('far117.state', null);
+    if (saved) Object.assign(F, saved);
+  }
+
+  PB.modules.register({
+    id: 'far117',
+    title: 'FAR 117',
+    icon: 'clock',
+    init: function() { loadState(); return Promise.resolve(); },
+    render: render
+  });
 
 })();
 </script>
@@ -11689,6 +11669,7 @@ function renderDayPairingsPanel(dk) {
     if (pdfDoc) buildScroll(pdfDoc);
   }
 })();
+})();
 // ============================================================
 // FILTER BUILDER — Avoid/Award mode filters for pairings
 // ============================================================
@@ -12415,8 +12396,6 @@ function renderDayPairingsPanel(dk) {
   }
   window.pbCommitCarry = function() { commit({ type: 'carry-out', mode: 'avoid', params: {} }); };
 
-  
-})();
 })();
 </script>
 
