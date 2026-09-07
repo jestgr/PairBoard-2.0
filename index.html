@@ -2749,6 +2749,289 @@ PB.modules = (function() {
   };
 })();
 
+/* ============================================================
+   PB.offlineAssets — Startup audit, downloader & cache manager
+   ============================================================ */
+PB.offlineAssets = (function() {
+  var BUNDLES = {
+    tesseract: {
+      id: 'tesseract',
+      name: 'Tesseract OCR Engine & Language Pack',
+      size: '~6.7 MB',
+      description: 'Processes duty-period and rotation screenshots directly on your device.',
+      files: [
+        './vendor/tesseract/tesseract.min.js',
+        './vendor/tesseract/worker.min.js',
+        './vendor/tesseract/tesseract-core.wasm.js',
+        './vendor/tesseract/eng.traineddata.gz'
+      ]
+    },
+    pdfjs: {
+      id: 'pdfjs',
+      name: 'PDF Parsing Engine (PDF.js)',
+      size: '~1.3 MB',
+      description: 'Renders and parses PDF bid packages and schedule exports completely offline.',
+      files: [
+        './vendor/pdfjs/pdf.min.js',
+        './vendor/pdfjs/pdf.worker.min.js'
+      ]
+    },
+    appshell: {
+      id: 'appshell',
+      name: 'PairBoard App Shell & Icons',
+      size: '~0.7 MB',
+      description: 'Core application code, offline web manifest, and touch icons.',
+      files: [
+        './',
+        './index.html',
+        './manifest.json',
+        './icons/icon-192.png',
+        './icons/icon-512.png',
+        './icons/apple-touch-icon.png'
+      ]
+    }
+  };
+
+  var CACHE_NAME = 'pb-shell-v4';
+  var RUNTIME_CACHE_NAME = 'pb-runtime-v4';
+
+  function resolveUrl(url) {
+    try {
+      return new URL(url, window.location.href).href;
+    } catch (e) {
+      return url;
+    }
+  }
+
+  function auditCache() {
+    return new Promise(function(resolve) {
+      if (!('caches' in window)) {
+        return resolve({
+          supported: false,
+          allReady: true,
+          bundles: {},
+          missingBundles: []
+        });
+      }
+
+      Promise.all([
+        caches.open(CACHE_NAME),
+        caches.open(RUNTIME_CACHE_NAME)
+      ]).then(function(openCaches) {
+        var shellCache = openCaches[0];
+        var runtimeCache = openCaches[1];
+
+        var bundleKeys = Object.keys(BUNDLES);
+        var bundleChecks = bundleKeys.map(function(bKey) {
+          var bundle = BUNDLES[bKey];
+          var fileChecks = bundle.files.map(function(filePath) {
+            var fullUrl = resolveUrl(filePath);
+            return Promise.all([
+              shellCache.match(fullUrl),
+              runtimeCache.match(fullUrl),
+              caches.match(fullUrl)
+            ]).then(function(matches) {
+              return !!(matches[0] || matches[1] || matches[2]);
+            }).catch(function() {
+              return false;
+            });
+          });
+
+          return Promise.all(fileChecks).then(function(results) {
+            var missingCount = results.filter(function(r) { return !r; }).length;
+            return {
+              id: bundle.id,
+              name: bundle.name,
+              size: bundle.size,
+              description: bundle.description,
+              totalFiles: bundle.files.length,
+              cachedFiles: bundle.files.length - missingCount,
+              ready: missingCount === 0
+            };
+          });
+        });
+
+        Promise.all(bundleChecks).then(function(bundleResults) {
+          var resMap = {};
+          var missing = [];
+          bundleResults.forEach(function(bRes) {
+            resMap[bRes.id] = bRes;
+            if (!bRes.ready) missing.push(bRes.id);
+          });
+          resolve({
+            supported: true,
+            allReady: missing.length === 0,
+            bundles: resMap,
+            missingBundles: missing
+          });
+        });
+      }).catch(function() {
+        resolve({ supported: false, allReady: true, bundles: {}, missingBundles: [] });
+      });
+    });
+  }
+
+  function downloadBundles(bundleIds, onProgress) {
+    return new Promise(function(resolve, reject) {
+      if (!('caches' in window)) {
+        return reject(new Error('Cache API not supported in this browser.'));
+      }
+
+      var targetFiles = [];
+      bundleIds.forEach(function(bId) {
+        if (BUNDLES[bId]) {
+          BUNDLES[bId].files.forEach(function(f) {
+            if (targetFiles.indexOf(f) === -1) targetFiles.push(f);
+          });
+        }
+      });
+
+      if (targetFiles.length === 0) return resolve();
+
+      caches.open(CACHE_NAME).then(function(cache) {
+        var completed = 0;
+        var errors = [];
+
+        function fetchNext(index) {
+          if (index >= targetFiles.length) {
+            if (onProgress) onProgress({ loaded: completed, total: targetFiles.length, percent: 100, done: true });
+            return resolve({ completed: completed, errors: errors });
+          }
+
+          var file = targetFiles[index];
+          var fullUrl = resolveUrl(file);
+
+          if (onProgress) {
+            var pct = Math.round((index / targetFiles.length) * 100);
+            onProgress({ loaded: index, total: targetFiles.length, percent: pct, file: file, done: false });
+          }
+
+          fetch(fullUrl, { cache: 'reload' }).then(function(res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+            return cache.put(fullUrl, res);
+          }).then(function() {
+            completed++;
+            fetchNext(index + 1);
+          }).catch(function(err) {
+            if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
+            errors.push({ file: file, error: String(err) });
+            fetchNext(index + 1);
+          });
+        }
+
+        fetchNext(0);
+      }).catch(reject);
+    });
+  }
+
+  function clearBundle(bundleId) {
+    if (!('caches' in window) || !BUNDLES[bundleId]) return Promise.resolve(false);
+    var files = BUNDLES[bundleId].files;
+    return Promise.all([
+      caches.open(CACHE_NAME),
+      caches.open(RUNTIME_CACHE_NAME)
+    ]).then(function(openCaches) {
+      var deletes = [];
+      files.forEach(function(f) {
+        var fullUrl = resolveUrl(f);
+        deletes.push(openCaches[0].delete(fullUrl));
+        deletes.push(openCaches[1].delete(fullUrl));
+      });
+      return Promise.all(deletes);
+    });
+  }
+
+  function checkAndPromptOnBoot() {
+    auditCache().then(function(audit) {
+      if (!audit.supported || audit.allReady) {
+        if (PB.log) PB.log.info('Offline assets audit complete', { allReady: true });
+        return;
+      }
+
+      var deferredUntil = localStorage.getItem('pb_offline_deferred_until');
+      if (deferredUntil && Date.now() < parseInt(deferredUntil, 10)) {
+        if (PB.log) PB.log.info('Offline prompt deferred by user', { until: new Date(parseInt(deferredUntil, 10)) });
+        return;
+      }
+
+      showPromptModal(audit);
+    });
+  }
+
+  function showPromptModal(audit) {
+    var modal = document.getElementById('pb-offline-prompt-modal');
+    if (!modal) return;
+
+    var bodyEl = document.getElementById('pb-offline-modal-body');
+    var progressEl = document.getElementById('pb-offline-progress-box');
+    var progressBar = document.getElementById('pb-offline-progress-bar');
+    var progressText = document.getElementById('pb-offline-progress-text');
+    var btnDownload = document.getElementById('pb-offline-download-btn');
+    var btnLater = document.getElementById('pb-offline-later-btn');
+
+    progressEl.style.display = 'none';
+    btnDownload.disabled = false;
+    btnDownload.textContent = 'Download Selected Now';
+
+    var missingKeys = audit.missingBundles;
+    var html = missingKeys.map(function(bKey) {
+      var b = BUNDLES[bKey];
+      return '<label style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--bg-card,#19202e);border:1px solid var(--border-color,#2a3447);border-radius:8px;cursor:pointer;">' +
+        '<input type="checkbox" class="pb-offline-chk" value="' + b.id + '" checked style="margin-top:3px;width:18px;height:18px;accent-color:var(--amber,#f59e0b);">' +
+        '<div>' +
+          '<div style="font-weight:600;font-size:14px;color:var(--text-primary,#f0f2f8);">' + escapeHtml(b.name) + ' <span style="font-size:12px;color:var(--amber,#f59e0b);font-weight:bold;">(' + b.size + ')</span></div>' +
+          '<div style="font-size:12px;color:var(--text-secondary,#94a3b8);margin-top:2px;">' + escapeHtml(b.description) + '</div>' +
+        '</div>' +
+      '</label>';
+    }).join('');
+
+    bodyEl.innerHTML = html;
+    modal.classList.remove('hidden');
+
+    btnLater.onclick = function() {
+      localStorage.setItem('pb_offline_deferred_until', Date.now() + 24 * 60 * 60 * 1000);
+      modal.classList.add('hidden');
+    };
+
+    btnDownload.onclick = function() {
+      var chks = bodyEl.querySelectorAll('.pb-offline-chk:checked');
+      var selectedIds = Array.prototype.map.call(chks, function(c) { return c.value; });
+
+      if (selectedIds.length === 0) {
+        modal.classList.add('hidden');
+        return;
+      }
+
+      btnDownload.disabled = true;
+      btnLater.style.display = 'none';
+      progressEl.style.display = 'block';
+
+      downloadBundles(selectedIds, function(prog) {
+        progressBar.style.width = prog.percent + '%';
+        progressText.textContent = prog.done ? 'Downloads complete!' : ('Caching ' + (prog.file ? prog.file.replace('./', '') : '') + ' (' + prog.loaded + '/' + prog.total + ')');
+      }).then(function() {
+        if (typeof toast === 'function') toast('Offline assets downloaded & cached!', 'success');
+        setTimeout(function() {
+          modal.classList.add('hidden');
+          btnLater.style.display = 'inline-block';
+        }, 800);
+      }).catch(function(err) {
+        progressText.textContent = 'Error downloading: ' + err.message;
+        btnDownload.disabled = false;
+        btnLater.style.display = 'inline-block';
+      });
+    };
+  }
+
+  return {
+    getBundles: function() { return BUNDLES; },
+    auditCache: auditCache,
+    downloadBundles: downloadBundles,
+    clearBundle: clearBundle,
+    checkAndPromptOnBoot: checkAndPromptOnBoot
+  };
+})();
+
 /* Helper */
 function escapeHtml(s) {
   return String(s == null ? '' : s)
@@ -3997,6 +4280,16 @@ PB.legacy.far117 = (function() {
         '</div>',
 
         '<div class="card">',
+          '<div class="card__header">',
+            '<div><h3 class="card__title">Offline Assets &amp; Storage</h3>',
+            '<p class="card__subtitle">Status of engines and resources cached for 100% offline flight deck operation.</p></div>',
+          '</div>',
+          '<div class="card__body card__body--flush" id="pb-offline-settings-body">',
+            '<div style="padding:16px;text-align:center;color:var(--text-secondary);">Auditing offline assets…</div>',
+          '</div>',
+        '</div>',
+
+        '<div class="card">',
           '<div class="card__header"><h3 class="card__title">Data</h3></div>',
           '<div class="card__body card__body--flush">',
             row('Storage used', '<span class="u-mono u-muted" id="pb-storage-usage">' + formatBytes(PB.storage.usage()) + '</span>'),
@@ -4013,6 +4306,65 @@ PB.legacy.far117 = (function() {
           '</div>',
         '</div>'
       ].join('');
+
+      function refreshOfflineSettings() {
+        var body = root.querySelector('#pb-offline-settings-body');
+        if (!body) return;
+        PB.offlineAssets.auditCache().then(function(audit) {
+          var bundles = PB.offlineAssets.getBundles();
+          var keys = Object.keys(bundles);
+          var html = keys.map(function(k) {
+            var b = bundles[k];
+            var status = audit.bundles[k];
+            var isReady = status && status.ready;
+            var badge = isReady ?
+              '<span class="badge badge--success" style="background:#10b98122;color:#10b981;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">✅ Cached &amp; Ready</span>' :
+              '<span class="badge badge--warning" style="background:#f59e0b22;color:#f59e0b;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">⚠️ Not Cached</span>';
+
+            var actionBtn = isReady ?
+              '<button class="btn btn--ghost btn--xs pb-btn-clear-asset" data-id="' + b.id + '" style="font-size:12px;">Clear</button>' :
+              '<button class="btn btn--primary btn--xs pb-btn-download-asset" data-id="' + b.id + '" style="font-size:12px;">Download (' + b.size + ')</button>';
+
+            return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color,#2a3447);gap:12px;">' +
+              '<div>' +
+                '<div style="font-weight:600;font-size:14px;color:var(--text-primary);">' + escapeHtml(b.name) + '</div>' +
+                '<div style="font-size:12px;color:var(--text-secondary);">' + escapeHtml(b.description) + '</div>' +
+              '</div>' +
+              '<div style="display:flex;align-items:center;gap:10px;">' +
+                badge + actionBtn +
+              '</div>' +
+            '</div>';
+          }).join('');
+
+          body.innerHTML = html;
+
+          body.querySelectorAll('.pb-btn-download-asset').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var id = btn.getAttribute('data-id');
+              btn.disabled = true;
+              btn.textContent = 'Downloading…';
+              PB.offlineAssets.downloadBundles([id]).then(function() {
+                if (typeof toast === 'function') toast('Downloaded asset bundle!', 'success');
+                refreshOfflineSettings();
+              }).catch(function(err) {
+                if (typeof toast === 'function') toast('Download failed: ' + err.message, 'error');
+                refreshOfflineSettings();
+              });
+            });
+          });
+
+          body.querySelectorAll('.pb-btn-clear-asset').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var id = btn.getAttribute('data-id');
+              PB.offlineAssets.clearBundle(id).then(function() {
+                if (typeof toast === 'function') toast('Cleared asset from cache', 'info');
+                refreshOfflineSettings();
+              });
+            });
+          });
+        });
+      }
+      refreshOfflineSettings();
 
       /* --- wire controls --- */
       wireSeg('pref-theme', function(v) { PB.theme.apply(v); });
@@ -4675,6 +5027,15 @@ PB.legacy.far117 = (function() {
     });
   }
 
+  function getAbsoluteTessConfig() {
+    var base = new URL('./vendor/tesseract/', window.location.href).href;
+    return {
+      workerPath: base + 'worker.min.js',
+      corePath: base + 'tesseract-core.wasm.js',
+      langPath: base.replace(/\/$/, '')
+    };
+  }
+
   // Parse Ezio's Family duty-period screenshot OCR text into structured data.
   // Tesseract reads 2-column layout as interleaved lines, so we search the
   // full text blob by regex rather than line-by-line.
@@ -4684,46 +5045,56 @@ PB.legacy.far117 = (function() {
       legs: [], warnings: []
     };
 
+    function cleanDigits(str) {
+      if (!str) return str;
+      return str.replace(/[Ili]/gi, '1').replace(/[Oo]/gi, '0').replace(/S/gi, '5').replace(/Z/gi, '2');
+    }
+
     // Report and date
-    var rptM = text.match(/Rpt\s*[-–]\s*(\d{4})\s+(\d{1,2}[A-Za-z]{3})/);
-    if (rptM) { result.schedReport = rptM[1]; result.dateStr = rptM[2].toUpperCase(); }
-    var aprM = text.match(/Apr\s+Rpt\s*[-–]\s*(\d{4})/i);
-    if (aprM) result.actualReport = aprM[1];
+    var rptM = text.match(/Rpt\s*[-–:]*\s*([0-9IliOoSZ]{4})\s+(\d{1,2}[A-Za-z]{3})/i);
+    if (rptM) {
+      result.schedReport = cleanDigits(rptM[1]);
+      result.dateStr = rptM[2].toUpperCase();
+    }
+    var aprM = text.match(/Apr\s+Rpt\s*[-–:]*\s*([0-9IliOoSZ]{4})/i);
+    if (aprM) result.actualReport = cleanDigits(aprM[1]);
+
+    var reservedWords = [
+      'RPT', 'ARR', 'DEP', 'BLK', 'TRN', 'EQP', 'GAT', 'GATE', 'DAY', 'DAYS',
+      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+      'MIN', 'HRS', 'RLS', 'CPT', 'FO', 'FA', 'DH', 'OAL', 'CRM', 'NYC'
+    ];
 
     // Find all flight header positions in the full text.
-    // OCR often drops the dash between airport codes (CLEATL instead of CLE-ATL),
-    // misreads "1" as "I" in flight numbers (DLI516 instead of DL1516), and
-    // mangles carrier codes for deadhead/partner flights. Accept any 2-letter IATA code.
-    var hdrRe = /[A-Z]{2}\s*[0-9I]{2,4}\s*[:\.\s-]*\s*([A-Z]{3})\s*[-–]?\s*([A-Z]{3})/gi;
+    // Header formats: DL2404 : LGA-TPA, DL2404 LGA-TPA, DL 2404 LGA TPA, 2404 LGA-TPA
+    var hdrRe = /[A-Z]{2}\s*[0-9IO]{2,4}\s*[:\.\s-]*\s*([A-Z]{3})\s*[-–\s:]+\s*([A-Z]{3})/gi;
     var headers = [];
     var hm;
     while ((hm = hdrRe.exec(text)) !== null) {
-      headers.push({
-        depApt: hm[1].toUpperCase(),
-        arrApt: hm[2].toUpperCase(),
-        pos: hm.index
-      });
+      var dep = hm[1].toUpperCase();
+      var arr = hm[2].toUpperCase();
+      if (!reservedWords.includes(dep) && !reservedWords.includes(arr)) {
+        headers.push({ depApt: dep, arrApt: arr, pos: hm.index });
+      }
     }
 
-    // For each header, extract the first Dep- and Arr- time found AFTER it
-    // (and before the next header).
-    // Dep/Arr lines: "Dep- 1154 13APR" or "Dep -1154" or "Dep- 1154"
-    var depRe = /Dep\s*[-–]\s*(\d{4})/gi;
-    var arrRe = /Arr\s*[-–]\s*(\d{4})/gi;
-    var blkRe = /Blk\s*[-–]\s*(\d{1,2}):(\d{2})/gi;
+    var depRe = /Dep\s*[-–:]*\s*([0-9IliOoSZ]{4})/gi;
+    var arrRe = /Arr\s*[-–:]*\s*([0-9IliOoSZ]{4})/gi;
+    var blkRe = /Blk\s*[-–:]*\s*(\d{1,2})[:\.](\d{2})/gi;
 
-    // Build arrays of all match positions
-    function allMatches(re, txt) {
+    function allMatches(re, txt, isDigitFix) {
       var results = [], m;
       re.lastIndex = 0;
-      while ((m = re.exec(txt)) !== null) results.push({ pos: m.index, val: m[1], m: m });
+      while ((m = re.exec(txt)) !== null) {
+        var val = isDigitFix ? cleanDigits(m[1]) : m[1];
+        results.push({ pos: m.index, val: val, m: m });
+      }
       return results;
     }
-    var allDeps = allMatches(depRe, text);
-    var allArrs = allMatches(arrRe, text);
-    var allBlks = allMatches(blkRe, text);
+    var allDeps = allMatches(depRe, text, true);
+    var allArrs = allMatches(arrRe, text, true);
+    var allBlks = allMatches(blkRe, text, false);
 
-    // Match each header to the nearest dep/arr/blk after it
     function firstAfter(arr, pos, nextPos) {
       for (var i = 0; i < arr.length; i++) {
         if (arr[i].pos > pos && (nextPos == null || arr[i].pos < nextPos)) return arr[i];
@@ -4737,14 +5108,13 @@ PB.legacy.far117 = (function() {
       var dep = firstAfter(allDeps, hdr.pos, nextPos);
       var arr = firstAfter(allArrs, hdr.pos, nextPos);
       var blk = firstAfter(allBlks, hdr.pos, nextPos);
-      // Detect DH: "Confirmation #" in OCR section is the most reliable signal
-      var isDH = /Confirmation\s*#/i.test(section);
+      var isDH = /Confirmation\s*#/i.test(section) || /Deadhead|DH/i.test(section);
 
-      if (dep) {
+      if (dep || arr) {
         result.legs.push({
           depApt: hdr.depApt,
           arrApt: hdr.arrApt,
-          depLocalHHMM: dep.val,
+          depLocalHHMM: dep ? dep.val : null,
           arrLocalHHMM: arr ? arr.val : null,
           blockMins: blk ? (parseInt(blk.m[1])*60 + parseInt(blk.m[2])) : null,
           isDH: isDH
@@ -4782,24 +5152,47 @@ PB.legacy.far117 = (function() {
     });
   }
 
+  function testOcrAssets(root) {
+    if (window.location.protocol === 'file:') {
+      return Promise.reject(new Error('Opening via file:// protocol blocks browser Web Workers & Fetch. Please run "npm run serve" and open http://localhost:3000'));
+    }
+    var base = new URL('./vendor/tesseract/', window.location.href).href;
+    var files = ['tesseract.min.js', 'worker.min.js', 'tesseract-core.wasm.js', 'eng.traineddata.gz'];
+    setOcrStatus(root, 'Checking OCR files...');
+
+    return Promise.all(files.map(function(f) {
+      var url = base + f;
+      return fetch(url, { method: 'HEAD' }).then(function(res) {
+        return { file: f, url: url, ok: res.ok, status: res.status };
+      }).catch(function(err) {
+        return { file: f, url: url, ok: false, error: err.message || String(err) };
+      });
+    })).then(function(results) {
+      var failed = results.filter(function(r) { return !r.ok; });
+      if (failed.length > 0) {
+        var details = failed.map(function(f) { return f.file + ' (' + (f.error || ('HTTP ' + f.status)) + ')'; }).join(', ');
+        throw new Error('Missing file: ' + details + ' [Base: ' + base + ']');
+      }
+    });
+  }
+
   function handleFar117OCR(root, file) {
     setOcrStatus(root, 'Preparing image…');
     preprocessOcrImage(file).then(function(processedFile) {
-      setOcrStatus(root, 'Loading OCR engine…');
-      return loadTesseract().then(function() {
-        setOcrStatus(root, 'Recognising text…');
-        return Tesseract.recognize(processedFile, 'eng', {
-          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v2.1.5/dist/worker.min.js',
-          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v2.2.0/tesseract-core.wasm.js',
-          langPath: 'https://cdn.jsdelivr.net/gh/naptha/tessdata_fast@main',
-          logger: function(m) {
+      return testOcrAssets(root).then(function() {
+        setOcrStatus(root, 'Loading OCR engine…');
+        return loadTesseract().then(function() {
+          setOcrStatus(root, 'Recognising text…');
+          var cfg = getAbsoluteTessConfig();
+          cfg.logger = function(m) {
             if (m.status === 'recognizing text') {
               setOcrStatus(root, 'Recognising text… ' + Math.round((m.progress || 0) * 100) + '%');
             } else if (m.status) {
               var label = String(m.status).replace(/_/g, ' ');
               setOcrStatus(root, 'OCR: ' + label + '…');
             }
-          }
+          };
+          return Tesseract.recognize(processedFile, 'eng', cfg);
         });
       });
     }).catch(function(err) {
@@ -10304,12 +10697,16 @@ function renderDayPairingsPanel(dk) {
     setProgress(root, 'Loading OCR engine…', 0);
     loadTesseract().then(function() {
       setProgress(root, 'Recognising text…', 0);
+      var base = new URL('./vendor/tesseract/', window.location.href).href;
       return Tesseract.recognize(file, 'eng', {
+        workerPath: base + 'worker.min.js',
+        corePath: base + 'tesseract-core.wasm.js',
+        langPath: base.replace(/\/$/, ''),
         logger: function(m) {
           if (m.status === 'recognizing text') {
             setProgress(root, 'Recognising text…', Math.round((m.progress || 0) * 100));
-          } else if (m.status === 'loading language traineddata') {
-            setProgress(root, 'Downloading language (~4MB, one-time)…', 0);
+          } else if (m.status) {
+            setProgress(root, 'OCR: ' + String(m.status).replace(/_/g, ' ') + '…', 0);
           }
         }
       });
@@ -12488,6 +12885,11 @@ function renderDayPairingsPanel(dk) {
     legacyFar117Loaded: !!(PB.legacy && PB.legacy.far117)
   });
 
+  /* Perform silent offline asset audit on startup & prompt if items are missing */
+  if (PB.offlineAssets && typeof PB.offlineAssets.checkAndPromptOnBoot === 'function') {
+    PB.offlineAssets.checkAndPromptOnBoot();
+  }
+
   if (!PB.legacy || !PB.legacy.far117) {
     PB.log.warn('Legacy FAR 117 core not yet injected. Module is running on fallback math. This is expected at Stage 1; legacy core will be wired in during Stage 1b.');
   }
@@ -12567,6 +12969,33 @@ function renderDayPairingsPanel(dk) {
     <div style="padding:0 24px 20px;display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn btn--ghost btn--sm" id="reset-modal-cancel">Cancel</button>
       <button class="btn btn--danger btn--sm" id="reset-modal-confirm">Clear Selected</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Missing Offline Assets Prompt Modal ───────────────────── -->
+<div class="modal-overlay hidden" id="pb-offline-prompt-modal" style="z-index:10002;">
+  <div class="modal" style="max-width:480px;width:90%;">
+    <div class="modal-header">
+      <div class="modal-title" style="display:flex;align-items:center;gap:8px;">
+        <span style="color:var(--amber,#f59e0b);">⚡</span> Offline Readiness Check
+      </div>
+      <div class="modal-sub">
+        The following items are missing from local cache. Select which items you would like to download now for 100% offline operation:
+      </div>
+    </div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;" id="pb-offline-modal-body">
+      <!-- Populated dynamically -->
+    </div>
+    <div id="pb-offline-progress-box" style="padding:0 20px 10px;display:none;">
+      <div style="height:8px;background:var(--border-color,#2a3447);border-radius:4px;overflow:hidden;">
+        <div id="pb-offline-progress-bar" style="width:0%;height:100%;background:var(--amber,#f59e0b);transition:width 0.2s ease;"></div>
+      </div>
+      <div id="pb-offline-progress-text" style="font-size:12px;color:var(--text-secondary,#94a3b8);margin-top:6px;text-align:center;">Preparing download…</div>
+    </div>
+    <div style="padding:12px 20px 20px;display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn--ghost btn--sm" id="pb-offline-later-btn">Remind Me Later</button>
+      <button class="btn btn--primary btn--sm" id="pb-offline-download-btn" style="background:var(--amber,#f59e0b);color:#000;font-weight:bold;">Download Selected Now</button>
     </div>
   </div>
 </div>
