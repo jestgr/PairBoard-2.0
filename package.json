@@ -1,0 +1,20 @@
+{
+  "name": "pairboard-tools",
+  "version": "1.0.0",
+  "description": "Offline-first airline crew pairing analyzer, FAR 117 calculator, and reserve bidding PWA",
+  "main": "index.html",
+  "scripts": {
+    "test": "node --test tests/**/*.test.js",
+    "check": "node scripts/check_syntax.js",
+    "serve": "npx -y serve ."
+  },
+  "keywords": [
+    "aviation",
+    "crew-scheduling",
+    "far117",
+    "pwa",
+    "offline-first"
+  ],
+  "author": "",
+  "license": "MIT"
+}

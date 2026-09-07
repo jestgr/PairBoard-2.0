@@ -13,7 +13,7 @@
 // deletes the old one, and notifies the user to refresh.
 // ============================================================
 
-const CACHE_VERSION  = 'v2';
+const CACHE_VERSION  = 'v3';
 const SHELL_CACHE    = 'pb-shell-'   + CACHE_VERSION;
 const RUNTIME_CACHE  = 'pb-runtime-' + CACHE_VERSION;
 
@@ -26,6 +26,9 @@ const SHELL_FILES = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
+  './vendor/pdfjs/pdf.min.js',
+  './vendor/pdfjs/pdf.worker.min.js',
+  './vendor/tesseract/tesseract.min.js',
 ];
 
 // ── Install ─────────────────────────────────────────────────

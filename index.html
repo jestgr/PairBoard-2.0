@@ -2,6 +2,7 @@
 <html lang="en" data-theme="auto">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: data:; worker-src 'self' blob:;">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -825,6 +826,72 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
   padding: var(--s-2);
 }
 
+/* Sidebar Datablock */
+.pb-sidebar-datablock {
+  margin: var(--s-2) var(--s-2);
+  padding: 10px 12px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+}
+.pb-datablock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.pb-datablock-month {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.pb-bidding-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.pb-bidding-status.open {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.pb-bidding-status.closed {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+  border: 1px solid rgba(100, 116, 139, 0.25);
+}
+.pb-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.pb-bidding-status.open .pb-status-dot {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+.pb-datablock-details {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pb-datablock-pill {
+  font-size: 10px;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 /* ----- Main ----- */
 .main {
   flex: 1 1 auto;
@@ -837,12 +904,12 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
 
 .topbar {
   flex: 0 0 auto;
-  height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px) + 6px);
+  height: var(--topbar-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--s-5);
-  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  padding-top: env(safe-area-inset-top, 0);
   background: #FFFFFF;                          /* fallback */
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
@@ -1756,7 +1823,6 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     z-index: 1000;
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
-    padding-top: env(safe-area-inset-top, 0px);
   }
   .sidebar[data-open="true"] {
     transform: translateX(0);
@@ -1916,13 +1982,103 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
 }
 .pb-trip-card:hover { border-color: var(--pb-border-bright); background: var(--pb-bg-hover); }
 
-.pb-fav-btn {
-  background: none;
+.pb-rating-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--pb-bg-panel, rgba(0,0,0,0.03));
+  border: 1px solid var(--pb-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+.pb-fav-btn, .pb-avoid-btn {
+  background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 16px;
-  padding: 2px 4px;
+  font-size: 14px;
   line-height: 1;
+  padding: 3px 5px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.pb-fav-btn.tier-1 { color: #10b981; background: rgba(16, 185, 129, 0.12); }
+.pb-fav-btn.tier-2 { color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+.pb-fav-btn.tier-0 { color: var(--pb-text-muted, #94a3b8); }
+.pb-fav-btn:hover { background: rgba(0,0,0,0.05); }
+.pb-avoid-btn.active { color: #ef4444; background: rgba(239, 68, 68, 0.12); }
+.pb-avoid-btn { color: var(--pb-text-muted, #94a3b8); }
+.pb-avoid-btn:hover { color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+
+.pb-cal-insights {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--pb-bg-surface, #ffffff);
+  border: 1px solid var(--pb-border, #e2e8f0);
+  border-radius: var(--pb-radius, 8px);
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.pb-cal-insights__item { display: flex; align-items: center; gap: 6px; color: var(--text-secondary, #475569); }
+.pb-cal-insights__val { font-weight: 700; color: var(--text-primary, #0f172a); }
+
+.pb-cal-comp-badges { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
+.pb-cal-badge {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  padding: 1px 3px; border-radius: 3px; line-height: 1.1; letter-spacing: -0.02em; white-space: nowrap;
+}
+.pb-cal-badge.b-1d { background: rgba(2, 132, 199, 0.14); color: #0284c7; }
+.pb-cal-badge.b-2d { background: rgba(79, 70, 229, 0.14); color: #4f46e5; }
+.pb-cal-badge.b-3d { background: rgba(13, 148, 136, 0.14); color: #0d9488; }
+.pb-cal-badge.b-4d { background: rgba(124, 58, 237, 0.14); color: #7c3aed; }
+.pb-cal-badge.b-5d { background: rgba(192, 38, 211, 0.14); color: #c026d3; }
+[data-theme="dark"] .pb-cal-badge.b-1d { background: rgba(56, 189, 248, 0.22); color: #38bdf8; }
+[data-theme="dark"] .pb-cal-badge.b-2d { background: rgba(129, 140, 248, 0.22); color: #818cf8; }
+[data-theme="dark"] .pb-cal-badge.b-3d { background: rgba(45, 212, 191, 0.22); color: #2dd4bf; }
+[data-theme="dark"] .pb-cal-badge.b-4d { background: rgba(192, 132, 252, 0.22); color: #c084fc; }
+[data-theme="dark"] .pb-cal-badge.b-5d { background: rgba(244, 114, 182, 0.22); color: #f472b6; }
+
+.pb-day-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 100vw;
+  background: var(--bg-surface, #ffffff); border-left: 1px solid var(--border, #e2e8f0);
+  box-shadow: -4px 0 20px rgba(0,0,0,0.15); z-index: 1000; display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pb-day-drawer[data-open="true"] { transform: translateX(0); }
+.pb-day-drawer__backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 999;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.pb-day-drawer__backdrop[data-open="true"] { opacity: 1; pointer-events: auto; }
+.pb-day-drawer__header {
+  padding: 14px 16px; border-bottom: 1px solid var(--border, #e2e8f0);
+  display: flex; align-items: center; justify-content: space-between; background: var(--bg-elevated, #f8fafc);
+}
+.pb-day-drawer__title { font-size: 15px; font-weight: 700; color: var(--text-primary, #0f172a); margin: 0; }
+.pb-day-drawer__close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-secondary, #64748b); }
+.pb-day-drawer__body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.pb-pa-toggle-btn {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 5px 10px;
+  border-radius: 6px; cursor: pointer; transition: all 0.15s ease;
+}
+.pb-pa-toggle-btn.clear { background: var(--bg-deep, #f1f5f9); color: var(--text-secondary, #64748b); border: 1px solid var(--border, #cbd5e1); }
+
+@media (max-width: 768px) {
+  .pb-day-drawer {
+    top: auto; left: 0; right: 0; bottom: 0; width: 100%; height: 80vh; max-height: 80vh;
+    border-left: none; border-top: 1px solid var(--border, #e2e8f0); border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+  }
+  .pb-day-drawer[data-open="true"] { transform: translateY(0); }
 }
 
 /* ── Data-tip tooltips (match v0.9) ───────────────────────── */
@@ -2277,6 +2433,9 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     </nav>
 
     <div class="sidebar__footer">
+      <div class="pb-sidebar-datablock" id="pb-sidebar-datablock" aria-label="Bid Period Info">
+        <!-- Populated dynamically by updateSidebarDatablock() -->
+      </div>
       <button class="nav-item" id="pb-nav-settings" type="button">
         <span class="nav-item__icon" data-icon="settings"></span>
         <span class="nav-item__label">Settings</span>
@@ -4566,7 +4725,7 @@ PB.legacy.far117 = (function() {
     return new Promise(function(resolve, reject) {
       if (window.Tesseract) return resolve();
       var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+      s.src = './vendor/tesseract/tesseract.min.js';
       s.onload  = function() { resolve(); };
       s.onerror = function() { reject(new Error('Failed to load OCR engine')); };
       document.head.appendChild(s);
@@ -6289,7 +6448,8 @@ var state = {
   bidPeriodStart: null,
   bidPeriodEnd: null,
   bidPeriodDays: null,
-  favorites: new Set(),
+  favorites: new Map(),        // pairingNumber -> tier (1 = Green/Best, 2 = Yellow/Maybe)
+  avoided: new Set(),          // pairingNumber Set (avoided / dislike)
   occurrenceFilters: [],       // full filter system (builder in separate module)
   awardFilterCount: 0,
   calYear:  new Date().getFullYear(),
@@ -6376,39 +6536,74 @@ function getUSHoliday(year, month, day) {
   return null;
 }
 
+var DELTA_BID_SCHEDULE = {
+  JAN: { startMonth: 11, startDay: 31, endMonth: 0, endDay: 30, isPrevYearStart: true },
+  FEB: { startMonth: 0, startDay: 31, endMonth: 1, endDay: 28 },
+  MAR: { startMonth: 2, startDay: 2, endMonth: 2, endDay: 31 },
+  APR: { startMonth: 3, startDay: 1, endMonth: 3, endDay: 30 },
+  MAY: { startMonth: 4, startDay: 1, endMonth: 4, endDay: 30 },
+  JUN: { startMonth: 4, startDay: 31, endMonth: 5, endDay: 29 },
+  JUL: { startMonth: 5, startDay: 30, endMonth: 6, endDay: 30 },
+  AUG: { startMonth: 6, startDay: 31, endMonth: 7, endDay: 30 },
+  SEP: { startMonth: 7, startDay: 31, endMonth: 8, endDay: 30 },
+  OCT: { startMonth: 9, startDay: 1, endMonth: 9, endDay: 30 },
+  NOV: { startMonth: 9, startDay: 31, endMonth: 10, endDay: 29 },
+  DEC: { startMonth: 10, startDay: 30, endMonth: 11, endDay: 30 }
+};
+
 function deriveBidPeriodFromMonth() {
-  var MMAP = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
   var bm = (appState.bidMonth || '').toUpperCase();
-  var mo = MMAP[bm];
-  if (mo === undefined) return null;
+  var cfg = DELTA_BID_SCHEDULE[bm];
   var yr = new Date().getFullYear();
   if (appState.pairings && appState.pairings.length) {
     var sample = appState.pairings[0].effectiveStart || '';
     var ym = sample.match(/(\d{4})/);
     if (ym) yr = parseInt(ym[1]);
   }
-  var start = new Date(yr, mo, 1);
-  var end   = new Date(yr, mo + 1, 0);
-  return { start: start, end: end, days: end.getDate() };
+  if (cfg) {
+    var startYr = cfg.isPrevYearStart ? yr - 1 : yr;
+    var start = new Date(startYr, cfg.startMonth, cfg.startDay);
+    var end   = new Date(yr, cfg.endMonth, cfg.endDay);
+    var days  = Math.round((end - start) / 86400000) + 1;
+    return { start: start, end: end, days: days };
+  }
+  var MMAP = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  var mo = MMAP[bm];
+  if (mo === undefined) return null;
+  var s = new Date(yr, mo, 1);
+  var e = new Date(yr, mo + 1, 0);
+  return { start: s, end: e, days: e.getDate() };
 }
+
 function ensureBidPeriod() {
-  if (appState.bidPeriodDays && appState.bidPeriodStart) return;
-  var derived = deriveBidPeriodFromMonth();
-  if (!derived) return;
-  if (!appState.bidPeriodStart) {
-    var s = derived.start;
-    appState.bidPeriodStart = s.getFullYear() + '-' + String(s.getMonth()+1).padStart(2,'0') + '-' + String(s.getDate()).padStart(2,'0');
+  if (!appState.bidPeriodDays || !appState.bidPeriodStart || !appState.bidPeriodEnd) {
+    var derived = deriveBidPeriodFromMonth();
+    if (derived) {
+      var toISO = function(d) {
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      };
+      if (!appState.bidPeriodStart) appState.bidPeriodStart = toISO(derived.start);
+      if (!appState.bidPeriodEnd)   appState.bidPeriodEnd   = toISO(derived.end);
+      if (!appState.bidPeriodDays)  appState.bidPeriodDays  = derived.days;
+    }
   }
-  if (!appState.bidPeriodEnd) {
-    var e = derived.end;
-    appState.bidPeriodEnd = e.getFullYear() + '-' + String(e.getMonth()+1).padStart(2,'0') + '-' + String(e.getDate()).padStart(2,'0');
+  if (appState.bidPeriodStart && appState.bidPeriodEnd) {
+    var s = parseBPDate(appState.bidPeriodStart);
+    var e = parseBPDate(appState.bidPeriodEnd);
+    if (s && e && !isNaN(s) && !isNaN(e)) {
+      appState.bidPeriodDays = Math.round((e - s) / 86400000) + 1;
+    }
   }
-  if (!appState.bidPeriodDays) appState.bidPeriodDays = derived.days;
 }
 
 function getBidPeriodYearMonth() {
-  var d = parseBPDate(appState.bidPeriodStart);
-  if (d) return { year: d.getFullYear(), month: d.getMonth() };
+  var end = parseBPDate(appState.bidPeriodEnd);
+  if (end && !isNaN(end)) return { year: end.getFullYear(), month: end.getMonth() };
+  var start = parseBPDate(appState.bidPeriodStart);
+  if (start && !isNaN(start)) {
+    var mid = new Date(start.getTime() + 10 * 86400000);
+    return { year: mid.getFullYear(), month: mid.getMonth() };
+  }
   if (appState.bidMonth) {
     var MONTHS = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
     var m = MONTHS[appState.bidMonth.toUpperCase()];
@@ -6440,8 +6635,8 @@ function pairingCheckOutMins(p) {
 
 // Occurrence engine — shared by filter + calendar
 function computeOccurrences(p) {
-  var MONTHS   = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
   var DAY_CODES = {MO:1,TU:2,WE:3,TH:4,FR:5,SA:6,SU:0};
+  var MONTHS    = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
   function parseLocalDate(str) {
     if (!str) return null;
     var m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -6449,52 +6644,210 @@ function computeOccurrences(p) {
     var d = new Date(str);
     return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }
-  var year = new Date().getFullYear(), month = null;
-  if (appState.bidPeriodStart) {
-    var d = parseLocalDate(appState.bidPeriodStart);
-    if (d) { year = d.getFullYear(); month = d.getMonth(); }
+
+  var bpStart = parseLocalDate(appState.bidPeriodStart);
+  var bpEnd   = parseLocalDate(appState.bidPeriodEnd);
+
+  // If bid period dates aren't set, derive from month
+  if (!bpStart || !bpEnd) {
+    var derived = deriveBidPeriodFromMonth();
+    if (derived) { bpStart = derived.start; bpEnd = derived.end; }
   }
-  if (month === null && appState.bidMonth)
-    month = MONTHS[appState.bidMonth.toUpperCase()];
-  if (p.effectiveStart) {
-    var em = p.effectiveStart.match(/([A-Z]{3})/i);
-    if (em && MONTHS[em[1].toUpperCase()] !== undefined)
-      month = MONTHS[em[1].toUpperCase()];
+  if (!bpStart || !bpEnd) return [];
+
+  var year = bpStart.getFullYear();
+  var bpMonth = bpStart.getMonth();
+
+  function parseEffectiveDate(str) {
+    if (!str) return null;
+    var m = str.match(/([A-Z]{3})?\s*(\d{1,2})/i);
+    if (!m) return null;
+    var monCode = m[1] ? MONTHS[m[1].toUpperCase()] : null;
+    var mIdx = (monCode !== undefined && monCode !== null) ? monCode : bpMonth;
+    var y = year;
+    if (bpMonth === 11 && mIdx === 0) y = year + 1;
+    return new Date(y, mIdx, parseInt(m[2]));
   }
-  if (month === null) return [];
-  var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  var startDate = parseEffectiveDate(p.effectiveStart) || bpStart;
+  var endDate   = p.effectiveOnly ? startDate : (parseEffectiveDate(p.effectiveEnd) || bpEnd);
+
   function parseDayNum(str) {
     if (!str) return null;
     var m = str.match(/(\d{1,2})/);
     return m ? parseInt(m[1]) : null;
   }
-  var effStart  = parseDayNum(p.effectiveStart) || 1;
-  var effEnd    = p.effectiveOnly ? effStart : (parseDayNum(p.effectiveEnd) || daysInMonth);
-  var exceptSet = new Set((p.exceptDates||[]).map(function(e) { return parseDayNum(e); }).filter(Boolean));
-  var opDows    = new Set((p.operatingDays||[]).map(function(d) { return DAY_CODES[d]; }));
+
+  var exceptSet   = new Set((p.exceptDates||[]).map(function(e) { return parseDayNum(e); }).filter(Boolean));
+  var opDows      = new Set((p.operatingDays||[]).map(function(d) { return DAY_CODES[d]; }));
+
   var result = [];
-  for (var dd = effStart; dd <= Math.min(effEnd, daysInMonth); dd++) {
-    if (opDows.size > 0 && !opDows.has(new Date(year, month, dd).getDay())) continue;
-    if (exceptSet.has(dd)) continue;
-    result.push(dd);
+  var cur = new Date(bpStart);
+  while (cur <= bpEnd) {
+    if (cur >= startDate && cur <= endDate) {
+      var dow = cur.getDay();
+      var dayN = cur.getDate();
+      if ((opDows.size === 0 || opDows.has(dow)) && !exceptSet.has(dayN)) {
+        result.push(dayN);
+      }
+    }
+    cur.setDate(cur.getDate() + 1);
   }
   return result;
 }
 
-// Favorites
+// Favorites & Ratings Engine
+function ensureFavoritesMap() {
+  if (!appState.favorites || typeof appState.favorites.get !== 'function') {
+    var m = new Map();
+    if (appState.favorites) {
+      if (typeof appState.favorites.forEach === 'function') {
+        appState.favorites.forEach(function(val, key) {
+          if (typeof val === 'number') m.set(key, val);
+          else if (typeof key === 'string') m.set(key, 1);
+          else m.set(val, 1);
+        });
+      } else if (typeof appState.favorites === 'object') {
+        Object.keys(appState.favorites).forEach(function(k) {
+          m.set(k, appState.favorites[k] || 1);
+        });
+      }
+    }
+    appState.favorites = m;
+  }
+  return appState.favorites;
+}
+
+function ensureAvoidedSet() {
+  if (!appState.avoided || typeof appState.avoided.has !== 'function') {
+    var s = new Set();
+    if (appState.avoided) {
+      if (Array.isArray(appState.avoided) || typeof appState.avoided.forEach === 'function') {
+        appState.avoided.forEach(function(item) { s.add(item); });
+      }
+    }
+    appState.avoided = s;
+  }
+  return appState.avoided;
+}
+
+function getFavoriteTier(num) {
+  var favs = ensureFavoritesMap();
+  var val = favs.get(num);
+  if (!val) return 0;
+  return typeof val === 'number' ? val : 1;
+}
+
+function isFavorite(num) {
+  return getFavoriteTier(num) > 0;
+}
+
+function isAvoided(num) {
+  var av = ensureAvoidedSet();
+  return av.has(num);
+}
+
 function saveFavorites() {
-  var arr = [];
-  appState.favorites.forEach(function(n) { arr.push(n); });
-  dbPut(STORE_META, { key: 'favorites', value: JSON.stringify(arr) })
+  var obj = {};
+  var favs = ensureFavoritesMap();
+  favs.forEach(function(tier, n) { obj[n] = tier; });
+  dbPut(STORE_META, { key: 'favorites', value: JSON.stringify(obj) })
     .catch(function(e) { PB.log.warn('Failed to save favorites', { error: String(e) }); });
 }
+
+function saveAvoided() {
+  var arr = [];
+  var av = ensureAvoidedSet();
+  av.forEach(function(n) { arr.push(n); });
+  dbPut(STORE_META, { key: 'avoided', value: JSON.stringify(arr) })
+    .catch(function(e) { PB.log.warn('Failed to save avoided', { error: String(e) }); });
+}
+
+var _ratingSaveTimer = null;
+function debouncedSaveRatings() {
+  if (_ratingSaveTimer) clearTimeout(_ratingSaveTimer);
+  _ratingSaveTimer = setTimeout(function() {
+    saveFavorites();
+    saveAvoided();
+  }, 200);
+}
+
+function updateRatingDOMForPairing(num) {
+  var tier = getFavoriteTier(num);
+  var avoided = isAvoided(num);
+
+  // Update all matching favorite buttons across DOM (main list, modals, day drawer)
+  var favBtns = document.querySelectorAll('.pb-fav-btn[data-num="' + num + '"]');
+  favBtns.forEach(function(btn) {
+    btn.className = tier === 1 ? 'pb-fav-btn tier-1' : tier === 2 ? 'pb-fav-btn tier-2' : 'pb-fav-btn tier-0';
+    btn.style.color = tier === 1 ? '#10b981' : tier === 2 ? '#f59e0b' : 'var(--pb-text-muted)';
+    btn.textContent = (tier === 1 || tier === 2) ? '★' : '☆';
+    btn.title = tier === 1 ? 'Tier 1 Best (Tap to change to Tier 2 Maybe)' : tier === 2 ? 'Tier 2 Maybe (Tap to unstar)' : 'Mark as Favorite (Tap for Tier 1 Green)';
+  });
+
+  // Update all matching avoid buttons across DOM
+  var avoidBtns = document.querySelectorAll('.pb-avoid-btn[data-num="' + num + '"]');
+  avoidBtns.forEach(function(btn) {
+    btn.className = avoided ? 'pb-avoid-btn active' : 'pb-avoid-btn';
+    btn.style.color = avoided ? '#ef4444' : 'var(--pb-text-muted)';
+    btn.textContent = avoided ? '🚫' : '⊘';
+    btn.title = avoided ? 'Avoided trip (Tap to clear)' : 'Mark as Avoid / Dislike';
+  });
+}
+
+function cycleFavorite(num, e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  var cur = getFavoriteTier(num);
+  if (cur === 0) {
+    appState.favorites.set(num, 1); // Tier 1: Green / Best
+    if (appState.avoided) appState.avoided.delete(num);
+  } else if (cur === 1) {
+    appState.favorites.set(num, 2); // Tier 2: Yellow / Maybe
+  } else {
+    appState.favorites.delete(num); // Off
+  }
+
+  // Instant 0ms visual DOM update across all cards and modals
+  updateRatingDOMForPairing(num);
+  debouncedSaveRatings();
+
+  if (_favFilterActive) {
+    setTimeout(function() {
+      applyFilters();
+      if (window.renderTripList) renderTripList();
+    }, 50);
+  }
+  if (PB.modules.active() && PB.modules.active().id === 'calendar') {
+    setTimeout(function() { renderCalendar(); }, 50);
+  }
+}
+
 function toggleFavorite(num, e) {
-  if (e) e.stopPropagation();
-  if (appState.favorites.has(num)) appState.favorites.delete(num);
-  else appState.favorites.add(num);
-  saveFavorites();
-  applyFilters();
-  if (PB.modules.active() && PB.modules.active().id === 'calendar') renderCalendar();
+  cycleFavorite(num, e);
+}
+
+function toggleAvoid(num, e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  if (isAvoided(num)) {
+    appState.avoided.delete(num);
+  } else {
+    appState.avoided.add(num);
+    if (appState.favorites) appState.favorites.delete(num);
+  }
+
+  // Instant 0ms visual DOM update across all cards and modals
+  updateRatingDOMForPairing(num);
+  debouncedSaveRatings();
+
+  if (_favFilterActive) {
+    setTimeout(function() {
+      applyFilters();
+      if (window.renderTripList) renderTripList();
+    }, 50);
+  }
+  if (PB.modules.active() && PB.modules.active().id === 'calendar') {
+    setTimeout(function() { renderCalendar(); }, 50);
+  }
 }
 var _favFilterActive = false;
 function toggleFavFilter() {
@@ -6514,6 +6867,181 @@ function togglePreAwardFilter() {
   if (btn) btn.classList.toggle('active', _paFilterActive);
   applyFilters();
 }
+
+function getPreAwardStyle(type) {
+  var map = {
+    'VACATION': { label: 'Vacation (V)',    abbr: 'V',   color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', text: '#1d4ed8' },
+    'SICK':     { label: 'Sick (S)',        abbr: 'S',   color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: '#b91c1c' },
+    'TRAINING': { label: 'Training (CQ)',   abbr: 'CQ',  color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', text: '#6d28d9' },
+    'MIL':      { label: 'Mil (MIL)',       abbr: 'MIL', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', text: '#b45309' },
+    'OTHER':    { label: 'Other (OTH)',     abbr: 'OTH', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', text: '#334155' }
+  };
+  return map[type] || { label: type || 'Pre-Award', abbr: type || 'PA', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', text: '#334155' };
+}
+window.getPreAwardStyle = getPreAwardStyle;
+
+function getAtlantaTime() {
+  var now = new Date();
+  try {
+    var atlStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    return new Date(atlStr);
+  } catch (e) {
+    return now;
+  }
+}
+
+function updateSidebarDatablock() {
+  var container = document.getElementById('pb-sidebar-datablock');
+  if (!container) return;
+
+  // 1. Bid Period Month (month with most days)
+  var bpMonthName = 'September 2026';
+  if (appState.bidPeriodStart && appState.bidPeriodEnd) {
+    var start = parseBPDate(appState.bidPeriodStart);
+    var end   = parseBPDate(appState.bidPeriodEnd);
+    if (start && end) {
+      var monthCounts = {};
+      var cur = new Date(start.getTime());
+      while (cur <= end) {
+        var mKey = cur.getFullYear() + '-' + cur.getMonth();
+        monthCounts[mKey] = (monthCounts[mKey] || 0) + 1;
+        cur.setDate(cur.getDate() + 1);
+      }
+      var bestKey = null, maxC = -1;
+      Object.keys(monthCounts).forEach(function(k) {
+        if (monthCounts[k] > maxC) { maxC = monthCounts[k]; bestKey = k; }
+      });
+      if (bestKey) {
+        var parts = bestKey.split('-');
+        var dObj = new Date(parseInt(parts[0]), parseInt(parts[1]), 15);
+        bpMonthName = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+    }
+  }
+
+  // 2. Base & Equipment
+  var base = appState.base || 'ATL';
+  var equip = appState.equipment || '73N';
+  if (appState.pairings && appState.pairings.length > 0) {
+    var p0 = appState.pairings[0];
+    if (p0.base) base = p0.base;
+    if (p0.equipment) equip = p0.equipment;
+  }
+
+  // 3. Bidding Window Status (4th 18:00 to 11th 18:00 Atlanta Time)
+  var atlNow = getAtlantaTime();
+  var day = atlNow.getDate();
+  var hr = atlNow.getHours();
+
+  var isOpen = false;
+  if (day > 4 && day < 11) {
+    isOpen = true;
+  } else if (day === 4 && hr >= 18) {
+    isOpen = true;
+  } else if (day === 11 && hr < 18) {
+    isOpen = true;
+  }
+
+  var statusBadge = isOpen
+    ? '<span class="pb-bidding-status open"><span class="pb-status-dot"></span> Bidding Open</span>'
+    : '<span class="pb-bidding-status closed"><span class="pb-status-dot"></span> Bidding Closed</span>';
+
+  container.innerHTML =
+    '<div class="pb-datablock-header">' +
+      '<div class="pb-datablock-month">' + bpMonthName + '</div>' +
+      statusBadge +
+    '</div>' +
+    '<div class="pb-datablock-details">' +
+      '<span class="pb-datablock-pill">Base: <strong>' + base + '</strong></span>' +
+      '<span class="pb-datablock-pill">Eqp: <strong>' + equip + '</strong></span>' +
+    '</div>';
+}
+window.updateSidebarDatablock = updateSidebarDatablock;
+
+function checkPairingPreAwardConflict(p) {
+  if (!p || !appState.preAwards || appState.preAwards.size === 0) {
+    return { hasConflict: false, conflicts: [] };
+  }
+  var bpStartLocal = parseBPDate(appState.bidPeriodStart);
+  var anchor = bpStartLocal || new Date(appState.calYear, appState.calMonth, 1);
+  var ancY = anchor.getFullYear(), ancM = anchor.getMonth(), ancD = anchor.getDate();
+  var survMap = appState.survivingMap || new Map();
+  var startDays = survMap.has(p.number)
+    ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMap.get(p.number))
+    : computeOccurrences(p);
+  var tripLen = Math.max(1, p.days || 1);
+
+  var paMap = {
+    'VACATION': { label: 'Vacation (V)', color: '#3b82f6' },
+    'SICK':     { label: 'Sick (S)',     color: '#ef4444' },
+    'TRAINING': { label: 'Training (CQ)',color: '#8b5cf6' },
+    'MIL':      { label: 'Mil (MIL)',    color: '#f59e0b' },
+    'OTHER':    { label: 'Other (OTH)',  color: '#64748b' }
+  };
+
+  var conflicts = [];
+  var conflictSet = new Set();
+
+  startDays.forEach(function(sd) {
+    for (var o = 0; o < tripLen; o++) {
+      var d = new Date(ancY, ancM, ancD + (sd - 1) + o);
+      var dk = localDKey(d.getFullYear(), d.getMonth(), d.getDate());
+      if (appState.preAwards.has(dk)) {
+        var type = appState.preAwards.get(dk);
+        var key = dk + '_' + type;
+        if (!conflictSet.has(key)) {
+          conflictSet.add(key);
+          var cfg = paMap[type] || { label: type, color: '#64748b' };
+          conflicts.push({ dateKey: dk, type: type, label: cfg.label, color: cfg.color });
+        }
+      }
+    }
+  });
+
+  return { hasConflict: conflicts.length > 0, conflicts: conflicts };
+}
+window.checkPairingPreAwardConflict = checkPairingPreAwardConflict;
+
+function computeEfficiencyMetrics(p) {
+  if (!p) return { payDutyRatio: 0, payTafbRatio: 0, creditBlockRatio: 1, payHours: 0, fdpHours: 0, tafbHours: 0, blockHours: 0 };
+
+  var payHours   = Math.max(p.creditHours || 0, p.payTL || 0, (p.totalPayMins ? p.totalPayMins / 60 : 0));
+  var blockHours = p.blockHours || (p.totalBlockMins ? p.totalBlockMins / 60 : 0);
+  var tafbHours  = p.tafbHours || (p.totalTafbMins ? p.totalTafbMins / 60 : 0);
+
+  var fdpHours = p.fdpHours || p.totalFdpHours || (p.totalFdpMins ? p.totalFdpMins / 60 : 0);
+  if (!fdpHours && p.dutyPeriods && p.dutyPeriods.length) {
+    var fdpSumMins = p.dutyPeriods.reduce(function(acc, d) { return acc + (d.fdpMins || d.dutyMins || 0); }, 0);
+    if (fdpSumMins > 0) fdpHours = fdpSumMins / 60;
+  }
+  if (!fdpHours && p.tripDays && p.tripDays.length) {
+    var numDays = Math.max(1, p.days || p.tripDays.length || 1);
+    fdpHours = blockHours + (numDays * 2.0);
+  }
+  if (!fdpHours && blockHours > 0) {
+    var numDaysEst = Math.max(1, p.days || Math.ceil((tafbHours || 24) / 24));
+    fdpHours = blockHours + (numDaysEst * 2.0);
+  }
+
+  var payDutyRatio     = fdpHours > 0 ? (payHours / fdpHours) : 0;
+  var payTafbRatio     = tafbHours > 0 ? (payHours / tafbHours) : 0;
+  var creditBlockRatio = blockHours > 0 ? (payHours / blockHours) : 1.0;
+
+  return {
+    payDutyRatio: parseFloat(payDutyRatio.toFixed(2)),
+    payTafbRatio: parseFloat(payTafbRatio.toFixed(2)),
+    creditBlockRatio: parseFloat(creditBlockRatio.toFixed(2)),
+    payHours: parseFloat(payHours.toFixed(2)),
+    fdpHours: parseFloat(fdpHours.toFixed(2)),
+    tafbHours: parseFloat(tafbHours.toFixed(2)),
+    blockHours: parseFloat(blockHours.toFixed(2)),
+    payMins: Math.round(payHours * 60),
+    fdpMins: Math.round(fdpHours * 60),
+    tafbMins: Math.round(tafbHours * 60),
+    blockMins: Math.round(blockHours * 60)
+  };
+}
+window.computeEfficiencyMetrics = computeEfficiencyMetrics;
 
 // ============================================================
 // Filter engine helpers — ported from v0.9
@@ -6690,7 +7218,7 @@ function applyFilters() {
   var result = appState.pairings.slice();
 
   if (_favFilterActive)
-    result = result.filter(function(p) { return appState.favorites.has(p.number); });
+    result = result.filter(function(p) { return isFavorite(p.number); });
 
   if (_paFilterActive && window.pbPreAwardsConflicts && appState.preAwards && appState.preAwards.size) {
     var conflictNums = new Set(window.pbPreAwardsConflicts(result).map(function(p) { return p.number; }));
@@ -6698,7 +7226,7 @@ function applyFilters() {
   }
 
   var searchEl = document.getElementById('pb-search-input');
-  var q = (searchEl ? searchEl.value : '').trim().toLowerCase();
+  var q = (searchEl && searchEl.value != null ? String(searchEl.value) : '').trim().toLowerCase();
   if (q) {
     result = result.filter(function(p) {
       return p.number.toLowerCase().indexOf(q) >= 0 ||
@@ -6713,28 +7241,36 @@ function applyFilters() {
 
     if (f.type === 'pairing-length') {
       var v = f.params.value;
-      if (f.subtype === 'lt')    result = result.filter(function(p) { return p.days < v; });
-      if (f.subtype === 'exact') result = result.filter(function(p) { return p.days === v; });
-      if (f.subtype === 'gt')    result = result.filter(function(p) { return p.days > v; });
-      if (f.subtype === 'min')   result = result.filter(function(p) { return p.days >= f.params.min; });
-      if (f.subtype === 'max')   result = result.filter(function(p) { return p.days <= f.params.max; });
-      if (f.subtype === 'range') result = result.filter(function(p) { return p.days >= f.params.min && p.days <= f.params.max; });
+      result = result.filter(function(p) {
+        var match = false;
+        if (f.subtype === 'lt')    match = p.days < v;
+        else if (f.subtype === 'exact') match = p.days === v;
+        else if (f.subtype === 'gt')    match = p.days > v;
+        else if (f.subtype === 'min')   match = p.days >= f.params.min;
+        else if (f.subtype === 'max')   match = p.days <= f.params.max;
+        else if (f.subtype === 'range') match = p.days >= f.params.min && p.days <= f.params.max;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
+      });
     }
     if (f.type === 'credit') {
-      if (f.subtype === 'min')   result = result.filter(function(p) { return p.creditHours >= f.params.min; });
-      if (f.subtype === 'max')   result = result.filter(function(p) { return p.creditHours <= f.params.max; });
-      if (f.subtype === 'range') result = result.filter(function(p) { return p.creditHours >= f.params.min && p.creditHours <= f.params.max; });
+      result = result.filter(function(p) {
+        var match = false;
+        if (f.subtype === 'min')   match = p.creditHours >= f.params.min;
+        else if (f.subtype === 'max')   match = p.creditHours <= f.params.max;
+        else if (f.subtype === 'range') match = p.creditHours >= f.params.min && p.creditHours <= f.params.max;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
+      });
     }
     if (f.type === 'layovers-in') {
       var cities = new Set(f.params.cities.map(function(c) { return c.toUpperCase(); }));
-      if (f.subtype === 'avoid')  result = result.filter(function(p) { return !p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); }); });
-      if (f.subtype === 'prefer') result = result.filter(function(p) { return  p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); }); });
+      if (f.subtype === 'avoid' || f.mode === 'avoid') result = result.filter(function(p) { return !p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); }); });
+      else result = result.filter(function(p) { return p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); }); });
     }
     if (f.type === 'landings-in') {
       var stations = new Set(f.params.stations.map(function(c) { return c.toUpperCase(); }));
       var hasLanding = function(p) { return p.tripDays.some(function(d) { return d.legs.some(function(l) { return l.arrCity && stations.has(l.arrCity.toUpperCase()); }); }); };
-      if (f.mode === 'avoid')  result = result.filter(function(p) { return !hasLanding(p); });
-      else                     result = result.filter(function(p) { return  hasLanding(p); });
+      if (f.mode === 'avoid') result = result.filter(function(p) { return !hasLanding(p); });
+      else                    result = result.filter(function(p) { return  hasLanding(p); });
     }
     if (f.type === 'commutable') {
       result = result.filter(function(p) {
@@ -6747,41 +7283,45 @@ function applyFilters() {
     if (f.type === 'pairing' && f.subtype === 'checkin-time') {
       result = result.filter(function(p) {
         var m = pairingCheckInMins(p); if (m == null) return true;
-        if (f.params.op === 'before') return m < f.params.mins;
-        if (f.params.op === 'after')  return m > f.params.mins;
-        if (f.params.op === 'range')  return m >= f.params.from && m <= f.params.to;
-        return true;
+        var match = false;
+        if (f.params.op === 'before') match = m < f.params.mins;
+        else if (f.params.op === 'after') match = m > f.params.mins;
+        else if (f.params.op === 'range') match = m >= f.params.from && m <= f.params.to;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
       });
     }
     if (f.type === 'pairing' && f.subtype === 'checkout-time') {
       result = result.filter(function(p) {
         var m = pairingCheckOutMins(p); if (m == null) return true;
-        if (f.params.op === 'before') return m < f.params.mins;
-        if (f.params.op === 'after')  return m > f.params.mins;
-        if (f.params.op === 'range')  return m >= f.params.from && m <= f.params.to;
-        return true;
+        var match = false;
+        if (f.params.op === 'before') match = m < f.params.mins;
+        else if (f.params.op === 'after') match = m > f.params.mins;
+        else if (f.params.op === 'range') match = m >= f.params.from && m <= f.params.to;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
       });
     }
     if (f.type === 'pairing' && f.subtype === 'tafb') {
       result = result.filter(function(p) {
         var v2 = p.tafbHours; if (!v2) return true;
-        if (f.params.op === 'min')   return v2 >= f.params.min;
-        if (f.params.op === 'max')   return v2 <= f.params.max;
-        if (f.params.op === 'range') return v2 >= f.params.min && v2 <= f.params.max;
-        return true;
+        var match = false;
+        if (f.params.op === 'min')   match = v2 >= f.params.min;
+        else if (f.params.op === 'max')   match = v2 <= f.params.max;
+        else if (f.params.op === 'range') match = v2 >= f.params.min && v2 <= f.params.max;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
       });
     }
     if (f.type === 'pairing' && f.subtype === 'avg-daily-credit') {
       result = result.filter(function(p) {
         var v3 = p.days > 0 ? p.creditHours / p.days : 0;
-        if (f.params.op === 'min')   return v3 >= f.params.min;
-        if (f.params.op === 'max')   return v3 <= f.params.max;
-        if (f.params.op === 'range') return v3 >= f.params.min && v3 <= f.params.max;
-        return true;
+        var match = false;
+        if (f.params.op === 'min')   match = v3 >= f.params.min;
+        else if (f.params.op === 'max')   match = v3 <= f.params.max;
+        else if (f.params.op === 'range') match = v3 >= f.params.min && v3 <= f.params.max;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
       });
     }
-    if (f.type === 'pairing' && f.subtype === 'has-dh')     result = result.filter(function(p) { return f.params.value ? !!p.containsDH     : !p.containsDH; });
-    if (f.type === 'pairing' && f.subtype === 'has-redeye') result = result.filter(function(p) { return f.params.value ? !!p.containsRedeye : !p.containsRedeye; });
+    if (f.type === 'pairing' && f.subtype === 'has-dh')     result = result.filter(function(p) { var hasDH = !!p.containsDH; return f.mode === 'avoid' ? (!f.params.value ? hasDH : !hasDH) : (f.params.value ? hasDH : !hasDH); });
+    if (f.type === 'pairing' && f.subtype === 'has-redeye') result = result.filter(function(p) { var hasRed = !!p.containsRedeye; return f.mode === 'avoid' ? (!f.params.value ? hasRed : !hasRed) : (f.params.value ? hasRed : !hasRed); });
     if (f.type === 'pairing' && f.subtype === 'has-dh-position') {
       var dhFront = function(p) { var d0 = p.tripDays[0]; return !!(d0 && d0.legs.length > 0 && d0.legs[0].isDH); };
       var dhBack  = function(p) { var dN = p.tripDays[p.tripDays.length-1]; return !!(dN && dN.legs.length > 0 && dN.legs[dN.legs.length-1].isDH); };
@@ -6792,17 +7332,17 @@ function applyFilters() {
         else if (pos === 'back')  match = dhBack(p);
         else if (pos === 'front-back') match = f.params.logic === 'and' ? (dhFront(p) && dhBack(p)) : (dhFront(p) || dhBack(p));
         else                      match = dhAny(p);
-        return f.params.op === 'avoid' ? !match : match;
+        return (f.mode === 'avoid' || f.params.op === 'avoid') ? !match : match;
       });
     }
     if (f.type === 'layover' && f.subtype === 'station') {
       var cs2 = new Set((f.params.stations||[]).map(function(c) { return c.toUpperCase(); }));
-      if (f.params.op === 'exclude') result = result.filter(function(p) { return !p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); }); });
-      else                           result = result.filter(function(p) { return  p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); }); });
+      if (f.params.op === 'exclude' || f.mode === 'avoid') result = result.filter(function(p) { return !p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); }); });
+      else                                                  result = result.filter(function(p) { return  p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); }); });
     }
     if (f.type === 'layover' && f.subtype === 'duration') {
       result = result.filter(function(p) {
-        return pairingLayovers(p).some(function(l) {
+        var match = pairingLayovers(p).some(function(l) {
           if (l.durationMins == null) return false;
           var hrs = l.durationMins / 60;
           if (f.params.op === 'lt')    return hrs < f.params.val;
@@ -6810,6 +7350,7 @@ function applyFilters() {
           if (f.params.op === 'range') return hrs >= f.params.min && hrs <= f.params.max;
           return false;
         });
+        return f.mode === 'avoid' ? !match : match;
       });
     }
   }
@@ -6879,6 +7420,7 @@ function applyFilters() {
   appState.filteredPairings = result;
   renderTripList();
   if (typeof window.renderOccFilterList === 'function') window.renderOccFilterList();
+  if (typeof updateSidebarDatablock === 'function') updateSidebarDatablock();
   var active = PB.modules.active();
   if (active && active.id === 'calendar') renderCalendar();
 }
@@ -6990,7 +7532,26 @@ function buildPairingCard(p) {
   if (p.holPay   > 0) badges.push('<span style="' + pBS + '" data-tip="Holiday pay: '        + p.holPay.toFixed(2)             + '" tabindex="0" onclick="event.stopPropagation()">H</span>');
   if (p.carvePay > 0) badges.push('<span style="' + pBS + '" data-tip="Carve pay: '          + p.carvePay.toFixed(2)           + '" tabindex="0" onclick="event.stopPropagation()">C</span>');
 
-  var isFav = appState.favorites.has(p.number);
+  var paRes = checkPairingPreAwardConflict(p);
+  var effMetrics = computeEfficiencyMetrics(p);
+  if (paRes.hasConflict) {
+    var paLabels = paRes.conflicts.map(function(c){ return c.label; }).join(', ');
+    badges.push('<span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#dc2626;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;cursor:default;" data-tip="Pre-Award Conflict: ' + paLabels + '" tabindex="0" onclick="event.stopPropagation()">⚠️ ' + paRes.conflicts[0].label + '</span>');
+  }
+
+  var favTier = getFavoriteTier(p.number);
+  var avoided = isAvoided(p.number);
+
+  var favClass = favTier === 1 ? 'pb-fav-btn tier-1' : favTier === 2 ? 'pb-fav-btn tier-2' : 'pb-fav-btn tier-0';
+  var favColor = favTier === 1 ? '#10b981' : favTier === 2 ? '#f59e0b' : 'var(--pb-text-muted)';
+  var favText  = favTier === 1 ? '★' : favTier === 2 ? '★' : '☆';
+  var favTip   = favTier === 1 ? 'Tier 1 Best (Tap to change to Tier 2 Maybe)' : favTier === 2 ? 'Tier 2 Maybe (Tap to unstar)' : 'Mark as Favorite (Tap for Tier 1 Green)';
+
+  var avoidClass = avoided ? 'pb-avoid-btn active' : 'pb-avoid-btn';
+  var avoidColor = avoided ? '#ef4444' : 'var(--pb-text-muted)';
+  var avoidText  = avoided ? '🚫' : '⊘';
+  var avoidTip   = avoided ? 'Avoided trip (Tap to clear)' : 'Mark as Avoid / Dislike';
+
   card.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
       '<div style="min-width:0;line-height:1.3;">' +
@@ -6998,14 +7559,13 @@ function buildPairingCard(p) {
         '<span style="font-family:var(--font-mono);font-size:11px;color:var(--pb-text-muted);margin-left:8px;">' + p.days + '-day</span>' +
         '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);margin-left:6px;">' + days + '</span>' +
         '<span style="font-family:var(--font-mono);font-size:11px;color:var(--pb-text-muted);margin-left:6px;">' + eff + '</span>' +
-        (badges.length ? '<span style="margin-left:8px;display:inline-flex;gap:5px;">' + badges.join('') + '</span>' : '') +
+        (badges.length ? '<span style="margin-left:8px;display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap;">' + badges.join('') + '</span>' : '') +
       '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
-        '<button class="pb-fav-btn" data-num="' + p.number + '" ' +
-          'title="' + (isFav ? 'Remove from favorites' : 'Mark as favorite') + '" ' +
-          'style="color:' + (isFav ? 'var(--pb-amber)' : 'var(--pb-text-muted)') + ';">' +
-          (isFav ? '★' : '☆') +
-        '</button>' +
+      '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+        '<div class="pb-rating-group">' +
+          '<button class="' + favClass + '" data-num="' + p.number + '" title="' + favTip + '" style="color:' + favColor + ';">' + favText + '</button>' +
+          '<button class="' + avoidClass + '" data-num="' + p.number + '" title="' + avoidTip + '" style="color:' + avoidColor + ';">' + avoidText + '</button>' +
+        '</div>' +
         '<div style="text-align:right;line-height:1.5;">' +
           '<span style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--pb-green);">' + pay + '</span>' +
           '<span style="font-family:var(--font-mono);font-size:10px;color:var(--pb-green);margin-left:2px;">pay</span>' +
@@ -7016,6 +7576,7 @@ function buildPairingCard(p) {
     '<div style="margin-top:5px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;">' +
       '<span style="color:var(--text-secondary);">' + layoverLine + '</span>' +
       '<span style="flex-shrink:0;">' +
+        '<span style="background:rgba(16,185,129,0.12);color:#047857;font-weight:700;font-size:10px;padding:2px 5px;border-radius:4px;margin-right:8px;" title="Pay / FDP Ratio: ' + effMetrics.payDutyRatio + 'x | Pay / TAFB: ' + (effMetrics.payTafbRatio*100).toFixed(1) + '%">⚡ ' + effMetrics.payDutyRatio + 'x Pay/Duty</span>' +
         '<span style="color:var(--pb-text-muted);">' + blk + ' blk</span>' +
         '<span style="color:var(--pb-text-muted);margin-left:8px;">TAFB ' + tafb + '</span>' +
       '</span>' +
@@ -7023,7 +7584,9 @@ function buildPairingCard(p) {
 
   card.onclick = function() { showPairingDetail(p, appState.survivingMap.get(p.number)); };
   var favBtn = card.querySelector('.pb-fav-btn');
-  if (favBtn) favBtn.onclick = function(e) { toggleFavorite(p.number, e); };
+  if (favBtn) favBtn.onclick = function(e) { cycleFavorite(p.number, e); };
+  var avoidBtn = card.querySelector('.pb-avoid-btn');
+  if (avoidBtn) avoidBtn.onclick = function(e) { toggleAvoid(p.number, e); };
 
   return card;
 }
@@ -7140,7 +7703,24 @@ function showPairingDetail(p, survivingDays) {
         : match;
     }
   );
-  document.getElementById('pb-pairing-modal-body').innerHTML = highlighted;
+  var paRes = checkPairingPreAwardConflict(p);
+  var effMetrics = computeEfficiencyMetrics(p);
+
+  var headerBannerHtml = '';
+  if (paRes.hasConflict) {
+    var cMsgs = paRes.conflicts.map(function(c){ return c.label + ' (' + c.dateKey + ')'; }).join(', ');
+    headerBannerHtml += '<div style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#dc2626;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:10px;">' +
+      '⚠️ Pre-Award Conflict: Clashes with ' + cMsgs +
+      '</div>';
+  }
+
+  headerBannerHtml += '<div style="background:var(--bg-secondary);border:1px solid var(--border-color);padding:8px 12px;border-radius:6px;font-size:11px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">' +
+    '<span><b>Pay / FDP Efficiency:</b> <span style="color:var(--pb-green);font-weight:700;">' + effMetrics.payDutyRatio + 'x</span></span>' +
+    '<span><b>Pay / TAFB Ratio:</b> <span style="color:var(--pb-blue);font-weight:700;">' + (effMetrics.payTafbRatio * 100).toFixed(1) + '%</span></span>' +
+    '<span><b>Credit / Block Density:</b> <span style="color:var(--pb-purple);font-weight:700;">' + effMetrics.creditBlockRatio + 'x</span></span>' +
+    '</div>';
+
+  document.getElementById('pb-pairing-modal-body').innerHTML = headerBannerHtml + highlighted;
 
   var modal = document.getElementById('pb-pairing-detail-modal');
   modal.setAttribute('data-open', 'true');
@@ -7216,13 +7796,23 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
   var calEnd = new Date(bpEnd);
   calEnd.setDate(calEnd.getDate() + (6 - calEnd.getDay()));
 
+  function parseEffectiveDate(str) {
+    if (!str) return null;
+    var m = str.match(/([A-Z]{3})?\s*(\d{1,2})/i);
+    if (!m) return null;
+    var monCode = m[1] ? MONTHS[m[1].toUpperCase()] : null;
+    var mIdx = (monCode !== undefined && monCode !== null) ? monCode : effMonth;
+    var y = year;
+    if (effMonth === 11 && mIdx === 0) y = year + 1;
+    return new Date(y, mIdx, parseInt(m[2]));
+  }
   function parseDayNum(str) {
     if (!str) return null;
     var m = str.match(/([A-Z]{3})?\s*(\d{1,2})/i);
     return m ? parseInt(m[2]) : null;
   }
-  var effStart  = parseDayNum(p.effectiveStart) || 1;
-  var effEnd    = p.effectiveOnly ? effStart : (parseDayNum(p.effectiveEnd) || daysInEffMonth);
+  var startDate = parseEffectiveDate(p.effectiveStart) || bpStart;
+  var endDate   = p.effectiveOnly ? startDate : (parseEffectiveDate(p.effectiveEnd) || bpEnd);
   var exceptSet = new Set((p.exceptDates||[]).map(function(e) { return parseDayNum(e); }).filter(Boolean));
   var opDows    = new Set((p.operatingDays||[]).map(function(d) { return DAY_CODES[d]; }));
 
@@ -7235,35 +7825,33 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
   var tafbMins  = p.tafbHours ? Math.round(p.tafbHours * 60) : tripDays * 1440;
   var totalMins = ciMins + tafbMins;
 
-  var occurrences = [];
-  for (var dn = effStart; dn <= Math.min(effEnd, daysInEffMonth); dn++) {
-    var dow = new Date(year, effMonth, dn).getDay();
-    if (opDows.size > 0 && !opDows.has(dow)) continue;
-    if (exceptSet.has(dn)) continue;
-    occurrences.push(dn);
-  }
-  var survivingSet = survivingDays instanceof Set ? survivingDays : new Set(occurrences);
-
-  // Build set of excluded relative day nums from dateKeys
-  var excludedRelDays = new Set();
-  if (excludedDateKeys && excludedDateKeys.size) {
-    var ancOriginMs = new Date(year, effMonth, 1).getTime();
-    excludedDateKeys.forEach(function(dk) {
-      var dParts = dk.split('-');
-      var relDay = Math.round((new Date(+dParts[0], +dParts[1]-1, +dParts[2]).getTime() - ancOriginMs) / 86400000) + 1;
-      excludedRelDays.add(relDay);
-    });
-  }
-
   function dateKey(dt) {
     return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
   }
+
+  var occurrences = [];
+  var occDates = [];
+  var oCur = new Date(bpStart);
+  while (oCur <= bpEnd) {
+    if (oCur >= startDate && oCur <= endDate) {
+      var dow = oCur.getDay();
+      var dn  = oCur.getDate();
+      if ((opDows.size === 0 || opDows.has(dow)) && !exceptSet.has(dn)) {
+        occurrences.push(dn);
+        occDates.push(new Date(oCur));
+      }
+    }
+    oCur.setDate(oCur.getDate() + 1);
+  }
+  var survivingSet = survivingDays instanceof Set ? survivingDays : new Set(occurrences);
+
   var dayBars = {};
-  occurrences.forEach(function(startDay, occIdx) {
-    var isExcluded = excludedRelDays.has(startDay);
+  occDates.forEach(function(occDt, occIdx) {
+    var startDay   = occDt.getDate();
+    var isExcluded = excludedDateKeys && excludedDateKeys.has(dateKey(occDt));
     var isAlive    = survivingSet.has(startDay) && !isExcluded;
     for (var offset = 0; offset < tripDays + 1; offset++) {
-      var dt = new Date(year, effMonth, startDay + offset);
+      var dt = new Date(occDt.getFullYear(), occDt.getMonth(), occDt.getDate() + offset);
       var dayStartMins = offset * 1440;
       if (dayStartMins >= totalMins) break;
       var barStart = Math.max(0, offset === 0 ? ciMins / 1440 : 0);
@@ -7277,10 +7865,12 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
 
   var effDates    = new Set();
   var exceptDates = new Set();
-  for (var de = effStart; de <= Math.min(effEnd, daysInEffMonth); de++) {
-    var dkey = dateKey(new Date(year, effMonth, de));
-    if (exceptSet.has(de)) exceptDates.add(dkey);
+  var eCur = new Date(startDate);
+  while (eCur <= endDate) {
+    var dkey = dateKey(eCur);
+    if (exceptSet.has(eCur.getDate())) exceptDates.add(dkey);
     else effDates.add(dkey);
+    eCur.setDate(eCur.getDate() + 1);
   }
 
   var bpEndStr = ' – ' + MONTH_NAMES[bpEnd.getMonth()] + ' ' + bpEnd.getDate() + ', ' + bpEnd.getFullYear();
@@ -7337,7 +7927,7 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
     var coH = String(Math.floor(coAbsMins/60)).padStart(2,'0');
     var coM = String(coAbsMins%60).padStart(2,'0');
     var extraDays = Math.floor(totalMins / 1440);
-    var excludedCount = excludedRelDays.size;
+    var excludedCount = excludedDateKeys ? excludedDateKeys.size : 0;
     html += '<div style="margin-top:6px;font-size:10px;color:var(--pb-text-muted);display:flex;gap:14px;flex-wrap:wrap;">' +
       '<span><span style="display:inline-block;width:10px;height:4px;background:rgba(255,176,32,0.85);border-radius:1px;vertical-align:middle;"></span> Active</span>' +
       (excludedCount ? '<span><span style="display:inline-block;width:10px;height:4px;background:rgba(220,80,80,0.35);border-radius:1px;vertical-align:middle;"></span> Excluded (' + excludedCount + ')</span>' : '') +
@@ -7355,7 +7945,13 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
 var _calMode = 'all'; // 'favs' | 'all' | 'filtered'
 
 // ── color palette for fav bars ─────────────────────────────
-function favPairingColor(index) {
+function favPairingColor(index, tier) {
+  if (tier === 1) {
+    return { bg: 'rgba(16,185,129,0.22)', border: '#10b981', text: '#047857' };
+  }
+  if (tier === 2) {
+    return { bg: 'rgba(245,158,11,0.22)', border: '#f59e0b', text: '#b45309' };
+  }
   var hue = (index * 137.508) % 360;
   return {
     bg:     'hsla(' + hue + ',70%,55%,0.18)',
@@ -7364,6 +7960,226 @@ function favPairingColor(index) {
   };
 }
 
+// ── Day Inspector Drawer ────────────────────────────────────
+function ensureDayDrawerInBody() {
+  var backdrop = document.getElementById('pb-day-drawer-backdrop');
+  var drawer   = document.getElementById('pb-day-drawer');
+
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'pb-day-drawer-backdrop';
+    backdrop.className = 'pb-day-drawer__backdrop';
+    backdrop.onclick = closeDayInspectorDrawer;
+    document.body.appendChild(backdrop);
+  } else if (backdrop.parentElement !== document.body) {
+    document.body.appendChild(backdrop);
+  }
+
+  if (!drawer) {
+    drawer = document.createElement('div');
+    drawer.id = 'pb-day-drawer';
+    drawer.className = 'pb-day-drawer';
+    drawer.innerHTML =
+      '<div class="pb-day-drawer__header">' +
+        '<h3 class="pb-day-drawer__title">Day Details</h3>' +
+        '<button class="pb-day-drawer__close" onclick="closeDayInspectorDrawer()">✕</button>' +
+      '</div>' +
+      '<div class="pb-day-drawer__body">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;">Quick Pre-Award Placement</div>' +
+        '<div class="pb-day-drawer__pa-section" style="display:flex;gap:6px;flex-wrap:wrap;"></div>' +
+        '<div class="pb-day-drawer__banner" style="display:none;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;color:#b45309;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;"></div>' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;">Filter by Trip Length</div>' +
+        '<div class="pb-day-drawer__cat-filter" style="display:flex;gap:4px;flex-wrap:wrap;"></div>' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;">Operating Trips</div>' +
+        '<div class="pb-day-drawer__list" style="display:flex;flex-direction:column;gap:8px;"></div>' +
+      '</div>';
+    document.body.appendChild(drawer);
+  } else if (drawer.parentElement !== document.body) {
+    document.body.appendChild(drawer);
+  }
+
+  return { drawer: drawer, backdrop: backdrop };
+}
+
+function closeDayInspectorDrawer() {
+  var backdrop = document.getElementById('pb-day-drawer-backdrop');
+  var drawer   = document.getElementById('pb-day-drawer');
+  if (drawer) drawer.removeAttribute('data-open');
+  if (backdrop) backdrop.removeAttribute('data-open');
+}
+window.closeDayInspectorDrawer = closeDayInspectorDrawer;
+
+function setDrawerCategoryFilter(dateKey, catId) {
+  openDayInspectorDrawer(dateKey, catId);
+}
+window.setDrawerCategoryFilter = setDrawerCategoryFilter;
+
+function openDayInspectorDrawer(dateKey, catFilter) {
+  var els = ensureDayDrawerInBody();
+  var drawer   = els.drawer;
+  var backdrop = els.backdrop;
+  if (!drawer) return;
+
+  var selectedCat = catFilter || drawer._selectedCat || 'all';
+  drawer._selectedCat = selectedCat;
+
+  var parts = dateKey.split('-');
+  var yr = parseInt(parts[0]), mo = parseInt(parts[1]) - 1, dy = parseInt(parts[2]);
+  var dateObj = new Date(yr, mo, dy);
+  var fullDateStr = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+
+  var titleEl = drawer.querySelector('.pb-day-drawer__title');
+  if (titleEl) titleEl.textContent = fullDateStr;
+
+  var curPa = appState.preAwards ? appState.preAwards.get(dateKey) : null;
+  var paTypes = [
+    { type: 'VACATION', label: 'Vacation (V)',    color: '#3b82f6' },
+    { type: 'SICK',     label: 'Sick (S)',        color: '#ef4444' },
+    { type: 'TRAINING', label: 'Training (CQ)',   color: '#8b5cf6' },
+    { type: 'MIL',      label: 'Mil (MIL)',       color: '#f59e0b' },
+    { type: 'OTHER',    label: 'Other (OTH)',     color: '#64748b' }
+  ];
+
+  var paButtonsHtml = paTypes.map(function(pt) {
+    var active = curPa === pt.type;
+    return '<button class="pb-pa-toggle-btn' + (active ? ' active' : '') + '" ' +
+      'onclick="toggleDrawerPreAward(\'' + dateKey + '\', \'' + pt.type + '\')" ' +
+      'style="cursor:pointer;padding:6px 12px;font-size:12px;font-weight:700;border-radius:6px;transition:all 0.15s ease;' +
+      'background:' + (active ? pt.color : 'transparent') + ';' +
+      'color:' + (active ? '#ffffff' : pt.color) + ';' +
+      'border:1.5px solid ' + pt.color + ';' +
+      (active ? 'box-shadow:0 2px 5px rgba(0,0,0,0.25);' : '') + '">' +
+      (active ? '✓ ' : '') + pt.label + '</button>';
+  }).join('');
+  if (curPa) {
+    paButtonsHtml += '<button class="pb-pa-toggle-btn clear" onclick="toggleDrawerPreAward(\'' + dateKey + '\', null)" style="cursor:pointer;padding:6px 12px;font-size:12px;font-weight:600;border-radius:6px;background:transparent;color:var(--pb-text-muted);border:1px solid var(--border-color);">Clear</button>';
+  }
+
+  var paSection = drawer.querySelector('.pb-day-drawer__pa-section');
+  if (paSection) paSection.innerHTML = paButtonsHtml;
+
+  var bpStartLocal = parseBPDate(appState.bidPeriodStart);
+  var anchor = bpStartLocal || new Date(appState.calYear, appState.calMonth, 1);
+  var ancY = anchor.getFullYear(), ancM = anchor.getMonth(), ancD = anchor.getDate();
+  var survMap = appState.survivingMap || new Map();
+
+  var operatingTrips = appState.pairings.filter(function(p) {
+    var startDays = survMap.has(p.number)
+      ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMap.get(p.number))
+      : computeOccurrences(p);
+    var tripLen = Math.max(1, p.days || 1);
+    return startDays.some(function(sd) {
+      for (var o = 0; o < tripLen; o++) {
+        var d = new Date(ancY, ancM, ancD + (sd - 1) + o);
+        if (localDKey(d.getFullYear(), d.getMonth(), d.getDate()) === dateKey) return true;
+      }
+      return false;
+    });
+  });
+
+  // Calculate category counts
+  var cAll = operatingTrips.length;
+  var c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0;
+  operatingTrips.forEach(function(p) {
+    var len = p.days || 1;
+    if (len === 1) c1++;
+    else if (len === 2) c2++;
+    else if (len === 3) c3++;
+    else if (len === 4) c4++;
+    else if (len >= 5) c5++;
+  });
+
+  // Render category filter bar
+  var catPills = [
+    { id: 'all', label: 'All (' + cAll + ')' },
+    { id: '1d',  label: '1-Day (' + c1 + ')', badgeClass: 'b-1d' },
+    { id: '2d',  label: '2-Day (' + c2 + ')', badgeClass: 'b-2d' },
+    { id: '3d',  label: '3-Day (' + c3 + ')', badgeClass: 'b-3d' },
+    { id: '4d',  label: '4-Day (' + c4 + ')', badgeClass: 'b-4d' },
+    { id: '5d',  label: '5-Day+ (' + c5 + ')', badgeClass: 'b-5d' }
+  ];
+
+  var catFilterEl = drawer.querySelector('.pb-day-drawer__cat-filter');
+  if (catFilterEl) {
+    catFilterEl.innerHTML = catPills.map(function(cp) {
+      var active = selectedCat === cp.id;
+      return '<button class="pb-cal-badge ' + (cp.badgeClass || '') + '" ' +
+        'onclick="setDrawerCategoryFilter(\'' + dateKey + '\', \'' + cp.id + '\')" ' +
+        'style="cursor:pointer;padding:5px 10px;font-size:11px;border-radius:6px;border:1px solid ' + (active ? 'currentColor' : 'transparent') + ';' +
+        (active ? 'font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.15);' : 'opacity:0.65;') + '">' +
+        cp.label + '</button>';
+    }).join('');
+  }
+
+  // Filter trips by selected category
+  var displayTrips = operatingTrips.filter(function(p) {
+    if (selectedCat === 'all') return true;
+    var len = p.days || 1;
+    if (selectedCat === '1d') return len === 1;
+    if (selectedCat === '2d') return len === 2;
+    if (selectedCat === '3d') return len === 3;
+    if (selectedCat === '4d') return len === 4;
+    if (selectedCat === '5d') return len >= 5;
+    return true;
+  });
+
+  var hasPaConflict = !!curPa && operatingTrips.length > 0;
+  var avoidedCount  = operatingTrips.filter(function(p){ return isAvoided(p.number); }).length;
+  var bannerEl = drawer.querySelector('.pb-day-drawer__banner');
+  if (bannerEl) {
+    if (hasPaConflict || avoidedCount > 0) {
+      var msgs = [];
+      if (hasPaConflict) msgs.push('⚠️ Pre-award (' + curPa + ') active on this date.');
+      if (avoidedCount > 0) msgs.push('🚫 ' + avoidedCount + ' trip(s) marked Avoid on this date.');
+      bannerEl.style.display = 'block';
+      bannerEl.innerHTML = msgs.join(' ');
+    } else {
+      bannerEl.style.display = 'none';
+    }
+  }
+
+  var listEl = drawer.querySelector('.pb-day-drawer__list');
+  if (listEl) {
+    listEl.innerHTML = '';
+    if (displayTrips.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--pb-text-muted);font-size:12px;text-align:center;padding:20px 0;">No trips match this filter for this date.</div>';
+    } else {
+      displayTrips.forEach(function(p) {
+        try {
+          var card = buildPairingCard(p);
+          if (card) listEl.appendChild(card);
+        } catch (cardErr) {
+          PB.log.warn('Failed to build pairing card for drawer', { pairing: p.number, error: String(cardErr) });
+        }
+      });
+    }
+  }
+
+  drawer.setAttribute('data-open', 'true');
+  if (backdrop) backdrop.setAttribute('data-open', 'true');
+}
+window.openDayInspectorDrawer = openDayInspectorDrawer;
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeDayInspectorDrawer();
+});
+
+function toggleDrawerPreAward(dateKey, type) {
+  if (!appState.preAwards) appState.preAwards = new Map();
+  if (type === null || appState.preAwards.get(dateKey) === type) {
+    appState.preAwards.delete(dateKey);
+  } else {
+    appState.preAwards.set(dateKey, type);
+  }
+  if (typeof window.pbSavePreAwards === 'function') {
+    window.pbSavePreAwards();
+  }
+  if (typeof applyFilters === 'function') applyFilters();
+  openDayInspectorDrawer(dateKey);
+  if (PB.modules.active() && PB.modules.active().id === 'calendar') renderCalendar();
+}
+window.toggleDrawerPreAward = toggleDrawerPreAward;
+
 // ── greedy interval-coloring slot assignment ────────────────
 // Returns { dateMap, slotMap, totalSlots }
 //   dateMap:  dateKey -> [ {number,slotIdx,color,position} ]
@@ -7371,12 +8187,11 @@ function favPairingColor(index) {
 function buildFavSlotMap() {
   var bpStart  = parseBPDate(appState.bidPeriodStart);
   var anchor   = bpStart || new Date(appState.calYear, appState.calMonth, 1);
-  var anchorY  = anchor.getFullYear();
-  var anchorM  = anchor.getMonth();
+  var ancY = anchor.getFullYear(), ancM = anchor.getMonth(), ancD = anchor.getDate();
   var survMap  = appState.survivingMap || new Map();
 
   var favPairings = appState.pairings.filter(function(p) {
-    return appState.favorites.has(p.number);
+    return isFavorite(p.number);
   });
 
   // Build intervals: list of date-keys covered by each fav pairing occurrence
@@ -7387,12 +8202,13 @@ function buildFavSlotMap() {
       ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMap.get(p.number))
       : allOcc;
     var tripLen  = Math.max(1, p.days || 1);
-    var color    = favPairingColor(idx);
+    var tier     = getFavoriteTier(p.number);
+    var color    = favPairingColor(idx, tier);
 
     startDays.forEach(function(sd) {
       var keys = [];
       for (var o = 0; o < tripLen; o++) {
-        var d = new Date(anchorY, anchorM, sd + o);
+        var d = new Date(ancY, ancM, ancD + (sd - 1) + o);
         keys.push(localDKey(d.getFullYear(), d.getMonth(), d.getDate()));
       }
       intervals.push({ p: p, color: color, keys: keys });
@@ -7453,14 +8269,34 @@ function calSetMode(mode) {
   renderCalendar();
 }
 
-function calGoToBidPeriod() {
+function setCalMonthToBidPeriod() {
+  var MONTHS = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  if (appState.bidMonth) {
+    var mx = MONTHS[appState.bidMonth.toUpperCase().slice(0,3)];
+    if (mx !== undefined) {
+      appState.calMonth = mx;
+      if (appState.bidPeriodEnd) {
+        var dE = parseBPDate(appState.bidPeriodEnd);
+        if (dE && !isNaN(dE)) appState.calYear = dE.getFullYear();
+      } else if (appState.bidPeriodStart) {
+        var dS = parseBPDate(appState.bidPeriodStart);
+        if (dS && !isNaN(dS)) appState.calYear = dS.getFullYear();
+      }
+      return;
+    }
+  }
   if (appState.bidPeriodStart) {
     var d = parseBPDate(appState.bidPeriodStart);
     if (d && !isNaN(d)) {
-      appState.calYear  = d.getFullYear();
-      appState.calMonth = d.getMonth();
+      var primary = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 14);
+      appState.calYear  = primary.getFullYear();
+      appState.calMonth = primary.getMonth();
     }
   }
+}
+
+function calGoToBidPeriod() {
+  setCalMonthToBidPeriod();
   renderCalendar();
 }
 function calToday() {
@@ -7500,20 +8336,60 @@ function renderCalendar() {
   var favDateMap = favData ? favData.dateMap : null;
   var favSlotMap = favData ? favData.slotMap : {};
 
+  // ── Render Insights Header ──
+  var insightsEl = document.getElementById('pb-cal-insights');
+  if (insightsEl) {
+    var pool = (_calMode === 'filtered') ? appState.filteredPairings : appState.pairings;
+    var totalTrips = pool.length;
+    var t1Count = 0, t2Count = 0, avCount = 0;
+    var totalPayMins = 0;
+    pool.forEach(function(p) {
+      var t = getFavoriteTier(p.number);
+      if (t === 1) t1Count++;
+      if (t === 2) t2Count++;
+      if (isAvoided(p.number)) avCount++;
+      totalPayMins += (p.totalPayMins || p.totalCreditMins || 0);
+    });
+    var avgPay = totalTrips > 0 ? (totalPayMins / totalTrips / 60).toFixed(1) + 'h' : '—';
+    var dowCounts = [0,0,0,0,0,0,0];
+    var dowNames  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var anc = bpStartLocal || new Date(y, m, 1);
+    var ancY = anc.getFullYear(), ancM = anc.getMonth();
+    pool.forEach(function(p) {
+      var sDays = (appState.survivingMap && appState.survivingMap.get(p.number)) || computeOccurrences(p);
+      sDays.forEach(function(sd) {
+        var d = new Date(ancY, ancM, sd);
+        dowCounts[d.getDay()]++;
+      });
+    });
+    var maxDowIdx = 0;
+    for (var di = 1; di < 7; di++) {
+      if (dowCounts[di] > dowCounts[maxDowIdx]) maxDowIdx = di;
+    }
+    var peakDowStr = dowCounts[maxDowIdx] > 0 ? dowNames[maxDowIdx] + 's' : '—';
+
+    insightsEl.innerHTML =
+      '<div class="pb-cal-insights__item">Total Trips: <span class="pb-cal-insights__val">' + totalTrips + '</span></div>' +
+      '<div class="pb-cal-insights__item">Ratings: <span class="pb-cal-insights__val" style="color:#10b981;">🟢 ' + t1Count + ' Best</span> · <span class="pb-cal-insights__val" style="color:#f59e0b;">🟡 ' + t2Count + ' Maybe</span> · <span class="pb-cal-insights__val" style="color:#ef4444;">🔴 ' + avCount + ' Avoided</span></div>' +
+      '<div class="pb-cal-insights__item">Peak Departure: <span class="pb-cal-insights__val">' + peakDowStr + '</span></div>' +
+      '<div class="pb-cal-insights__item">Avg Credit: <span class="pb-cal-insights__val">' + avgPay + '</span></div>' +
+      '<div class="pb-cal-insights__item" style="gap:4px;"><span style="font-weight:600;margin-right:2px;">Trip Lengths:</span> <span class="pb-cal-badge b-1d">1d</span> <span class="pb-cal-badge b-2d">2d</span> <span class="pb-cal-badge b-3d">3d</span> <span class="pb-cal-badge b-4d">4d</span> <span class="pb-cal-badge b-5d">5d+</span></div>';
+  }
+
   // ── heatmap count map (start-day only) ──
   var dayCountMap = new Map();
   if (_calMode !== 'favs') {
     var pool = (_calMode === 'filtered') ? appState.filteredPairings : appState.pairings;
     var survMap = appState.survivingMap || new Map();
     var anchor  = bpStartLocal || new Date(y, m, 1);
-    var ancY = anchor.getFullYear(), ancM = anchor.getMonth();
+    var ancY = anchor.getFullYear(), ancM = anchor.getMonth(), ancD = anchor.getDate();
     pool.forEach(function(p) {
       var startDays = survMap.has(p.number)
         ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMap.get(p.number))
         : computeOccurrences(p);
       startDays.forEach(function(sd) {
         // Count only the START day
-        var d = new Date(ancY, ancM, sd);
+        var d = new Date(ancY, ancM, ancD + (sd - 1));
         var key = localDKey(d.getFullYear(), d.getMonth(), d.getDate());
         dayCountMap.set(key, (dayCountMap.get(key) || 0) + 1);
       });
@@ -7587,6 +8463,43 @@ function renderCalendar() {
       cell.appendChild(badge);
     }
 
+    // Composition Badges (1d, 2d, 3d, 4d, 5d+)
+    if (inBP) {
+      var poolForComp = (_calMode === 'filtered') ? appState.filteredPairings : appState.pairings;
+      var c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0;
+      var ancC = bpStartLocal || new Date(y, m, 1);
+      var ancCY = ancC.getFullYear(), ancCM = ancC.getMonth(), ancCD = ancC.getDate();
+      var survMapComp = appState.survivingMap || new Map();
+      poolForComp.forEach(function(p) {
+        var sDays = survMapComp.has(p.number)
+          ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMapComp.get(p.number))
+          : computeOccurrences(p);
+        sDays.forEach(function(sd) {
+          var d = new Date(ancCY, ancCM, ancCD + (sd - 1));
+          if (localDKey(d.getFullYear(), d.getMonth(), d.getDate()) === dateKey) {
+            var dLen = p.days || 1;
+            if (dLen === 1) c1++;
+            else if (dLen === 2) c2++;
+            else if (dLen === 3) c3++;
+            else if (dLen === 4) c4++;
+            else if (dLen >= 5) c5++;
+          }
+        });
+      });
+      if (c1 > 0 || c2 > 0 || c3 > 0 || c4 > 0 || c5 > 0) {
+        var compDiv = document.createElement('div');
+        compDiv.className = 'pb-cal-comp-badges';
+        var bHtml = '';
+        if (c1 > 0) bHtml += '<span class="pb-cal-badge b-1d" title="' + c1 + ' 1-day trips">' + c1 + '</span>';
+        if (c2 > 0) bHtml += '<span class="pb-cal-badge b-2d" title="' + c2 + ' 2-day trips">' + c2 + '</span>';
+        if (c3 > 0) bHtml += '<span class="pb-cal-badge b-3d" title="' + c3 + ' 3-day trips">' + c3 + '</span>';
+        if (c4 > 0) bHtml += '<span class="pb-cal-badge b-4d" title="' + c4 + ' 4-day trips">' + c4 + '</span>';
+        if (c5 > 0) bHtml += '<span class="pb-cal-badge b-5d" title="' + c5 + ' 5+-day trips">' + c5 + '</span>';
+        compDiv.innerHTML = bHtml;
+        cell.appendChild(compDiv);
+      }
+    }
+
     // Holiday label
     var holiday = getUSHoliday(cellDate.getFullYear(), cellDate.getMonth(), dayN);
     if (holiday && inBP) {
@@ -7600,22 +8513,31 @@ function renderCalendar() {
     cell._dateKey = dateKey;
     cell._inBP    = inBP;
     cell._slots   = (favSlotMap[dateKey] || 0);
-    cell._preAwardDateKey = inBP ? dateKey : null; // expose for click handler
-    cell.style.cursor = inBP ? 'pointer' : 'default';
+    cell._preAwardDateKey = inBP ? dateKey : null;
+    cell.setAttribute('data-date-key', dateKey);
+    cell.style.cursor = 'pointer';
+    cell.onclick = (function(dk) {
+      return function() { openDayInspectorDrawer(dk); };
+    })(dateKey);
 
-    // Pre-award indicator
-    if (inBP && appState.preAwards && appState.preAwards.has(dateKey)) {
+    // Pre-award indicator & background shading
+    if (appState.preAwards && appState.preAwards.has(dateKey)) {
       var paType = appState.preAwards.get(dateKey);
-      var paCfg  = window.pbPreAwards ? (window.pbPreAwards.map[paType] || { color: '#666', abbr: paType }) : { color: '#666', abbr: paType };
+      var paCfg  = getPreAwardStyle(paType);
+
       var paBar = document.createElement('div');
-      paBar.style.cssText = 'position:absolute;top:0;left:0;right:0;height:4px;background:' + paCfg.color + ';border-radius:var(--r-sm) var(--r-sm) 0 0;';
+      paBar.style.cssText = 'position:absolute;top:0;left:0;right:0;height:4px;background:' + paCfg.color + ';border-radius:var(--r-sm) var(--r-sm) 0 0;z-index:2;';
       cell.style.position = 'relative';
+      cell.style.background = paCfg.bg;
       cell.insertBefore(paBar, cell.firstChild);
-      var paLabel = document.createElement('div');
-      paLabel.style.cssText = 'font-size:9px;font-family:var(--font-mono);font-weight:700;' +
-        'color:' + paCfg.color + ';letter-spacing:.05em;margin-top:2px;';
-      paLabel.textContent = paCfg.abbr;
-      cell.appendChild(paLabel);
+
+      var paTag = document.createElement('div');
+      paTag.className = 'pb-cal-pa-tag';
+      paTag.style.cssText = 'font-size:10px;font-family:var(--font-sans);font-weight:700;' +
+        'color:#fff;background:' + paCfg.color + ';padding:2px 5px;border-radius:4px;margin-top:3px;' +
+        'display:inline-block;letter-spacing:.02em;box-shadow:0 1px 2px rgba(0,0,0,0.15);';
+      paTag.textContent = paCfg.label;
+      cell.appendChild(paTag);
     }
 
     cells.push(cell);
@@ -7710,7 +8632,8 @@ function loadAllData() {
         dbGet(STORE_META, 'extraXDay'),
         dbGet(STORE_META, 'pdfName'),
         dbGet(STORE_META, 'preAwards'),
-        dbGet(STORE_META, 'excludedOccurrences')
+        dbGet(STORE_META, 'excludedOccurrences'),
+        dbGet(STORE_META, 'avoided')
       ]);
     })
     .then(function(results) {
@@ -7720,26 +8643,27 @@ function loadAllData() {
       if (results[3]) appState.bidPeriodDays  = results[3].value;
       if (results[4]) appState.seat           = results[4].value;
       if (results[5]) appState.baseCityCode   = results[5].value;
-      if (results[6]) {
+      if (results[6] && results[6].value) {
         try {
-          var favArr = JSON.parse(results[6].value);
-          if (Array.isArray(favArr)) appState.favorites = new Set(favArr);
+          var favRaw = JSON.parse(results[6].value);
+          appState.favorites = new Map();
+          if (Array.isArray(favRaw)) {
+            favRaw.forEach(function(item) {
+              if (Array.isArray(item)) appState.favorites.set(item[0], item[1]);
+              else appState.favorites.set(item, 1);
+            });
+          } else if (favRaw && typeof favRaw === 'object') {
+            Object.keys(favRaw).forEach(function(k) { appState.favorites.set(k, favRaw[k]); });
+          }
         } catch (e) { PB.log.warn('Failed to parse favorites', { error: String(e) }); }
       }
+      if (results[15] && results[15].value) {
+        try {
+          var avArr = JSON.parse(results[15].value);
+          if (Array.isArray(avArr)) appState.avoided = new Set(avArr);
+        } catch (e) { PB.log.warn('Failed to parse avoided', { error: String(e) }); }
+      }
       appState.pairings = results[7] || [];
-      // One-time reclassification for pairings persisted before the redeye-day
-      // fix. Re-derives p.days from letter span (+1 if trip ends in a redeye);
-      // idempotent, so safe on both pre-fix and post-fix stored data.
-      (function migrateRedeyeDays(list) {
-        (list || []).forEach(function(p) {
-          var td = p.tripDays;
-          if (!td || !td.length) return;
-          var span = td[td.length-1].letter.charCodeAt(0) - td[0].letter.charCodeAt(0) + 1;
-          var last = td[td.length-1].legs;
-          var redeye = last.length && last[last.length-1].isRedeye;
-          p.days = span + (redeye ? 1 : 0);
-        });
-      })(appState.pairings);
       if (results[8])  appState.categoryALV  = results[8].value;
       if (results[9])  appState.resGuarantee = results[9].value;
       if (results[10]) appState.resRule      = results[10].value;
@@ -7751,14 +8675,8 @@ function loadAllData() {
 
       ensureBidPeriod();
 
-      // Initialize calendar to bid period if available
-      if (appState.bidPeriodStart) {
-        var d = parseBPDate(appState.bidPeriodStart);
-        if (d && !isNaN(d)) {
-          appState.calYear  = d.getFullYear();
-          appState.calMonth = d.getMonth();
-        }
-      }
+      // Initialize calendar to primary bid period month if available
+      setCalMonthToBidPeriod();
 
       // Build initial survivingMap (no filters active)
       var sm = new Map();
@@ -7796,6 +8714,8 @@ PB.pairings.parseBPDate        = parseBPDate;
 PB.pairings.pairingCheckInMins = pairingCheckInMins;
 PB.pairings.pairingCheckOutMins= pairingCheckOutMins;
 PB.pairings.buildPairingCard   = buildPairingCard;
+PB.pairings.checkPairingPreAwardConflict = checkPairingPreAwardConflict;
+PB.pairings.computeEfficiencyMetrics     = computeEfficiencyMetrics;
 window.applyFilters            = applyFilters;
 window._appStateRef            = appState;
 PB.pairings.reload = function() {
@@ -7936,14 +8856,11 @@ PB.modules.register({
 
   // ── config ─────────────────────────────────────────────────
   var PA_TYPES = [
-    { id: 'Carry In',  abbr: 'CIN', color: '#2A7BA8' },
-    { id: 'Vacation',  abbr: 'VAC', color: '#1D9E75' },
-    { id: 'CQ',       abbr: 'CQ',  color: '#185FA5' },
-    { id: 'Qual',     abbr: 'QL',  color: '#534AB7' },
-    { id: 'Mil',      abbr: 'MIL', color: '#854F0B' },
-    { id: 'ALPA',     abbr: 'ALP', color: '#0F6E56' },
-    { id: 'Parental', abbr: 'PAR', color: '#A32D2D' },
-    { id: 'Other',    abbr: 'OTH', color: '#666'    }
+    { id: 'VACATION', label: 'Vacation',          abbr: 'V',   color: '#3b82f6' },
+    { id: 'SICK',     label: 'Sick',              abbr: 'S',   color: '#ef4444' },
+    { id: 'TRAINING', label: 'Training (CQ, IQ)', abbr: 'CQ',  color: '#8b5cf6' },
+    { id: 'MIL',      label: 'Military',          abbr: 'MIL', color: '#f59e0b' },
+    { id: 'OTHER',    label: 'Other',             abbr: 'OTH', color: '#64748b' }
   ];
   var PA_MAP = {};
   PA_TYPES.forEach(function(t) { PA_MAP[t.id] = t; });
@@ -7951,10 +8868,13 @@ PB.modules.register({
   // ── persistence ─────────────────────────────────────────────
   function savePreAwards() {
     var obj = {};
-    appState.preAwards.forEach(function(v, k) { obj[k] = v; });
+    if (appState.preAwards) {
+      appState.preAwards.forEach(function(v, k) { obj[k] = v; });
+    }
     dbPut(STORE_META, { key: 'preAwards', value: JSON.stringify(obj) })
       .catch(function(e) { PB.log.warn('preAwards save failed', { error: String(e) }); });
   }
+  window.pbSavePreAwards = savePreAwards;
 
   function loadPreAwards(raw) {
     appState.preAwards = new Map();
@@ -8337,10 +9257,13 @@ PB.modules.register({
               '<button id="pb-cal-today-btn"    class="pb-cal-mode-btn">Today</button>' +
             '</div>' +
           '</div>' +
+          '<div class="pb-cal-insights" id="pb-cal-insights"></div>' +
           '<div class="pb-cal-grid" id="pb-cal-grid"></div>' +
         '</div>' +
-        '<div id="pb-day-pairings-panel" class="pb-day-pairings-panel" style="display:none;"></div>' +
       '</div>';
+
+    // Ensure Day Inspector drawer elements exist at top-level body
+    ensureDayDrawerInBody();
 
     // Wire nav + mode events
     document.getElementById('pb-cal-prev').addEventListener('click', function() { calNav(-1); });
@@ -8354,14 +9277,13 @@ PB.modules.register({
     document.getElementById('pb-cal-bp-btn').addEventListener('click',    calGoToBidPeriod);
     document.getElementById('pb-cal-today-btn').addEventListener('click', calToday);
 
-    // Wire calendar grid for pre-award day clicks (delegated)
+    // Wire calendar grid for day clicks -> open Day Inspector drawer
     document.getElementById('pb-cal-grid').addEventListener('click', function(e) {
       var cell = e.target.closest('.pb-cal-cell');
-      if (!cell || cell.classList.contains('other-month')) return;
-      var dk = cell._preAwardDateKey;
+      if (!cell) return;
+      var dk = cell.getAttribute('data-date-key') || cell._dateKey || cell._preAwardDateKey;
       if (!dk) return;
-      if (window.pbPreAwards) window.pbPreAwards.openPopover(dk, cell);
-      renderDayPairingsPanel(dk);
+      openDayInspectorDrawer(dk);
     });
 
     // Restore active button
@@ -9043,7 +9965,7 @@ function renderDayPairingsPanel(dk) {
     return new Promise(function(resolve, reject) {
       if (_tessLoaded || window.Tesseract) { _tessLoaded = true; resolve(); return; }
       var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+      s.src = './vendor/tesseract/tesseract.min.js';
       s.onload = function() { _tessLoaded = true; resolve(); };
       s.onerror = function() { reject(new Error('Could not load Tesseract.js')); };
       document.head.appendChild(s);
@@ -10809,31 +11731,32 @@ function renderDayPairingsPanel(dk) {
         if (p.checkOutBefore != null) parts.push('CO ≤ ' + PB.pairings.fmtFilterMins(p.checkOutBefore));
         return mode + ' only commutable (' + parts.join(', ') + ')';
       case 'pairing':
-        if (f.subtype === 'has-dh')     return mode + (p.value ? ' DH pairings' : ' no-DH pairings');
-        if (f.subtype === 'has-redeye') return mode + (p.value ? ' redeye pairings' : ' no-redeye pairings');
-        if (f.subtype === 'has-dh-position') return (p.op === 'avoid' ? 'Avoid ' : 'Prefer ') + 'DH at ' + (p.pos || 'any');
-        if (f.subtype === 'tafb')       return mode + ' TAFB ' + (p.op === 'min' ? '≥ ' + p.min : p.op === 'max' ? '≤ ' + p.max : p.min + '–' + p.max);
-        if (f.subtype === 'checkin-time')  return mode + ' CI ' + p.op + ' ' + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
-        if (f.subtype === 'checkout-time') return mode + ' CO ' + p.op + ' ' + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
-        return mode + ' ' + f.subtype;
+        if (f.subtype === 'has-dh')     return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + (p.value ? 'Contains Deadhead' : 'No Deadhead');
+        if (f.subtype === 'has-redeye') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + (p.value ? 'Contains Redeye' : 'No Redeye');
+        if (f.subtype === 'has-dh-position') return (p.op === 'avoid' ? 'Avoid' : 'Award') + ' Pairings If Deadhead Position = ' + (p.pos || 'Any');
+        if (f.subtype === 'tafb')       return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If TAFB ' + (p.op === 'min' ? '≥ ' + p.min : p.op === 'max' ? '≤ ' + p.max : p.min + '–' + p.max + ' Hours');
+        if (f.subtype === 'checkin-time')  return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Check-In ' + (p.op === 'after' ? 'After ' : 'Before ') + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
+        if (f.subtype === 'checkout-time') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Check-Out ' + (p.op === 'after' ? 'After ' : 'Before ') + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
+        return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + f.subtype;
       case 'layover':
-        if (f.subtype === 'station')  return mode + ' layover stations ' + (p.stations || []).join(', ');
-        if (f.subtype === 'duration') return mode + ' layover duration ' + (p.op === 'range' ? p.min + '–' + p.max + 'hr' : p.op + ' ' + p.val + 'hr');
-        return mode + ' layover ' + f.subtype;
+        if (f.subtype === 'station')  return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover In ' + (p.stations || []).join(', ');
+        if (f.subtype === 'duration') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover Duration ' + (p.op === 'range' ? p.min + '–' + p.max + ' Hours' : (p.op === 'gt' ? '> ' : '< ') + p.val + ' Hours');
+        return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover ' + f.subtype;
       case 'prefer-off':
-        if (f.subtype === 'dates') return 'Prefer off: ' + (p.dates || []).length + ' dates';
-        if (f.subtype === 'dow')   return 'Prefer off DOW: ' + (p.dows || []).join(',');
-        if (f.subtype === 'range') return 'Prefer off: ' + p.start + ' – ' + p.end;
-        return 'Prefer off';
-      case 'pairing-dow':   return mode + ' pairings starting DOW ' + (p.dows || []).join(',');
-      case 'layover-dow':   return mode + ' layovers on DOW ' + (p.dows || []).join(',');
-      case 'layover-range': return mode + ' layovers ' + p.start + ' – ' + p.end;
-      case 'carry-out':     return 'Avoid carry-out past bid period';
+        if (f.subtype === 'dates') return 'Prefer Off Dates: ' + (p.dates || []).join(', ');
+        if (f.subtype === 'dow')   return 'Prefer Off Days Of Week: ' + (p.dows || []).join(', ');
+        if (f.subtype === 'range') return 'Prefer Off Date Range: ' + p.start + ' to ' + p.end;
+        return 'Prefer Off';
+      case 'pairing-dow':   return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Operating On ' + (p.dows || []).join(', ');
+      case 'layover-dow':   return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover On ' + (p.dows || []).join(', ');
+      case 'layover-range': return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover Between ' + p.start + ' and ' + p.end;
+      case 'carry-out':     return 'Avoid Pairings If Carry-Out > 0';
     }
-    return f.type + ' / ' + f.subtype;
+    return (f.mode || 'Avoid') + ' ' + f.type + ' / ' + (f.subtype || '');
   }
+  window.filterDescription = filterDescription;
 
-  // Sidebar filter list (rendered above the pairings list, below search)
+  // Sidebar filter list
   window.renderOccFilterList = function() {
     var s = window._appStateRef || {};
     var list = s.occurrenceFilters || [];
@@ -10846,26 +11769,44 @@ function renderDayPairingsPanel(dk) {
     var list = s.occurrenceFilters || [];
     var mo = ensureModal();
     var rows = list.length === 0
-      ? '<div class="pb-empty" style="padding:20px;"><div class="pb-empty__title">No filters yet</div></div>'
+      ? '<div class="pb-empty" style="padding:24px 20px;text-align:center;"><div class="pb-empty__title" style="font-weight:600;font-size:14px;color:var(--text-secondary);">No active filters</div><div style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">Click + Add Filter to build priority rules in top-down order.</div></div>'
       : list.map(function(f, idx) {
-          return '<div class="pb-occ-filter-card">' +
-            '<span class="pb-occ-filter-card__mode pb-occ-filter-card__mode--' + (f.mode || 'avoid') + '">' + (f.mode || 'avoid') + '</span>' +
-            '<span class="pb-occ-filter-card__text">' + PB.escapeHtml(filterDescription(f)) + '</span>' +
-            '<div class="pb-occ-filter-card__actions">' +
-              '<button class="pb-occ-filter-card__btn" onclick="window.pbRemoveFilter(' + idx + ')" title="Remove">✕</button>' +
+          var isFirst = idx === 0;
+          var isLast  = idx === list.length - 1;
+          var modeLabel = f.mode === 'award' ? 'Prefer' : (f.mode === 'set-condition' ? 'Set Cond' : 'Avoid');
+          var modeClass = f.mode === 'award' ? 'prefer' : (f.mode === 'set-condition' ? 'setcond' : 'avoid');
+
+          return '<div class="pb-occ-filter-card" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);margin-bottom:6px;">' +
+            '<span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-tertiary);min-width:24px;">#' + (idx + 1) + '</span>' +
+            '<span class="pb-occ-filter-card__mode pb-occ-filter-card__mode--' + modeClass + '" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;background:' + (modeClass === 'prefer' ? 'rgba(16,185,129,0.15)' : modeClass === 'setcond' ? 'rgba(139,92,246,0.15)' : 'rgba(239,68,68,0.15)') + ';color:' + (modeClass === 'prefer' ? '#047857' : modeClass === 'setcond' ? '#6d28d9' : '#b91c1c') + ';">' + modeLabel + '</span>' +
+            '<span class="pb-occ-filter-card__text" style="flex:1;font-size:12px;font-weight:500;color:var(--text-primary);">' + PB.escapeHtml(filterDescription(f)) + '</span>' +
+            '<div class="pb-occ-filter-card__actions" style="display:flex;gap:4px;align-items:center;">' +
+              '<button class="btn btn--ghost btn--icon" onclick="window.pbMoveFilter(' + idx + ', -1)" title="Move Up in Priority Ladder" ' + (isFirst ? 'disabled style="opacity:0.3;"' : '') + '>▲</button>' +
+              '<button class="btn btn--ghost btn--icon" onclick="window.pbMoveFilter(' + idx + ', 1)" title="Move Down in Priority Ladder" ' + (isLast ? 'disabled style="opacity:0.3;"' : '') + '>▼</button>' +
+              '<button class="btn btn--ghost btn--icon" onclick="window.pbRemoveFilter(' + idx + ')" title="Remove Filter">✕</button>' +
             '</div>' +
           '</div>';
         }).join('');
 
     mo.innerHTML =
-      '<div class="pb-port-modal__inner" style="max-width:540px;">' +
-        '<div class="pb-port-modal__header">' +
-          '<div class="pb-port-modal__title">Filters</div>' +
+      '<div class="pb-port-modal__inner" style="max-width:580px;">' +
+        '<div class="pb-port-modal__header" style="display:flex;align-items:center;justify-space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle);">' +
+          '<div>' +
+            '<div class="pb-port-modal__title" style="font-weight:700;font-size:16px;">PBS Filter Ladder</div>' +
+            '<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Top-down priority order (Line 1 down to Line N)</div>' +
+          '</div>' +
           '<button class="pb-port-modal__close" onclick="document.getElementById(\'pb-fb-modal\').removeAttribute(\'data-open\');">✕</button>' +
         '</div>' +
-        '<div class="pb-port-modal__body">' + rows + '</div>' +
-        '<div style="padding:12px 18px;border-top:1px solid var(--border-subtle);display:flex;gap:8px;">' +
-          '<button class="btn btn--primary btn--sm" onclick="window.pbShowFilterTypes()">+ Add Filter</button>' +
+        '<div class="pb-port-modal__body" style="padding:14px 18px;max-height:60vh;overflow-y:auto;">' +
+          '<div style="margin-bottom:12px;">' +
+            '<button class="btn btn--primary btn--sm" style="width:100%;justify-content:center;background:var(--accent);color:#fff;font-weight:700;padding:8px 12px;" onclick="window.pbGeneratePBSReport()">' +
+              '📋 Generate Step-by-Step PBS Bidding Report' +
+            '</button>' +
+          '</div>' +
+          rows +
+        '</div>' +
+        '<div style="padding:12px 18px;border-top:1px solid var(--border-subtle);display:flex;gap:8px;align-items:center;">' +
+          '<button class="btn btn--secondary btn--sm" onclick="window.pbShowFilterTypes()">+ Add Filter</button>' +
           '<button class="btn btn--ghost btn--sm" onclick="window.pbClearFilters()">Clear all</button>' +
           '<div style="flex:1;"></div>' +
           '<button class="btn btn--ghost btn--sm" onclick="window.pbExportFilters()">⬇ Export</button>' +
@@ -10876,12 +11817,25 @@ function renderDayPairingsPanel(dk) {
     mo.setAttribute('data-open', 'true');
   };
 
+  window.pbMoveFilter = function(idx, dir) {
+    var s = window._appStateRef || {};
+    var list = s.occurrenceFilters || [];
+    var targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= list.length) return;
+    var temp = list[idx];
+    list[idx] = list[targetIdx];
+    list[targetIdx] = temp;
+    if (window.applyFilters) window.applyFilters();
+    window.pbOpenFiltersPanel();
+  };
+
   window.pbRemoveFilter = function(idx) {
     var s = window._appStateRef || {};
     s.occurrenceFilters.splice(idx, 1);
     if (window.applyFilters) window.applyFilters();
     window.pbOpenFiltersPanel();
   };
+
   window.pbClearFilters = function() {
     var s = window._appStateRef || {};
     s.occurrenceFilters = [];
@@ -10898,6 +11852,7 @@ function renderDayPairingsPanel(dk) {
     a.href = url; a.download = 'pairboard-filters.json'; a.click();
     URL.revokeObjectURL(url);
   };
+
   window.pbImportFilters = function(input) {
     var f = input.files[0]; if (!f) return;
     var r = new FileReader();
@@ -10914,6 +11869,122 @@ function renderDayPairingsPanel(dk) {
       } catch(e) { toast('Invalid filter file', 'error'); }
     };
     r.readAsText(f);
+  };
+
+  // Step-by-Step PBS Bidding Report Generator
+  function fmtHHMM(val) {
+    if (typeof decToHHMM === 'function') return decToHHMM(val);
+    var h = Math.floor(val || 0);
+    var m = Math.round(((val || 0) - h) * 60);
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  }
+
+  window.pbGeneratePBSReport = function() {
+    var s = window._appStateRef || {};
+    var list = (s.occurrenceFilters || []).slice();
+    var preAwards = s.preAwards || new Map();
+    var pairings = s.filteredPairings || s.pairings || [];
+
+    // 1. Compute Vacation Drop & Prorated Set Condition Minimum Credit
+    var vacCount = 0;
+    preAwards.forEach(function(type) {
+      if (type === 'VACATION' || type === 'V') vacCount++;
+    });
+    var baseMinPay = 75.0; // standard monthly min credit
+    var dropCreditHours = parseFloat((vacCount * 2.45).toFixed(2));
+    var proratedMinPay = Math.max(40.0, parseFloat((baseMinPay - dropCreditHours).toFixed(2)));
+
+    // 2. Sort Filters into Strategic NAVBLUE Order (Exclusions before Awards)
+    var exclusions = [];
+    var awards = [];
+
+    list.forEach(function(f) {
+      var mode = (f.mode || 'avoid').toLowerCase();
+      if (mode === 'avoid' || f.type === 'preferOff' || (f.params && f.params.op === 'avoid')) {
+        exclusions.push(f);
+      } else {
+        awards.push(f);
+      }
+    });
+
+    var mo = ensureModal();
+    var step1Html =
+      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
+        '<div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">📌 STEP 1: SET LINE OPTIONS & WAIVES</div>' +
+        '<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">' +
+          '1. Go to <strong>Bid Options</strong> tab in NAVBLUE web app.<br>' +
+          '2. Select <strong>Set Condition</strong> ➔ <strong>Minimum Credit</strong> ➔ Enter <strong>' + fmtHHMM(proratedMinPay) + '</strong> ' + (vacCount > 0 ? '(Prorated for your ' + vacCount + ' Vacation days)' : '(Standard Line Floor)') + '<br>' +
+          '3. Select <strong>Set Condition</strong> ➔ <strong>Max Consecutive Duty Days</strong> ➔ Enter <strong>4</strong><br>' +
+          '4. <em>(Optional)</em> If bidding tight trip spacing, select <strong>Waive</strong> ➔ <strong>Waive 30/168 Rest Requirement</strong>.' +
+        '</div>' +
+      '</div>';
+
+    var lineNum = 1;
+    var step2Rows = exclusions.length === 0
+      ? '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">No exclusion/avoid filters active.</div>'
+      : exclusions.map(function(f) {
+          var lineDesc = filterDescription(f);
+          var html = '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#b91c1c;">' +
+            'Line ' + (lineNum++) + ': ' + PB.escapeHtml(lineDesc) +
+          '</div>';
+          return html;
+        }).join('');
+
+    var step2Html =
+      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
+        '<div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">📌 STEP 2: EXCLUSION LINES (Placed FIRST in NAVBLUE)</div>' +
+        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">*Critical: Exclude dates & unwanted trips BEFORE adding positive awards so NAVBLUE doesn\'t award them first.</div>' +
+        step2Rows +
+      '</div>';
+
+    var step3Rows = awards.length === 0
+      ? '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">No positive award filters active.</div>'
+      : awards.map(function(f) {
+          var lineDesc = filterDescription(f);
+          var html = '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#047857;">' +
+            'Line ' + (lineNum++) + ': ' + PB.escapeHtml(lineDesc) +
+          '</div>';
+          return html;
+        }).join('');
+
+    var step3Html =
+      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
+        '<div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">📌 STEP 3: POSITIVE AWARD LINES (Placed BELOW Exclusions)</div>' +
+        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">Target your preferred layover cities, trip lengths, and report/release times.</div>' +
+        step3Rows +
+      '</div>';
+
+    var totalCredit = 0;
+    pairings.forEach(function(p) { totalCredit += (p.creditHours || 0); });
+    var avgCredit = pairings.length > 0 ? (totalCredit / pairings.length).toFixed(2) : '0.00';
+
+    var summaryHtml =
+      '<div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><div style="font-size:11px;color:var(--text-tertiary);">Matching Pairings</div><div style="font-weight:700;font-size:16px;color:var(--text-primary);">' + pairings.length + '</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-tertiary);">Avg Trip Credit</div><div style="font-weight:700;font-size:16px;color:var(--text-primary);">' + avgCredit + 'h</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-tertiary);">Target Min Pay</div><div style="font-weight:700;font-size:16px;color:var(--accent);">' + fmtHHMM(proratedMinPay) + '</div></div>' +
+      '</div>';
+
+    mo.innerHTML =
+      '<div class="pb-port-modal__inner" style="max-width:620px;">' +
+        '<div class="pb-port-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle);">' +
+          '<div>' +
+            '<div class="pb-port-modal__title" style="font-weight:700;font-size:16px;">NAVBLUE PBS Step-by-Step Bidding Guide</div>' +
+            '<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Follow these steps in NAVBLUE web app to build this schedule</div>' +
+          '</div>' +
+          '<button class="pb-port-modal__close" onclick="window.pbOpenFiltersPanel();">‹ Back</button>' +
+        '</div>' +
+        '<div class="pb-port-modal__body" style="padding:16px 18px;max-height:65vh;overflow-y:auto;">' +
+          step1Html +
+          step2Html +
+          step3Html +
+          summaryHtml +
+        '</div>' +
+        '<div style="padding:12px 18px;border-top:1px solid var(--border-subtle);display:flex;justify-content:flex-end;">' +
+          '<button class="btn btn--primary btn--sm" onclick="document.getElementById(\'pb-fb-modal\').removeAttribute(\'data-open\');">Done</button>' +
+        '</div>' +
+      '</div>';
+    mo.setAttribute('data-open', 'true');
   };
 
   // Filter type picker
@@ -11159,8 +12230,12 @@ function renderDayPairingsPanel(dk) {
   };
 
   // Prefer Off
+  if (!window._poSelectedDates) window._poSelectedDates = new Set();
+  if (!window._poSelectedDows)  window._poSelectedDows  = new Set();
+
   function preferOffBody() {
-    return '<div class="field"><div class="field__label">Type</div>' +
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">Selection Method</div>' +
         '<div class="segmented" id="fb-po">' +
           '<button class="segmented__item" data-v="dates" aria-pressed="true">Specific Dates</button>' +
           '<button class="segmented__item" data-v="dow" aria-pressed="false">Days of Week</button>' +
@@ -11168,28 +12243,169 @@ function renderDayPairingsPanel(dk) {
         '</div></div>' +
       '<div id="fb-po-body" style="margin-top:12px;"></div>';
   }
+
+  function getBidPeriodDays() {
+    var s = window._appStateRef || {};
+    var parseLocalDate = function(str) {
+      if (!str) return null;
+      var m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+      var d = new Date(str);
+      return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    };
+
+    var start = parseLocalDate(s.bidPeriodStart);
+    var end   = parseLocalDate(s.bidPeriodEnd);
+
+    if (!start || isNaN(start)) {
+      var bpM = s.bidMonth ? {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11}[s.bidMonth.toUpperCase()] : 8;
+      var y = s.calYear || 2026;
+      start = new Date(y, bpM != null ? bpM : 8, 1);
+      end   = new Date(y, (bpM != null ? bpM : 8) + 1, 0);
+    }
+    if (!end || isNaN(end)) end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+
+    var days = [];
+    var cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    var eTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+    var dowNames = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    var monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+    while (cur.getTime() <= eTime) {
+      var dNum = cur.getDate();
+      var mIdx = cur.getMonth();
+      var mName = monthNames[mIdx];
+      var dKey = cur.getFullYear() + '-' + String(mIdx + 1).padStart(2, '0') + '-' + String(dNum).padStart(2, '0');
+      var pbsKey = mName + String(dNum).padStart(2, '0');
+
+      days.push({
+        date: new Date(cur.getTime()),
+        dayNum: dNum,
+        dow: cur.getDay(),
+        dowName: dowNames[cur.getDay()],
+        dateKey: dKey,
+        pbsKey: pbsKey,
+        monthName: mName
+      });
+      cur.setDate(cur.getDate() + 1);
+    }
+    return days;
+  }
+
   function preferOffWire() {
+    wireSeg('fb-po');
+    wireSeg('fb-mode');
     var s = document.getElementById('fb-po'); if (!s) return;
     var b = document.getElementById('fb-po-body'); if (!b) return;
-    function up() {
+
+    function renderView() {
       var a = s.querySelector('[aria-pressed="true"]'); var v = a ? a.getAttribute('data-v') : 'dates';
-      if (v === 'dates')      b.innerHTML = '<div class="field"><div class="field__label">Dates (YYYY-MM-DD, comma-separated)</div><input class="input u-mono" id="fb-po-dates" placeholder="2026-04-15, 2026-04-22"></div><button class="btn btn--primary" onclick="window.pbCommitPO(\'dates\')">Add Filter</button>';
-      else if (v === 'dow')   b.innerHTML = '<div class="field"><div class="field__label">Days (0=Sun..6=Sat, comma-separated)</div><input class="input u-mono" id="fb-po-dow" placeholder="0,6"></div><button class="btn btn--primary" onclick="window.pbCommitPO(\'dow\')">Add Filter</button>';
-      else if (v === 'range') b.innerHTML = '<div class="field-row"><div class="field"><div class="field__label">Start</div><input type="date" class="input u-mono" id="fb-po-start"></div><div class="field"><div class="field__label">End</div><input type="date" class="input u-mono" id="fb-po-end"></div></div><button class="btn btn--primary" onclick="window.pbCommitPO(\'range\')">Add Filter</button>';
+      if (v === 'dates') {
+        var days = getBidPeriodDays();
+        var dowHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        var headerHtml = dowHeaders.map(function(h) {
+          return '<div style="text-align:center;font-size:10px;font-weight:700;color:var(--text-tertiary);padding-bottom:4px;">' + h + '</div>';
+        }).join('');
+
+        var paddingCells = days.length > 0 ? days[0].dow : 0;
+        var gridHtml = headerHtml;
+        for (var p = 0; p < paddingCells; p++) {
+          gridHtml += '<div></div>';
+        }
+
+        days.forEach(function(d) {
+          var isSel = window._poSelectedDates.has(d.pbsKey) || window._poSelectedDates.has(d.dateKey);
+          var activeStyle = isSel
+            ? 'background:var(--accent);color:#ffffff;border-color:var(--accent);font-weight:700;box-shadow:0 2px 6px rgba(37,99,235,0.3);'
+            : 'background:var(--bg-app);color:var(--text-primary);border:1px solid var(--border-subtle);';
+
+          gridHtml +=
+            '<button type="button" class="pb-chip" style="width:100%;min-height:44px;padding:4px 2px;flex-direction:column;justify-content:center;align-items:center;border-radius:6px;cursor:pointer;' + activeStyle + '" onclick="window.pbTogglePODate(\'' + d.pbsKey + '\')">' +
+              '<div style="font-size:9px;opacity:0.75;line-height:1;">' + d.dowName + '</div>' +
+              '<div style="font-size:13px;font-weight:700;line-height:1.2;">' + d.dayNum + '</div>' +
+              '<div style="font-size:8px;opacity:0.65;line-height:1;">' + d.monthName + '</div>' +
+            '</button>';
+        });
+
+        var sortedD = Array.from(window._poSelectedDates).sort();
+        var tagsHtml = sortedD.map(function(d) {
+          return '<span class="pb-datablock-pill" style="font-size:11px;background:rgba(37,99,235,0.1);color:var(--accent);border:1px solid rgba(37,99,235,0.2);">' + d + '</span>';
+        }).join(' ');
+
+        b.innerHTML =
+          '<div class="field"><div class="field__label" style="margin-bottom:6px;">Tap Calendar Days to Select Off</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:4px;margin-bottom:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:8px;border-radius:var(--r-md);">' + gridHtml + '</div>' +
+            '<div class="field__label">Selected Dates</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;min-height:24px;">' + (tagsHtml || '<span style="font-size:11px;color:var(--text-tertiary);">No dates selected yet. Tap days above to select.</span>') + '</div>' +
+          '</div>' +
+          '<button class="btn btn--primary" style="width:100%;margin-top:4px;" onclick="window.pbCommitPO(\'dates\')">Add Prefer Off Filter</button>';
+      } else if (v === 'dow') {
+        var dows = [
+          { val: 0, label: 'Sun' }, { val: 1, label: 'Mon' }, { val: 2, label: 'Tue' },
+          { val: 3, label: 'Wed' }, { val: 4, label: 'Thu' }, { val: 5, label: 'Fri' }, { val: 6, label: 'Sat' }
+        ];
+        var dowsHtml = dows.map(function(d) {
+          var isSel = window._poSelectedDows.has(d.val);
+          var style = isSel
+            ? 'background:var(--accent);color:#ffffff;border-color:var(--accent);font-weight:700;'
+            : 'background:var(--bg-app);color:var(--text-primary);border:1px solid var(--border-subtle);';
+          return '<button type="button" class="pb-chip" style="flex:1;padding:10px 0;justify-content:center;font-weight:700;font-size:13px;border-radius:6px;cursor:pointer;' + style + '" onclick="window.pbTogglePODow(' + d.val + ')">' + d.label + '</button>';
+        }).join('');
+
+        b.innerHTML =
+          '<div class="field"><div class="field__label">Select Days of Week Off</div>' +
+            '<div style="display:flex;gap:6px;margin-bottom:16px;">' + dowsHtml + '</div>' +
+          '</div>' +
+          '<button class="btn btn--primary" style="width:100%;" onclick="window.pbCommitPO(\'dow\')">Add Prefer Off DOW Filter</button>';
+      } else if (v === 'range') {
+        b.innerHTML =
+          '<div class="field-row" style="display:flex;gap:10px;margin-bottom:12px;">' +
+            '<div class="field" style="flex:1;"><div class="field__label">Start Date</div><input type="date" class="input u-mono" id="fb-po-start"></div>' +
+            '<div class="field" style="flex:1;"><div class="field__label">End Date</div><input type="date" class="input u-mono" id="fb-po-end"></div>' +
+          '</div>' +
+          '<button class="btn btn--primary" style="width:100%;" onclick="window.pbCommitPO(\'range\')">Add Prefer Off Range Filter</button>';
+      }
     }
-    up();
-    s.addEventListener('click', function(e) { if (e.target.closest('.segmented__item')) setTimeout(up, 0); });
+
+    renderView();
+    s.addEventListener('click', function(e) { if (e.target.closest('.segmented__item')) setTimeout(renderView, 0); });
   }
+
+  window.pbTogglePODate = function(dKey) {
+    if (!window._poSelectedDates) window._poSelectedDates = new Set();
+    if (window._poSelectedDates.has(dKey)) window._poSelectedDates.delete(dKey);
+    else window._poSelectedDates.add(dKey);
+    preferOffWire();
+  };
+
+  window.pbTogglePODow = function(dowVal) {
+    if (!window._poSelectedDows) window._poSelectedDows = new Set();
+    if (window._poSelectedDows.has(dowVal)) window._poSelectedDows.delete(dowVal);
+    else window._poSelectedDows.add(dowVal);
+    preferOffWire();
+  };
+
   window.pbCommitPO = function(sub) {
+    var mode = modeVal('fb-mode');
     var params = {};
     if (sub === 'dates') {
-      var raw = document.getElementById('fb-po-dates').value.trim();
-      var parts = raw.split(/[,\s]+/).filter(Boolean);
-      params.dates = parts;
+      var arr = Array.from(window._poSelectedDates || []).sort();
+      if (arr.length === 0) { toast('Select at least one date', 'error'); return; }
+      params.dates = arr;
+    } else if (sub === 'dow') {
+      var dows = Array.from(window._poSelectedDows || []).sort();
+      if (dows.length === 0) { toast('Select at least one day of week', 'error'); return; }
+      params.dows = dows;
+    } else if (sub === 'range') {
+      var st = document.getElementById('fb-po-start').value;
+      var en = document.getElementById('fb-po-end').value;
+      if (!st || !en) { toast('Select start and end dates', 'error'); return; }
+      params.start = st; params.end = en;
     }
-    if (sub === 'dow') params.dows = document.getElementById('fb-po-dow').value.split(/[,\s]+/).map(function(n) { return parseInt(n); }).filter(function(n) { return !isNaN(n); });
-    if (sub === 'range') { params.start = document.getElementById('fb-po-start').value; params.end = document.getElementById('fb-po-end').value; }
-    commit({ type: 'prefer-off', subtype: sub, mode: 'avoid', params: params });
+
+    commit({ type: 'prefer-off', subtype: sub, mode: mode, params: params });
+    window._poSelectedDates = new Set();
+    window._poSelectedDows  = new Set();
   };
 
   // Carry-out
@@ -11216,6 +12432,38 @@ function renderDayPairingsPanel(dk) {
   var last = PB.storage.get('lastModule', 'dashboard');
   if (!PB.modules.get(last)) last = 'dashboard';
   PB.navigate(last);
+
+  /* Lock storage persistence on mobile devices (Android / iOS / iPadOS) */
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then(function(granted) {
+      if (PB.log) PB.log.info('Storage persistence status', { persistent: granted });
+    }).catch(function(err) {
+      if (PB.log) PB.log.warn('Storage persistence request failed', { error: String(err) });
+    });
+  }
+
+  /* Register Service Worker with toast update notification */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js').then(function(reg) {
+        if (PB.log) PB.log.info('ServiceWorker registered', { scope: reg.scope });
+        reg.onupdatefound = function() {
+          var installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.onstatechange = function() {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                if (typeof toast === 'function') {
+                  toast('App update available — refresh to update', 'info');
+                }
+              }
+            };
+          }
+        };
+      }).catch(function(err) {
+        if (PB.log) PB.log.error('ServiceWorker registration failed', { error: String(err) });
+      });
+    });
+  }
 
   PB.log.info('PairBoard Tools booted', {
     theme: PB.theme.getEffective(),
@@ -11423,11 +12671,10 @@ function renderDayPairingsPanel(dk) {
 <script>
 (function() {
   var s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  s.src = './vendor/pdfjs/pdf.min.js';
   s.onload = function() {
     if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdfjs/pdf.worker.min.js';
       window.pdfjsLib = pdfjsLib;
       window._pdfjsReady = true;
     } else {
@@ -11887,83 +13134,152 @@ function collectMetaFromPanel() {
  *   "Effective: 04-01-25 thru 04-30-25"
  *   "30 Day Bid Period" / "31-Day Bid Period"
  */
-function parseBidPeriod(page1Text) {
-  const result = { start: null, end: null, days: null };
-  if (!page1Text) return result;
+function parseBidPeriod(page1Text, fallbackMonth, fallbackYear) {
+  const result = { start: null, end: null, days: null, source: null };
+  if (!page1Text) page1Text = '';
 
-  // ── Pre-normalize PDF extraction artifacts ────────────────
-  // PDF.js sometimes inserts spaces between individual characters.
-  // e.g. "May  0 2 , 2026" → "May 02, 2026"
-  // Strategy: collapse digit-space(s)-digit when it appears inside
-  // what looks like a date token (after a month word or within a number).
-  let text = page1Text
-    // Fix "Month  D D , YYYY" — single digit, space(s), single digit before comma+year
-    .replace(/([A-Za-z]{3,10})\s{1,4}(\d)\s{1,3}(\d)\s*,\s*(\d{4})/gi,
-             (_, mon, d1, d2, yr) => `${mon} ${d1}${d2}, ${yr}`)
-    // Fix any remaining digit-space-digit in date-like positions (e.g. "0 1 ," → "01,")
-    .replace(/(\d)\s{1,2}(\d)\s*,\s*(\d{4})/g,
-             (_, d1, d2, yr) => `${d1}${d2}, ${yr}`)
-    // Fix spaces inside 4-digit years: "2 0 2 6" → "2026"
+  const MONTH_MAP = {
+    JAN:0, JANU:0, JANUARY:0,
+    FEB:1, FEBR:1, FEBRUARY:1,
+    MAR:2, MARC:2, MARCH:2,
+    APR:3, APRI:3, APRIL:3,
+    MAY:4,
+    JUN:5, JUNE:5,
+    JUL:6, JULY:6,
+    AUG:7, AUGU:7, AUGUST:7,
+    SEP:8, SEPT:8, SEPTEMBER:8,
+    OCT:9, OCTO:9, OCTOBER:9,
+    NOV:10, NOVE:10, NOVEMBER:10,
+    DEC:11, DECE:11, DECEMBER:11
+  };
+
+  const DELTA_BID_MONTHS = {
+    JAN: { startMonth: 11, startDay: 31, endMonth: 0, endDay: 30, isPrevYearStart: true },
+    FEB: { startMonth: 0, startDay: 31, endMonth: 1, endDay: 28 },
+    MAR: { startMonth: 2, startDay: 2, endMonth: 2, endDay: 31 },
+    APR: { startMonth: 3, startDay: 1, endMonth: 3, endDay: 30 },
+    MAY: { startMonth: 4, startDay: 1, endMonth: 4, endDay: 30 },
+    JUN: { startMonth: 4, startDay: 31, endMonth: 5, endDay: 29 },
+    JUL: { startMonth: 5, startDay: 30, endMonth: 6, endDay: 30 },
+    AUG: { startMonth: 6, startDay: 31, endMonth: 7, endDay: 30 },
+    SEP: { startMonth: 7, startDay: 31, endMonth: 8, endDay: 30 },
+    OCT: { startMonth: 9, startDay: 1, endMonth: 9, endDay: 30 },
+    NOV: { startMonth: 9, startDay: 31, endMonth: 10, endDay: 29 },
+    DEC: { startMonth: 10, startDay: 30, endMonth: 11, endDay: 30 }
+  };
+
+  const clean = page1Text
+    .replace(/([A-Za-z]{3,10})\s{1,4}(\d)\s{1,3}(\d)\s*,\s*(\d{4})/gi, (_, m, d1, d2, y) => `${m} ${d1}${d2}, ${y}`)
+    .replace(/(\d)\s{1,2}(\d)\s*,\s*(\d{4})/g, (_, d1, d2, y) => `${d1}${d2}, ${y}`)
     .replace(/(\d)\s(\d)\s(\d)\s(\d)/g, '$1$2$3$4')
-    // Normalize en-dash and spaced dashes to simple " – "
-    .replace(/\s*[–—]\s*/g, ' – ');
+    .replace(/\s*[–—–]\s*/g, ' – ');
 
-  // ── Most reliable: parenthetical day count "(31 days)" ────
-  const parenDays = text.match(/\(\s*(2[89]|3[01])\s*days?\s*\)/i);
+  // 1. Parenthetical day count
+  const parenDays = clean.match(/\(\s*(2[89]|3[01])\s*days?\s*\)/i);
   if (parenDays) result.days = parseInt(parenDays[1]);
 
-  // ── Pattern 1: "Month DD, YYYY – Month DD, YYYY" ─────────
-  const p1 = text.match(/([A-Za-z]+\s+\d{1,2},?\s*\d{4})\s*(?:through|thru|to| – |–|-)\s*([A-Za-z]+\s+\d{1,2},?\s*\d{4})/i);
-  if (p1) { result.start = p1[1].trim(); result.end = p1[2].trim(); }
+  let startRaw = null, endRaw = null;
 
-  // ── Pattern 2: MM/DD/YYYY – MM/DD/YYYY ───────────────────
-  if (!result.start) {
-    const p2 = text.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*(?:through|thru|to| – |–|-)\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i);
-    if (p2) { result.start = p2[1]; result.end = p2[2]; }
+  // Pattern 1: "August 31, 2026 – September 30, 2026" or "AUG 31, 2026 – SEP 30, 2026"
+  const p1 = clean.match(/([A-Za-z]{3,10}\s+\d{1,2},?\s*\d{2,4})\s*(?:through|thru|to| – |-)\s*([A-Za-z]{3,10}\s+\d{1,2},?\s*\d{4})/i);
+  if (p1) { startRaw = p1[1]; endRaw = p1[2]; result.source = 'Pattern 1 (Month DD, YYYY)'; }
+
+  // Pattern 2: "31AUG26 – 30SEP26" or "31 AUG 2026 – 30 SEP 2026" or "31AUG – 30SEP, 2026"
+  if (!startRaw) {
+    const p2 = clean.match(/(\d{1,2}\s*[A-Za-z]{3,10}\s*\d{0,4})\s*(?:through|thru|to| – |-)\s*(\d{1,2}\s*[A-Za-z]{3,10}\s*,?\s*\d{2,4})/i);
+    if (p2) { startRaw = p2[1]; endRaw = p2[2]; result.source = 'Pattern 2 (DDMMM)'; }
   }
 
-  // ── Pattern 3: APR 1 – APR 30, 2025 ─────────────────────
-  if (!result.start) {
-    const p3 = text.match(/([A-Z]{3}\s+\d{1,2})\s*(?:–|-|–)\s*([A-Z]{3}\s+\d{1,2},?\s*\d{4})/i);
-    if (p3) { result.start = p3[1]; result.end = p3[2]; }
+  // Pattern 3: "08/31/2026 – 09/30/2026" or "08-31-26 – 09-30-26"
+  if (!startRaw) {
+    const p3 = clean.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*(?:through|thru|to| – |-)\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i);
+    if (p3) { startRaw = p3[1]; endRaw = p3[2]; result.source = 'Pattern 3 (Numeric MM/DD)'; }
   }
 
-  // ── Day count fallback if parenthetical didn't catch it ──
-  if (!result.days) {
-    const dayMatch = text.match(/\b(2[89]|3[01])\s*[-\s]?day\b/i)
-                  || text.match(/bid\s*period[:\s]+(\d{2})\s*days/i);
-    if (dayMatch) result.days = parseInt(dayMatch[1]);
+  // Pattern 4: "AUG 31 – SEP 30" (no year on either)
+  if (!startRaw) {
+    const p4 = clean.match(/([A-Za-z]{3,10}\s+\d{1,2})\s*(?:through|thru|to| – |-)\s*([A-Za-z]{3,10}\s+\d{1,2})/i);
+    if (p4) { startRaw = p4[1]; endRaw = p4[2]; result.source = 'Pattern 4 (Month DD no year)'; }
   }
 
-  // ── Compute days from date range if still missing ─────────
-  if (!result.days && result.start && result.end) {
-    try {
-      const s = new Date(result.start);
-      const e = new Date(result.end);
-      if (!isNaN(s) && !isNaN(e)) {
-        result.days = Math.round((e - s) / 86400000) + 1;
-      }
-    } catch(_) {}
+  // Parse raw date tokens into Date objects
+  const parseToken = (tok, yearHint) => {
+    if (!tok) return null;
+    tok = tok.trim();
+
+    const iso = tok.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+
+    const num = tok.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (num) {
+      let yr = +num[3];
+      if (yr < 100) yr += 2000;
+      return new Date(yr, +num[1] - 1, +num[2]);
+    }
+
+    const ddmmm = tok.match(/^(\d{1,2})\s*([A-Za-z]{3,10})\s*(\d{0,4})/i);
+    if (ddmmm) {
+      const day = +ddmmm[1];
+      const monStr = ddmmm[2].toUpperCase().slice(0, 3);
+      const mon = MONTH_MAP[monStr];
+      let yr = ddmmm[3] ? +ddmmm[3] : yearHint;
+      if (yr && yr < 100) yr += 2000;
+      if (mon !== undefined && yr) return new Date(yr, mon, day);
+    }
+
+    const mmmdd = tok.match(/^([A-Za-z]{3,10})\s+(\d{1,2}),?\s*(\d{0,4})/i);
+    if (mmmdd) {
+      const monStr = mmmdd[1].toUpperCase().slice(0, 3);
+      const mon = MONTH_MAP[monStr];
+      const day = +mmmdd[2];
+      let yr = mmmdd[3] ? +mmmdd[3] : yearHint;
+      if (yr && yr < 100) yr += 2000;
+      if (mon !== undefined && yr) return new Date(yr, mon, day);
+    }
+
+    const d = new Date(tok);
+    return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+
+  let yrHint = fallbackYear || new Date().getFullYear();
+  if (endRaw) {
+    const ym = endRaw.match(/\b(20\d{2}|\d{2})\b/);
+    if (ym) {
+      let y = +ym[1];
+      if (y < 100) y += 2000;
+      yrHint = y;
+    }
   }
 
-  // ── Normalize start/end to ISO YYYY-MM-DD for downstream use ──
-  // parseBPDate() requires ISO format; convert here if parseable.
-  if (result.start || result.end) {
-    const toISO = str => {
-      if (!str) return str;
-      // Already ISO?
-      if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str;
-      // Try JS Date (works for "April 01, 2026", "May 02, 2026" etc.)
-      const d = new Date(str);
-      if (!isNaN(d)) {
-        // Use UTC components to avoid timezone shift
-        const utc = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
-        return `${utc.getFullYear()}-${String(utc.getMonth()+1).padStart(2,'0')}-${String(utc.getDate()).padStart(2,'0')}`;
-      }
-      return str;
-    };
-    result.start = toISO(result.start);
-    result.end   = toISO(result.end);
+  let startDate = parseToken(startRaw, yrHint);
+  let endDate   = parseToken(endRaw, yrHint);
+
+  if (startDate && endDate && startDate > endDate) {
+    if (startDate.getMonth() === 11 && endDate.getMonth() === 0) {
+      startDate.setFullYear(endDate.getFullYear() - 1);
+    }
+  }
+
+  const toISO = d => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : null;
+
+  if (startDate && endDate) {
+    result.start = toISO(startDate);
+    result.end   = toISO(endDate);
+    result.days  = Math.round((endDate - startDate) / 86400000) + 1;
+    return result;
+  }
+
+  // Fallback to Delta Bid Month Schedule if bidMonth is known
+  if (fallbackMonth && DELTA_BID_MONTHS[fallbackMonth.toUpperCase()]) {
+    const cfg = DELTA_BID_MONTHS[fallbackMonth.toUpperCase()];
+    const yr = yrHint;
+    const startYr = cfg.isPrevYearStart ? yr - 1 : yr;
+    const sDate = new Date(startYr, cfg.startMonth, cfg.startDay);
+    const eDate = new Date(yr, cfg.endMonth, cfg.endDay);
+    result.start = toISO(sDate);
+    result.end   = toISO(eDate);
+    result.days  = Math.round((eDate - sDate) / 86400000) + 1;
+    result.source = 'Delta Standard Schedule Fallback';
   }
 
   return result;
@@ -12757,14 +14073,16 @@ async function processPDF(file) {
     setProgress(78, 'Parsing bid period and timeline…');
 
     // ── Parse bid period from page 1 ──
-    const bpResult = parseBidPeriod(appState.pdfPages[0] || '');
+    const headerMeta = parsePDFHeaderMeta(appState.pdfPages[0] || '');
+    if (!appState.bidMonth && headerMeta.bidMonth) appState.bidMonth = headerMeta.bidMonth;
+    const bpResult = parseBidPeriod(appState.pdfPages[0] || '', appState.bidMonth);
     if (bpResult.start || bpResult.days) {
       appState.bidPeriodStart = bpResult.start || null;
       appState.bidPeriodEnd   = bpResult.end   || null;
       appState.bidPeriodDays  = bpResult.days  || null;
-      log(`Bid period: ${bpResult.start || '?'} – ${bpResult.end || '?'} (${bpResult.days || '?'} days)`, 'var(--green)');
+      log(`Bid period: ${bpResult.start || '?'} – ${bpResult.end || '?'} (${bpResult.days || '?'} days)${bpResult.source ? ' [' + bpResult.source + ']' : ''}`, 'var(--green)');
     } else {
-      log('Bid period not detected on page 1 — will refine with parser', 'var(--amber)');
+      log('Bid period not detected on page 1 — using standard month fallback', 'var(--amber)');
     }
 
     // ── Parse monthly timeline from page 2 & diff against hardcoded ──
@@ -13017,8 +14335,10 @@ function _postImportSync() {
       }
       if (sel.favorites) {
         if (dbOk) _dbDelete(db, 'meta', 'favorites').catch(function(){});
+        if (dbOk) _dbDelete(db, 'meta', 'avoided').catch(function(){});
         if (window.PB && PB.pairings && PB.pairings.state) {
-          PB.pairings.state.favorites = new Set();
+          PB.pairings.state.favorites = new Map();
+          PB.pairings.state.avoided   = new Set();
         }
       }
       if (sel.far117) {
@@ -13333,6 +14653,7 @@ function parsePairings(fullText, seat) {
       if (tcM) {
         p.creditHours    = hmToDecimal(tcM[1]);
         p.blockHours     = hmToDecimal(tcM[2]);
+        p.fdpHours       = hmToDecimal(tcM[4]);
         p.tafbHours      = hmToDecimal(tcM[5]);
         p.tafbRaw        = tcM[5];
         p.rawTotalCredit = norm;
