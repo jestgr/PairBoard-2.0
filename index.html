@@ -13111,29 +13111,71 @@ function renderDayPairingsPanel(dk) {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PDF.js CDN loader  (inline bundle removed for size; CDN
-     loads on demand when Import PDF is first opened)
+     PDF.js Loader & Engine Setup (Offline Ready)
      ═══════════════════════════════════════════════════════════ -->
 <script>
-(function() {
-  var s = document.createElement('script');
-  s.src = './vendor/pdfjs/pdf.min.js';
-  s.onload = function() {
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdfjs/pdf.worker.min.js';
-      window.pdfjsLib = pdfjsLib;
-      window._pdfjsReady = true;
-    } else {
-      window._pdfjsLoadError = true;
+window.ensurePdfEngine = function() {
+  return new Promise(function(resolve, reject) {
+    var workerAbsUrl;
+    try {
+      workerAbsUrl = new URL('./vendor/pdfjs/pdf.worker.min.js', window.location.href).href;
+    } catch(e) {
+      workerAbsUrl = './vendor/pdfjs/pdf.worker.min.js';
     }
-    window.dispatchEvent(new Event('pdfjs-ready'));
-  };
-  s.onerror = function() {
-    window._pdfjsLoadError = true;
-    window.dispatchEvent(new Event('pdfjs-ready'));
-  };
-  document.head.appendChild(s);
-})();
+
+    if (window.pdfjsLib || typeof pdfjsLib !== 'undefined') {
+      window.pdfjsLib = window.pdfjsLib || pdfjsLib;
+      try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerAbsUrl; } catch(e) {}
+      window._pdfjsReady = true;
+      window._pdfjsLoadError = false;
+      return resolve(window.pdfjsLib);
+    }
+
+    var existing = document.querySelector('script[data-pdfjs-engine]');
+    if (!existing) {
+      var s = document.createElement('script');
+      s.setAttribute('data-pdfjs-engine', 'true');
+      try {
+        s.src = new URL('./vendor/pdfjs/pdf.min.js', window.location.href).href;
+      } catch(e) {
+        s.src = './vendor/pdfjs/pdf.min.js';
+      }
+      s.onload = function() {
+        if (typeof pdfjsLib !== 'undefined') {
+          window.pdfjsLib = pdfjsLib;
+          try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerAbsUrl; } catch(e) {}
+          window._pdfjsReady = true;
+          window._pdfjsLoadError = false;
+          window.dispatchEvent(new Event('pdfjs-ready'));
+          resolve(window.pdfjsLib);
+        } else {
+          window._pdfjsLoadError = true;
+          reject(new Error('PDF engine script loaded but pdfjsLib object is undefined.'));
+        }
+      };
+      s.onerror = function() {
+        window._pdfjsLoadError = true;
+        reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+      };
+      document.head.appendChild(s);
+    } else {
+      var timer = setTimeout(function() {
+        reject(new Error('PDF engine load timed out. Ensure offline assets are downloaded in Settings.'));
+      }, 10000);
+      window.addEventListener('pdfjs-ready', function() {
+        clearTimeout(timer);
+        if (window.pdfjsLib) resolve(window.pdfjsLib);
+        else reject(new Error('PDF engine unavailable. Ensure offline assets are downloaded in Settings.'));
+      }, { once: true });
+    }
+  });
+};
+window.pdfjsReady = window.ensurePdfEngine;
+
+// Attempt background preload on boot
+window.ensurePdfEngine().catch(function(err) {
+  if (window.PB && PB.log) PB.log.warn('Initial PDF engine preload:', { error: String(err) });
+});
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -14236,20 +14278,11 @@ function parseCategoryChart(pages, seat, baseCityCode, aircraftCode) {
 // ─────────────────────────────────────────────────────────────
 
 function pdfjsReady() {
-  // Fast path: already loaded
-  if (window.pdfjsLib && window._pdfjsReady) return Promise.resolve();
-  // Error path: CDN failed
-  if (window._pdfjsLoadError) return Promise.resolve();
-  // Still loading: wait for event — but also set a 15-second timeout
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('PDF.js load timed out. Check your internet connection.'));
-    }, 15000);
-    window.addEventListener('pdfjs-ready', () => {
-      clearTimeout(timer);
-      resolve();
-    }, { once: true });
-  });
+  if (window.ensurePdfEngine && typeof window.ensurePdfEngine === 'function') {
+    return window.ensurePdfEngine();
+  }
+  if (window.pdfjsLib && window._pdfjsReady) return Promise.resolve(window.pdfjsLib);
+  return Promise.reject(new Error('PDF engine not initialized. Ensure offline assets are downloaded in Settings.'));
 }
 
 // ── Open / close ──────────────────────────────────────────────
@@ -14261,13 +14294,6 @@ let selectedSeat = null;
 let selectedFile = null;
 
 function openImportModal() {
-  if (!navigator.onLine) {
-    const btn = document.querySelector('[onclick="openImportModal()"]');
-    const orig = btn ? btn.textContent.trim() : '';
-    if (btn) { btn.textContent = '✗ No connection'; btn.style.color = '#e05555'; }
-    setTimeout(() => { if (btn) { btn.textContent = orig || 'Import PDF'; btn.style.color = ''; } }, 2500);
-    return;
-  }
   wizardStep = 1;
   selectedSeat = appState.seat;
   selectedFile = null;
@@ -14428,8 +14454,8 @@ async function processPDF(file) {
     setProgress(10, 'Loading PDF engine…');
 
     await pdfjsReady();
-    if (window._pdfjsLoadError || !window.pdfjsLib) {
-      throw new Error('PDF engine unavailable. Check your internet connection and try again.');
+    if (!window.pdfjsLib) {
+      throw new Error('PDF engine unavailable. Ensure offline assets are downloaded in Settings.');
     }
 
     // Pass a fresh ArrayBuffer copy to the text extractor
@@ -14438,7 +14464,7 @@ async function processPDF(file) {
       pdf = await pdfjsLib.getDocument({ data: appState.pdfBytes.slice(0) }).promise;
     } catch(e) {
       if (e.message && (e.message.includes('worker') || e.message.includes('Worker') || e.message.includes('script'))) {
-        throw new Error('PDF import requires an internet connection to load the PDF engine. Please connect and try again.');
+        throw new Error('PDF engine worker failed to load. Ensure offline assets are downloaded in Settings.');
       }
       throw e;
     }
