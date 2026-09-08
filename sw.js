@@ -13,7 +13,7 @@
 // deletes the old one, and notifies the user to refresh.
 // ============================================================
 
-const CACHE_VERSION  = 'v4';
+const CACHE_VERSION  = 'v2.0.1';
 const SHELL_CACHE    = 'pb-shell-'   + CACHE_VERSION;
 const RUNTIME_CACHE  = 'pb-runtime-' + CACHE_VERSION;
 
@@ -29,6 +29,9 @@ const SHELL_FILES = [
   './vendor/pdfjs/pdf.min.js',
   './vendor/pdfjs/pdf.worker.min.js',
   './vendor/tesseract/tesseract.min.js',
+  './vendor/tesseract/worker.min.js',
+  './vendor/tesseract/tesseract-core.wasm.js',
+  './vendor/tesseract/eng.traineddata.gz'
 ];
 
 // ── Install ─────────────────────────────────────────────────

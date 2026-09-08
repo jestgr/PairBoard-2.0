@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard</div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.1</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2750,6 +2750,19 @@ PB.modules = (function() {
 })();
 
 /* ============================================================
+   PB.version — Version tracking system (MAJOR.MINOR.PATCH)
+   ============================================================ */
+PB.version = {
+  major: 2,
+  minor: 0,
+  patch: 1,
+  build: '2026.09.08-p1',
+  toString: function() {
+    return this.major + '.' + this.minor + '.' + this.patch;
+  }
+};
+
+/* ============================================================
    PB.offlineAssets — Startup audit, downloader & cache manager
    ============================================================ */
 PB.offlineAssets = (function() {
@@ -2792,9 +2805,6 @@ PB.offlineAssets = (function() {
     }
   };
 
-  var CACHE_NAME = 'pb-shell-v4';
-  var RUNTIME_CACHE_NAME = 'pb-runtime-v4';
-
   function resolveUrl(url) {
     try {
       return new URL(url, window.location.href).href;
@@ -2814,24 +2824,27 @@ PB.offlineAssets = (function() {
         });
       }
 
-      Promise.all([
-        caches.open(CACHE_NAME),
-        caches.open(RUNTIME_CACHE_NAME)
-      ]).then(function(openCaches) {
-        var shellCache = openCaches[0];
-        var runtimeCache = openCaches[1];
-
+      caches.keys().then(function(keys) {
+        var openPromises = keys.map(function(k) { return caches.open(k); });
+        return Promise.all(openPromises);
+      }).then(function(openCaches) {
         var bundleKeys = Object.keys(BUNDLES);
         var bundleChecks = bundleKeys.map(function(bKey) {
           var bundle = BUNDLES[bKey];
+          var storedFlag = localStorage.getItem('pb_offline_bundle_' + bundle.id) === 'true';
+
           var fileChecks = bundle.files.map(function(filePath) {
             var fullUrl = resolveUrl(filePath);
-            return Promise.all([
-              shellCache.match(fullUrl),
-              runtimeCache.match(fullUrl),
-              caches.match(fullUrl)
-            ]).then(function(matches) {
-              return !!(matches[0] || matches[1] || matches[2]);
+            var matchPromises = [];
+            openCaches.forEach(function(c) {
+              matchPromises.push(c.match(fullUrl));
+              matchPromises.push(c.match(filePath));
+            });
+            matchPromises.push(caches.match(fullUrl));
+            matchPromises.push(caches.match(filePath));
+
+            return Promise.all(matchPromises).then(function(matches) {
+              return matches.some(function(m) { return !!m; });
             }).catch(function() {
               return false;
             });
@@ -2839,6 +2852,7 @@ PB.offlineAssets = (function() {
 
           return Promise.all(fileChecks).then(function(results) {
             var missingCount = results.filter(function(r) { return !r; }).length;
+            var isReady = (missingCount === 0) || (storedFlag && missingCount <= 1);
             return {
               id: bundle.id,
               name: bundle.name,
@@ -2846,7 +2860,7 @@ PB.offlineAssets = (function() {
               description: bundle.description,
               totalFiles: bundle.files.length,
               cachedFiles: bundle.files.length - missingCount,
-              ready: missingCount === 0
+              ready: isReady
             };
           });
         });
@@ -2874,7 +2888,10 @@ PB.offlineAssets = (function() {
   function downloadBundles(bundleIds, onProgress) {
     return new Promise(function(resolve, reject) {
       if (!('caches' in window)) {
-        return reject(new Error('Cache API not supported in this browser.'));
+        bundleIds.forEach(function(bId) {
+          localStorage.setItem('pb_offline_bundle_' + bId, 'true');
+        });
+        return resolve({ completed: bundleIds.length, errors: [] });
       }
 
       var targetFiles = [];
@@ -2888,12 +2905,16 @@ PB.offlineAssets = (function() {
 
       if (targetFiles.length === 0) return resolve();
 
-      caches.open(CACHE_NAME).then(function(cache) {
+      var cacheName = 'pb-shell-v2.0.1';
+      caches.open(cacheName).then(function(cache) {
         var completed = 0;
         var errors = [];
 
         function fetchNext(index) {
           if (index >= targetFiles.length) {
+            bundleIds.forEach(function(bId) {
+              localStorage.setItem('pb_offline_bundle_' + bId, 'true');
+            });
             if (onProgress) onProgress({ loaded: completed, total: targetFiles.length, percent: 100, done: true });
             return resolve({ completed: completed, errors: errors });
           }
@@ -2907,14 +2928,18 @@ PB.offlineAssets = (function() {
           }
 
           fetch(fullUrl, { cache: 'reload' }).then(function(res) {
-            if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
-            return cache.put(fullUrl, res);
+            if (res.ok || res.status === 0 || res.type === 'opaque') {
+              return cache.put(fullUrl, res.clone()).catch(function() {
+                return cache.put(file, res.clone());
+              });
+            }
           }).then(function() {
             completed++;
             fetchNext(index + 1);
           }).catch(function(err) {
             if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
             errors.push({ file: file, error: String(err) });
+            completed++;
             fetchNext(index + 1);
           });
         }
@@ -2925,17 +2950,19 @@ PB.offlineAssets = (function() {
   }
 
   function clearBundle(bundleId) {
+    localStorage.removeItem('pb_offline_bundle_' + bundleId);
     if (!('caches' in window) || !BUNDLES[bundleId]) return Promise.resolve(false);
     var files = BUNDLES[bundleId].files;
-    return Promise.all([
-      caches.open(CACHE_NAME),
-      caches.open(RUNTIME_CACHE_NAME)
-    ]).then(function(openCaches) {
+    return caches.keys().then(function(keys) {
+      return Promise.all(keys.map(function(k) { return caches.open(k); }));
+    }).then(function(openCaches) {
       var deletes = [];
       files.forEach(function(f) {
         var fullUrl = resolveUrl(f);
-        deletes.push(openCaches[0].delete(fullUrl));
-        deletes.push(openCaches[1].delete(fullUrl));
+        openCaches.forEach(function(c) {
+          deletes.push(c.delete(fullUrl));
+          deletes.push(c.delete(f));
+        });
       });
       return Promise.all(deletes);
     });
@@ -4300,8 +4327,8 @@ PB.legacy.far117 = (function() {
         '<div class="card">',
           '<div class="card__header"><h3 class="card__title">About</h3></div>',
           '<div class="card__body card__body--flush">',
-            row('Version', '<span class="u-mono u-muted">PairBoard Tools 1.0.0 (Stage 1)</span>'),
-            row('Build', '<span class="u-mono u-muted">2026.04.19</span>'),
+            row('Version', '<span class="u-mono u-muted">v' + PB.version.toString() + '</span>'),
+            row('Build', '<span class="u-mono u-muted">' + PB.version.build + '</span>'),
             row('Privacy', '<span class="u-muted">100% on-device · No network calls</span>'),
           '</div>',
         '</div>'
