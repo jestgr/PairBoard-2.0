@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.1</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.2</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2449,15 +2449,19 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
   <!-- MAIN -->
   <main class="main">
     <header class="topbar">
-      <div class="topbar__left">
+      <div class="topbar__left" style="display:flex;align-items:center;gap:6px;">
         <button class="icon-btn topbar__menu-btn" id="pb-menu-btn" type="button" aria-label="Open menu">
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.2</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
+        </button>
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.2" style="margin-right:4px;" onclick="PB.forceUpdate()">
+          <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
           <span data-icon="trash"></span>
@@ -2755,10 +2759,42 @@ PB.modules = (function() {
 PB.version = {
   major: 2,
   minor: 0,
-  patch: 1,
-  build: '2026.09.08-p1',
+  patch: 2,
+  build: '2026.09.09-p2',
   toString: function() {
     return this.major + '.' + this.minor + '.' + this.patch;
+  }
+};
+
+PB.forceUpdate = function() {
+  if (typeof toast === 'function') toast('Force pulling update v' + PB.version.toString() + '…', 'info');
+  
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      return Promise.all(regs.map(function(r) { return r.unregister(); }));
+    }).then(function() {
+      if ('caches' in window) {
+        return caches.keys().then(function(names) {
+          return Promise.all(names.map(function(n) { return caches.delete(n); }));
+        });
+      }
+    }).then(function() {
+      try {
+        localStorage.removeItem('pb_offline_bundle_tesseract');
+        localStorage.removeItem('pb_offline_bundle_pdfjs');
+        localStorage.removeItem('pb_offline_bundle_appshell');
+        localStorage.removeItem('pb_offline_deferred_until');
+      } catch(e) {}
+      
+      var targetUrl = new URL(window.location.href);
+      targetUrl.searchParams.set('v', PB.version.toString());
+      targetUrl.searchParams.set('t', Date.now());
+      window.location.href = targetUrl.href;
+    }).catch(function() {
+      window.location.reload(true);
+    });
+  } else {
+    window.location.reload(true);
   }
 };
 
