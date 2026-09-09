@@ -13,7 +13,7 @@
 // deletes the old one, and notifies the user to refresh.
 // ============================================================
 
-const CACHE_VERSION  = 'v2.0.8';
+const CACHE_VERSION  = 'v2.0.9';
 const SHELL_CACHE    = 'pb-shell-'   + CACHE_VERSION;
 const RUNTIME_CACHE  = 'pb-runtime-' + CACHE_VERSION;
 
@@ -89,25 +89,19 @@ self.addEventListener('fetch', function(e) {
       })
     );
   } else {
-    // ── External / CDN resources: cache on first fetch ────
+    // ── External / CDN resources: cache-first ────
     // PDF.js, Tesseract workers, fonts, etc.
-    // Once cached → fully offline. Never re-fetched unless cache cleared.
+    // If cached, return from cache immediately (100% offline).
+    // If not cached, fetch from network with mode: 'cors' and cache for offline.
     e.respondWith(
       caches.match(req).then(function(cached) {
         if (cached) return cached;
-        return fetch(req).then(function(response) {
-          if (response.ok) {
+        return fetch(req.url, { mode: 'cors' }).then(function(response) {
+          if (response && (response.ok || response.status === 0 || response.type === 'opaque')) {
             var clone = response.clone();
             caches.open(RUNTIME_CACHE).then(function(c) { c.put(req.url, clone); });
           }
           return response;
-        }).catch(function() {
-          // Offline and not yet cached — return a minimal offline response
-          // The app handles individual missing CDN resources (PDF.js guard, etc.)
-          return new Response(
-            JSON.stringify({ offline: true }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          );
         });
       })
     );

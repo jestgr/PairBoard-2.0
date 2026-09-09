@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.8</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.9</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2454,13 +2454,13 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
-        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.8</span>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.9</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
         </button>
-        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.8" style="margin-right:4px;" onclick="PB.forceUpdate()">
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.9" style="margin-right:4px;" onclick="PB.forceUpdate()">
           <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
@@ -2759,8 +2759,8 @@ PB.modules = (function() {
 PB.version = {
   major: 2,
   minor: 0,
-  patch: 8,
-  build: '2026.09.09-p8',
+  patch: 9,
+  build: '2026.09.09-p9',
   toString: function() {
     return this.major + '.' + this.minor + '.' + this.patch;
   }
@@ -2815,10 +2815,22 @@ PB.offlineAssets = (function() {
         './vendor/tesseract/eng.traineddata.gz'
       ],
       cdnFallbacks: {
-        './vendor/tesseract/tesseract.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js',
-        './vendor/tesseract/worker.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/worker.min.js',
-        './vendor/tesseract/tesseract-core.wasm.js': 'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.2/tesseract-core.wasm.js',
-        './vendor/tesseract/eng.traineddata.gz': 'https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz'
+        './vendor/tesseract/tesseract.min.js': [
+          'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js'
+        ],
+        './vendor/tesseract/worker.min.js': [
+          'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/worker.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/worker.min.js'
+        ],
+        './vendor/tesseract/tesseract-core.wasm.js': [
+          'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.2/tesseract-core.wasm.js',
+          'https://unpkg.com/tesseract.js-core@4.0.2/tesseract-core.wasm.js'
+        ],
+        './vendor/tesseract/eng.traineddata.gz': [
+          'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0/eng.traineddata.gz',
+          'https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz'
+        ]
       }
     },
     pdfjs: {
@@ -2831,8 +2843,16 @@ PB.offlineAssets = (function() {
         './vendor/pdfjs/pdf.worker.min.js'
       ],
       cdnFallbacks: {
-        './vendor/pdfjs/pdf.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-        './vendor/pdfjs/pdf.worker.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+        './vendor/pdfjs/pdf.min.js': [
+          'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+          'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js'
+        ],
+        './vendor/pdfjs/pdf.worker.min.js': [
+          'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+          'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
+        ]
       }
     },
     appshell: {
@@ -2904,7 +2924,10 @@ PB.offlineAssets = (function() {
             var cdnUrl = bundle.cdnFallbacks ? bundle.cdnFallbacks[filePath] : null;
 
             var urlsToCheck = [fullUrl, filePath];
-            if (cdnUrl) urlsToCheck.push(cdnUrl);
+            if (cdnUrl) {
+              if (Array.isArray(cdnUrl)) urlsToCheck = urlsToCheck.concat(cdnUrl);
+              else urlsToCheck.push(cdnUrl);
+            }
 
             var matchPromises = [];
             openCaches.forEach(function(c) {
@@ -3010,11 +3033,12 @@ PB.offlineAssets = (function() {
           var file = targetFiles[index];
           var fullUrl = resolveUrl(file);
 
-          // Locate CDN fallback if defined for this file
-          var cdnUrl = null;
+          var cdnList = [];
           bundleIds.forEach(function(bId) {
             if (BUNDLES[bId] && BUNDLES[bId].cdnFallbacks && BUNDLES[bId].cdnFallbacks[file]) {
-              cdnUrl = BUNDLES[bId].cdnFallbacks[file];
+              var fbs = BUNDLES[bId].cdnFallbacks[file];
+              if (Array.isArray(fbs)) cdnList = cdnList.concat(fbs);
+              else if (typeof fbs === 'string') cdnList.push(fbs);
             }
           });
 
@@ -3023,14 +3047,18 @@ PB.offlineAssets = (function() {
             onProgress({ loaded: index, total: targetFiles.length, percent: pct, file: file, done: false });
           }
 
-          Promise.all([
+          var matchPromises = [
             shellCache.match(fullUrl),
             shellCache.match(file),
             runtimeCache.match(fullUrl),
-            cdnUrl ? runtimeCache.match(cdnUrl) : Promise.resolve(null),
-            caches.match(fullUrl),
-            cdnUrl ? caches.match(cdnUrl) : Promise.resolve(null)
-          ]).then(function(matches) {
+            caches.match(fullUrl)
+          ];
+          cdnList.forEach(function(cUrl) {
+            matchPromises.push(runtimeCache.match(cUrl));
+            matchPromises.push(caches.match(cUrl));
+          });
+
+          Promise.all(matchPromises).then(function(matches) {
             var alreadyValidInCache = matches.some(function(m) {
               return m && (m.ok || m.status === 0 || m.type === 'opaque');
             });
@@ -3040,21 +3068,20 @@ PB.offlineAssets = (function() {
               return;
             }
 
-            // Function to put response under all relevant URL keys in caches
-            function storeResponse(resp) {
+            function storeResponse(resp, fromCdnUrl) {
               var puts = [
                 shellCache.put(fullUrl, resp.clone()).catch(function(){}),
                 shellCache.put(file, resp.clone()).catch(function(){}),
                 runtimeCache.put(fullUrl, resp.clone()).catch(function(){})
               ];
-              if (cdnUrl) {
-                puts.push(runtimeCache.put(cdnUrl, resp.clone()).catch(function(){}));
-                puts.push(shellCache.put(cdnUrl, resp.clone()).catch(function(){}));
-              }
+              cdnList.forEach(function(cUrl) {
+                puts.push(runtimeCache.put(cUrl, resp.clone()).catch(function(){}));
+                puts.push(shellCache.put(cUrl, resp.clone()).catch(function(){}));
+              });
               return Promise.all(puts);
             }
 
-            // 1. Try fetching local vendor file (string URL)
+            // 1. Try local vendor path
             fetch(fullUrl).then(function(res) {
               if (res.ok || res.status === 0 || res.type === 'opaque') {
                 return storeResponse(res);
@@ -3065,22 +3092,33 @@ PB.offlineAssets = (function() {
               completed++;
               processFile(index + 1);
             }).catch(function(localErr) {
-              // 2. If local fails and CDN fallback exists, fetch from CDN (string URL)
-              if (cdnUrl) {
-                fetch(cdnUrl).then(function(cRes) {
+              // 2. Iterate through CDN fallbacks sequentially
+              function tryCdn(cIdx) {
+                if (cIdx >= cdnList.length) {
+                  var errMsg = 'Local: ' + String(localErr) + (cdnList.length ? ' | All CDNs failed' : '');
+                  if (PB.log) PB.log.warn('Failed to cache file from local & CDNs', { file: file, error: errMsg });
+                  errors.push({ file: file, error: errMsg });
+                  processFile(index + 1);
+                  return;
+                }
+                var cdnUrl = cdnList[cIdx];
+                fetch(cdnUrl, { mode: 'cors' }).then(function(cRes) {
                   if (cRes.ok || cRes.status === 0 || cRes.type === 'opaque') {
-                    return storeResponse(cRes);
+                    return storeResponse(cRes, cdnUrl);
                   } else {
                     throw new Error('CDN HTTP ' + cRes.status);
                   }
                 }).then(function() {
                   completed++;
                   processFile(index + 1);
-                }).catch(function(cdnErr) {
-                  if (PB.log) PB.log.warn('Failed to cache file from local & CDN', { file: file, localError: String(localErr), cdnError: String(cdnErr) });
-                  errors.push({ file: file, error: String(cdnErr) });
-                  processFile(index + 1);
+                }).catch(function() {
+                  // Fall back to next CDN
+                  tryCdn(cIdx + 1);
                 });
+              }
+
+              if (cdnList.length > 0) {
+                tryCdn(0);
               } else {
                 if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(localErr) });
                 errors.push({ file: file, error: String(localErr) });
@@ -5235,9 +5273,15 @@ PB.legacy.far117 = (function() {
       s.onerror = function() {
         if (window.location.protocol === 'file:') return reject(new Error('Failed to load OCR engine from local vendor.'));
         var cs = document.createElement('script');
-        cs.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+        cs.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js';
         cs.onload = function() { resolve(); };
-        cs.onerror = function() { reject(new Error('Failed to load OCR engine')); };
+        cs.onerror = function() {
+          var cs2 = document.createElement('script');
+          cs2.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+          cs2.onload = function() { resolve(); };
+          cs2.onerror = function() { reject(new Error('Failed to load OCR engine from local vendor and CDNs.')); };
+          document.head.appendChild(cs2);
+        };
         document.head.appendChild(cs);
       };
       document.head.appendChild(s);
@@ -10614,11 +10658,17 @@ function renderDayPairingsPanel(dk) {
       s.src = './vendor/tesseract/tesseract.min.js';
       s.onload = function() { _tessLoaded = true; resolve(); };
       s.onerror = function() {
-        if (window.location.protocol === 'file:') return reject(new Error('Could not load Tesseract.js'));
+        if (window.location.protocol === 'file:') return reject(new Error('Could not load Tesseract.js from local vendor'));
         var cs = document.createElement('script');
-        cs.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+        cs.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js';
         cs.onload = function() { _tessLoaded = true; resolve(); };
-        cs.onerror = function() { reject(new Error('Could not load Tesseract.js')); };
+        cs.onerror = function() {
+          var cs2 = document.createElement('script');
+          cs2.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+          cs2.onload = function() { _tessLoaded = true; resolve(); };
+          cs2.onerror = function() { reject(new Error('Could not load Tesseract.js from local vendor and CDNs')); };
+          document.head.appendChild(cs2);
+        };
         document.head.appendChild(cs);
       };
       document.head.appendChild(s);
@@ -13436,22 +13486,44 @@ window.ensurePdfEngine = function() {
           window._pdfjsLoadError = true;
           return reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure file exists locally.'));
         }
-        var cdnScript = document.createElement('script');
-        cdnScript.setAttribute('data-pdfjs-engine', 'true');
-        cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        cdnScript.onload = function() {
-          var lib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
-          if (lib) initLib(lib, 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
-          else {
-            window._pdfjsLoadError = true;
-            reject(new Error('PDF engine CDN script loaded but pdfjsLib is undefined.'));
+        var cdnScripts = [
+          {
+            lib: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+            worker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
+          },
+          {
+            lib: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+            worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+          },
+          {
+            lib: 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js',
+            worker: 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
           }
-        };
-        cdnScript.onerror = function() {
-          window._pdfjsLoadError = true;
-          reject(new Error('Failed to load PDF engine from local vendor and CDN. Check internet connection.'));
-        };
-        document.head.appendChild(cdnScript);
+        ];
+
+        function loadCdnScriptAt(i) {
+          if (i >= cdnScripts.length) {
+            window._pdfjsLoadError = true;
+            return reject(new Error('Failed to load PDF engine from local vendor and all CDNs. Check internet connection.'));
+          }
+          var item = cdnScripts[i];
+          var cs = document.createElement('script');
+          cs.setAttribute('data-pdfjs-engine', 'true');
+          cs.src = item.lib;
+          cs.onload = function() {
+            var lib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
+            if (lib) initLib(lib, item.worker);
+            else {
+              loadCdnScriptAt(i + 1);
+            }
+          };
+          cs.onerror = function() {
+            loadCdnScriptAt(i + 1);
+          };
+          document.head.appendChild(cs);
+        }
+
+        loadCdnScriptAt(0);
       }
 
       // Offline fallback: try loading script text directly from Cache Storage as a Blob
@@ -13459,6 +13531,7 @@ window.ensurePdfEngine = function() {
       if ('caches' in window) {
         matchPromises.push(caches.match(targetSrc));
         matchPromises.push(caches.match('./vendor/pdfjs/pdf.min.js'));
+        matchPromises.push(caches.match('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'));
         matchPromises.push(caches.match('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'));
       }
       Promise.all(matchPromises).then(function(matches) {
