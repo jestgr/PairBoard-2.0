@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.2</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.3</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2454,13 +2454,13 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
-        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.2</span>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.3</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
         </button>
-        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.2" style="margin-right:4px;" onclick="PB.forceUpdate()">
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.3" style="margin-right:4px;" onclick="PB.forceUpdate()">
           <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
@@ -2759,8 +2759,8 @@ PB.modules = (function() {
 PB.version = {
   major: 2,
   minor: 0,
-  patch: 2,
-  build: '2026.09.09-p2',
+  patch: 3,
+  build: '2026.09.09-p3',
   toString: function() {
     return this.major + '.' + this.minor + '.' + this.patch;
   }
@@ -2941,7 +2941,7 @@ PB.offlineAssets = (function() {
 
       if (targetFiles.length === 0) return resolve();
 
-      var cacheName = 'pb-shell-v2.0.1';
+      var cacheName = 'pb-shell-' + PB.version.toString();
       caches.open(cacheName).then(function(cache) {
         var completed = 0;
         var errors = [];
@@ -2963,7 +2963,7 @@ PB.offlineAssets = (function() {
             onProgress({ loaded: index, total: targetFiles.length, percent: pct, file: file, done: false });
           }
 
-          fetch(fullUrl, { cache: 'reload' }).then(function(res) {
+          fetch(fullUrl).then(function(res) {
             if (res.ok || res.status === 0 || res.type === 'opaque') {
               return cache.put(fullUrl, res.clone()).catch(function() {
                 return cache.put(file, res.clone());
@@ -2973,10 +2973,22 @@ PB.offlineAssets = (function() {
             completed++;
             fetchNext(index + 1);
           }).catch(function(err) {
-            if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
-            errors.push({ file: file, error: String(err) });
-            completed++;
-            fetchNext(index + 1);
+            return cache.match(fullUrl).then(function(existing) {
+              if (existing) {
+                completed++;
+                fetchNext(index + 1);
+              } else {
+                if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
+                errors.push({ file: file, error: String(err) });
+                completed++;
+                fetchNext(index + 1);
+              }
+            }).catch(function() {
+              if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
+              errors.push({ file: file, error: String(err) });
+              completed++;
+              fetchNext(index + 1);
+            });
           });
         }
 
