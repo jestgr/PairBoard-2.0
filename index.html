@@ -4330,6 +4330,7 @@ PB.legacy.far117 = (function() {
             row('Version', '<span class="u-mono u-muted">v' + PB.version.toString() + '</span>'),
             row('Build', '<span class="u-mono u-muted">' + PB.version.build + '</span>'),
             row('Privacy', '<span class="u-muted">100% on-device · No network calls</span>'),
+            rowButton('Check for updates &amp; force reload', 'btn--primary', 'pb-force-update-btn'),
           '</div>',
         '</div>'
       ].join('');
@@ -4434,7 +4435,29 @@ PB.legacy.far117 = (function() {
           if (k.indexOf('setting.') === 0) PB.storage.remove(k);
         });
         PB.log.info('Preferences cleared');
-        PB.navigate('settings'); /* re-render */
+        PB.navigate('settings');
+      });
+
+      root.querySelector('#pb-force-update-btn').addEventListener('click', function() {
+        if (typeof toast === 'function') toast('Clearing cache & checking for app updates…', 'info');
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            var unregs = regs.map(function(r) { return r.unregister(); });
+            return Promise.all(unregs);
+          }).then(function() {
+            if ('caches' in window) {
+              return caches.keys().then(function(names) {
+                return Promise.all(names.map(function(n) { return caches.delete(n); }));
+              });
+            }
+          }).then(function() {
+            window.location.reload(true);
+          }).catch(function() {
+            window.location.reload(true);
+          });
+        } else {
+          window.location.reload(true);
+        }
       });
     }
   });
