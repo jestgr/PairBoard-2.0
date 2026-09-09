@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.4</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.5</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2454,13 +2454,13 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
-        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.4</span>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.5</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
         </button>
-        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.4" style="margin-right:4px;" onclick="PB.forceUpdate()">
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.5" style="margin-right:4px;" onclick="PB.forceUpdate()">
           <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
@@ -2759,8 +2759,8 @@ PB.modules = (function() {
 PB.version = {
   major: 2,
   minor: 0,
-  patch: 4,
-  build: '2026.09.09-p4',
+  patch: 5,
+  build: '2026.09.09-p5',
   toString: function() {
     return this.major + '.' + this.minor + '.' + this.patch;
   }
@@ -2948,10 +2948,15 @@ PB.offlineAssets = (function() {
 
         function processFile(index) {
           if (index >= targetFiles.length) {
-            bundleIds.forEach(function(bId) {
-              localStorage.setItem('pb_offline_bundle_' + bId, 'true');
-            });
+            if (errors.length === 0 || errors.length < targetFiles.length) {
+              bundleIds.forEach(function(bId) {
+                localStorage.setItem('pb_offline_bundle_' + bId, 'true');
+              });
+            }
             if (onProgress) onProgress({ loaded: completed, total: targetFiles.length, percent: 100, done: true });
+            if (errors.length > 0 && errors.length === targetFiles.length) {
+              return reject(new Error('Failed to download offline assets. Check network connection.'));
+            }
             return resolve({ completed: completed, errors: errors });
           }
 
@@ -2969,8 +2974,10 @@ PB.offlineAssets = (function() {
             caches.match(fullUrl),
             caches.match(file)
           ]).then(function(matches) {
-            var alreadyCached = matches.some(function(m) { return !!m; });
-            if (alreadyCached) {
+            var alreadyValidInCache = matches.some(function(m) {
+              return m && (m.ok || m.status === 0 || m.type === 'opaque');
+            });
+            if (alreadyValidInCache) {
               completed++;
               processFile(index + 1);
               return;
@@ -2980,21 +2987,24 @@ PB.offlineAssets = (function() {
               if (res.ok || res.status === 0 || res.type === 'opaque') {
                 var clone1 = res.clone();
                 var clone2 = res.clone();
-                return cache.put(fullUrl, clone1).catch(function() {
-                  return cache.put(file, clone2);
-                });
+                return Promise.all([
+                  cache.put(fullUrl, clone1).catch(function() {}),
+                  cache.put(file, clone2).catch(function() {})
+                ]);
+              } else {
+                throw new Error('HTTP ' + res.status + ' fetching ' + file);
               }
             }).then(function() {
               completed++;
               processFile(index + 1);
             }).catch(function(err) {
               caches.match(fullUrl).then(function(m1) {
-                if (m1) {
+                if (m1 && (m1.ok || m1.status === 0 || m1.type === 'opaque')) {
                   completed++;
                   processFile(index + 1);
                 } else {
                   return caches.match(file).then(function(m2) {
-                    if (m2) {
+                    if (m2 && (m2.ok || m2.status === 0 || m2.type === 'opaque')) {
                       completed++;
                       processFile(index + 1);
                     } else {
@@ -3015,8 +3025,14 @@ PB.offlineAssets = (function() {
           }).catch(function() {
             fetch(fullUrl).then(function(res) {
               if (res.ok || res.status === 0 || res.type === 'opaque') {
-                var c = res.clone();
-                return cache.put(fullUrl, c);
+                var c1 = res.clone();
+                var c2 = res.clone();
+                return Promise.all([
+                  cache.put(fullUrl, c1).catch(function() {}),
+                  cache.put(file, c2).catch(function() {})
+                ]);
+              } else {
+                throw new Error('HTTP ' + res.status + ' fetching ' + file);
               }
             }).then(function() {
               completed++;
@@ -13294,11 +13310,12 @@ window.ensurePdfEngine = function() {
     window._pdfjsLoadError = false;
     var s = document.createElement('script');
     s.setAttribute('data-pdfjs-engine', 'true');
+    var targetSrc = './vendor/pdfjs/pdf.min.js';
     try {
-      s.src = new URL('./vendor/pdfjs/pdf.min.js', window.location.href).href;
-    } catch(e) {
-      s.src = './vendor/pdfjs/pdf.min.js';
-    }
+      targetSrc = new URL('./vendor/pdfjs/pdf.min.js', window.location.href).href;
+    } catch(e) {}
+    s.src = targetSrc;
+
     s.onload = function() {
       var lib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
       if (lib) {
@@ -13313,9 +13330,49 @@ window.ensurePdfEngine = function() {
         reject(new Error('PDF engine script loaded but pdfjsLib object is undefined.'));
       }
     };
+
     s.onerror = function() {
-      window._pdfjsLoadError = true;
-      reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+      // Offline fallback: try loading script text directly from Cache Storage as a Blob
+      caches.match(targetSrc).then(function(res) {
+        if (!res) return caches.match('./vendor/pdfjs/pdf.min.js');
+        return res;
+      }).then(function(cachedRes) {
+        if (cachedRes && (cachedRes.ok || cachedRes.status === 0 || cachedRes.type === 'opaque')) {
+          return cachedRes.text().then(function(jsText) {
+            var blob = new Blob([jsText], { type: 'application/javascript' });
+            var blobUrl = URL.createObjectURL(blob);
+            var bs = document.createElement('script');
+            bs.src = blobUrl;
+            bs.onload = function() {
+              URL.revokeObjectURL(blobUrl);
+              var lib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
+              if (lib) {
+                window.pdfjsLib = lib;
+                try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerAbsUrl; } catch(e) {}
+                window._pdfjsReady = true;
+                window._pdfjsLoadError = false;
+                window.dispatchEvent(new Event('pdfjs-ready'));
+                resolve(window.pdfjsLib);
+              } else {
+                window._pdfjsLoadError = true;
+                reject(new Error('PDF engine script loaded from cache blob but pdfjsLib is undefined.'));
+              }
+            };
+            bs.onerror = function() {
+              URL.revokeObjectURL(blobUrl);
+              window._pdfjsLoadError = true;
+              reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+            };
+            document.head.appendChild(bs);
+          });
+        } else {
+          window._pdfjsLoadError = true;
+          reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+        }
+      }).catch(function() {
+        window._pdfjsLoadError = true;
+        reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+      });
     };
     document.head.appendChild(s);
   });
