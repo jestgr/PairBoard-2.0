@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.5</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.6</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2454,13 +2454,13 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
-        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.5</span>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.6</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
         </button>
-        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.5" style="margin-right:4px;" onclick="PB.forceUpdate()">
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.6" style="margin-right:4px;" onclick="PB.forceUpdate()">
           <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
@@ -2759,8 +2759,8 @@ PB.modules = (function() {
 PB.version = {
   major: 2,
   minor: 0,
-  patch: 5,
-  build: '2026.09.09-p5',
+  patch: 6,
+  build: '2026.09.09-p6',
   toString: function() {
     return this.major + '.' + this.minor + '.' + this.patch;
   }
@@ -2867,20 +2867,23 @@ PB.offlineAssets = (function() {
         var bundleKeys = Object.keys(BUNDLES);
         var bundleChecks = bundleKeys.map(function(bKey) {
           var bundle = BUNDLES[bKey];
-          var storedFlag = localStorage.getItem('pb_offline_bundle_' + bundle.id) === 'true';
 
           var fileChecks = bundle.files.map(function(filePath) {
             var fullUrl = resolveUrl(filePath);
+            var req = new Request(fullUrl);
+
             var matchPromises = [];
             openCaches.forEach(function(c) {
+              matchPromises.push(c.match(req));
               matchPromises.push(c.match(fullUrl));
-              matchPromises.push(c.match(filePath));
             });
+            matchPromises.push(caches.match(req));
             matchPromises.push(caches.match(fullUrl));
-            matchPromises.push(caches.match(filePath));
 
             return Promise.all(matchPromises).then(function(matches) {
-              return matches.some(function(m) { return !!m; });
+              return matches.some(function(m) {
+                return m && (m.ok || m.status === 0 || m.type === 'opaque');
+              });
             }).catch(function() {
               return false;
             });
@@ -2888,7 +2891,7 @@ PB.offlineAssets = (function() {
 
           return Promise.all(fileChecks).then(function(results) {
             var missingCount = results.filter(function(r) { return !r; }).length;
-            var isReady = (missingCount === 0) || (storedFlag && missingCount <= 1);
+            var isReady = (missingCount === 0);
             return {
               id: bundle.id,
               name: bundle.name,
@@ -2939,7 +2942,7 @@ PB.offlineAssets = (function() {
         }
       });
 
-      if (targetFiles.length === 0) return resolve();
+      if (targetFiles.length === 0) return resolve({ completed: 0, errors: [] });
 
       var cacheName = 'pb-shell-' + PB.version.toString();
       caches.open(cacheName).then(function(cache) {
@@ -2948,20 +2951,21 @@ PB.offlineAssets = (function() {
 
         function processFile(index) {
           if (index >= targetFiles.length) {
-            if (errors.length === 0 || errors.length < targetFiles.length) {
+            if (errors.length === 0) {
               bundleIds.forEach(function(bId) {
                 localStorage.setItem('pb_offline_bundle_' + bId, 'true');
               });
             }
             if (onProgress) onProgress({ loaded: completed, total: targetFiles.length, percent: 100, done: true });
-            if (errors.length > 0 && errors.length === targetFiles.length) {
-              return reject(new Error('Failed to download offline assets. Check network connection.'));
+            if (errors.length > 0) {
+              return reject(new Error('Failed to cache ' + errors.length + ' file(s). Check network connection.'));
             }
             return resolve({ completed: completed, errors: errors });
           }
 
           var file = targetFiles[index];
           var fullUrl = resolveUrl(file);
+          var req = new Request(fullUrl);
 
           if (onProgress) {
             var pct = Math.round((index / targetFiles.length) * 100);
@@ -2969,10 +2973,10 @@ PB.offlineAssets = (function() {
           }
 
           Promise.all([
+            cache.match(req),
             cache.match(fullUrl),
-            cache.match(file),
-            caches.match(fullUrl),
-            caches.match(file)
+            caches.match(req),
+            caches.match(fullUrl)
           ]).then(function(matches) {
             var alreadyValidInCache = matches.some(function(m) {
               return m && (m.ok || m.status === 0 || m.type === 'opaque');
@@ -2983,54 +2987,9 @@ PB.offlineAssets = (function() {
               return;
             }
 
-            fetch(fullUrl).then(function(res) {
+            fetch(req).then(function(res) {
               if (res.ok || res.status === 0 || res.type === 'opaque') {
-                var clone1 = res.clone();
-                var clone2 = res.clone();
-                return Promise.all([
-                  cache.put(fullUrl, clone1).catch(function() {}),
-                  cache.put(file, clone2).catch(function() {})
-                ]);
-              } else {
-                throw new Error('HTTP ' + res.status + ' fetching ' + file);
-              }
-            }).then(function() {
-              completed++;
-              processFile(index + 1);
-            }).catch(function(err) {
-              caches.match(fullUrl).then(function(m1) {
-                if (m1 && (m1.ok || m1.status === 0 || m1.type === 'opaque')) {
-                  completed++;
-                  processFile(index + 1);
-                } else {
-                  return caches.match(file).then(function(m2) {
-                    if (m2 && (m2.ok || m2.status === 0 || m2.type === 'opaque')) {
-                      completed++;
-                      processFile(index + 1);
-                    } else {
-                      if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
-                      errors.push({ file: file, error: String(err) });
-                      completed++;
-                      processFile(index + 1);
-                    }
-                  });
-                }
-              }).catch(function() {
-                if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
-                errors.push({ file: file, error: String(err) });
-                completed++;
-                processFile(index + 1);
-              });
-            });
-          }).catch(function() {
-            fetch(fullUrl).then(function(res) {
-              if (res.ok || res.status === 0 || res.type === 'opaque') {
-                var c1 = res.clone();
-                var c2 = res.clone();
-                return Promise.all([
-                  cache.put(fullUrl, c1).catch(function() {}),
-                  cache.put(file, c2).catch(function() {})
-                ]);
+                return cache.put(req, res.clone());
               } else {
                 throw new Error('HTTP ' + res.status + ' fetching ' + file);
               }
@@ -3040,7 +2999,21 @@ PB.offlineAssets = (function() {
             }).catch(function(err) {
               if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
               errors.push({ file: file, error: String(err) });
+              processFile(index + 1);
+            });
+          }).catch(function() {
+            fetch(req).then(function(res) {
+              if (res.ok || res.status === 0 || res.type === 'opaque') {
+                return cache.put(req, res.clone());
+              } else {
+                throw new Error('HTTP ' + res.status + ' fetching ' + file);
+              }
+            }).then(function() {
               completed++;
+              processFile(index + 1);
+            }).catch(function(err) {
+              if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
+              errors.push({ file: file, error: String(err) });
               processFile(index + 1);
             });
           });
@@ -3061,9 +3034,10 @@ PB.offlineAssets = (function() {
       var deletes = [];
       files.forEach(function(f) {
         var fullUrl = resolveUrl(f);
+        var req = new Request(fullUrl);
         openCaches.forEach(function(c) {
+          deletes.push(c.delete(req));
           deletes.push(c.delete(fullUrl));
-          deletes.push(c.delete(f));
         });
       });
       return Promise.all(deletes);
