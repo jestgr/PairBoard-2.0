@@ -13,25 +13,19 @@
 // deletes the old one, and notifies the user to refresh.
 // ============================================================
 
-const CACHE_VERSION  = 'v2.0.6';
+const CACHE_VERSION  = 'v2.0.7';
 const SHELL_CACHE    = 'pb-shell-'   + CACHE_VERSION;
 const RUNTIME_CACHE  = 'pb-runtime-' + CACHE_VERSION;
 
-// Files cached immediately on install (app shell).
-// These must be present and correct for offline to work.
+// Files cached immediately on install (core app shell).
+// Kept lightweight so install succeeds in milliseconds without network timeouts.
 const SHELL_FILES = [
   './',
   './index.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/apple-touch-icon.png',
-  './vendor/pdfjs/pdf.min.js',
-  './vendor/pdfjs/pdf.worker.min.js',
-  './vendor/tesseract/tesseract.min.js',
-  './vendor/tesseract/worker.min.js',
-  './vendor/tesseract/tesseract-core.wasm.js',
-  './vendor/tesseract/eng.traineddata.gz'
+  './icons/apple-touch-icon.png'
 ];
 
 // ── Install ─────────────────────────────────────────────────

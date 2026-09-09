@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.6</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.7</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2454,13 +2454,13 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
-        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.6</span>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.7</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
         </button>
-        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.6" style="margin-right:4px;" onclick="PB.forceUpdate()">
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.7" style="margin-right:4px;" onclick="PB.forceUpdate()">
           <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
@@ -2759,8 +2759,8 @@ PB.modules = (function() {
 PB.version = {
   major: 2,
   minor: 0,
-  patch: 6,
-  build: '2026.09.09-p6',
+  patch: 7,
+  build: '2026.09.09-p7',
   toString: function() {
     return this.major + '.' + this.minor + '.' + this.patch;
   }
@@ -2813,7 +2813,13 @@ PB.offlineAssets = (function() {
         './vendor/tesseract/worker.min.js',
         './vendor/tesseract/tesseract-core.wasm.js',
         './vendor/tesseract/eng.traineddata.gz'
-      ]
+      ],
+      cdnFallbacks: {
+        './vendor/tesseract/tesseract.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js',
+        './vendor/tesseract/worker.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/worker.min.js',
+        './vendor/tesseract/tesseract-core.wasm.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js-core/4.0.2/tesseract-core.wasm.js',
+        './vendor/tesseract/eng.traineddata.gz': 'https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz'
+      }
     },
     pdfjs: {
       id: 'pdfjs',
@@ -2823,7 +2829,11 @@ PB.offlineAssets = (function() {
       files: [
         './vendor/pdfjs/pdf.min.js',
         './vendor/pdfjs/pdf.worker.min.js'
-      ]
+      ],
+      cdnFallbacks: {
+        './vendor/pdfjs/pdf.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+        './vendor/pdfjs/pdf.worker.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+      }
     },
     appshell: {
       id: 'appshell',
@@ -2841,9 +2851,16 @@ PB.offlineAssets = (function() {
     }
   };
 
+  function isFileProtocol() {
+    return (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:');
+  }
+
   function resolveUrl(url) {
     try {
-      return new URL(url, window.location.href).href;
+      if (typeof window !== 'undefined' && window.location && window.location.href) {
+        return new URL(url, window.location.href).href;
+      }
+      return url;
     } catch (e) {
       return url;
     }
@@ -2851,9 +2868,9 @@ PB.offlineAssets = (function() {
 
   function auditCache() {
     return new Promise(function(resolve) {
-      if (!('caches' in window)) {
+      if (!('caches' in window) || isFileProtocol()) {
         return resolve({
-          supported: false,
+          supported: !isFileProtocol() && ('caches' in window),
           allReady: true,
           bundles: {},
           missingBundles: []
@@ -2871,14 +2888,17 @@ PB.offlineAssets = (function() {
           var fileChecks = bundle.files.map(function(filePath) {
             var fullUrl = resolveUrl(filePath);
             var req = new Request(fullUrl);
+            var cdnUrl = bundle.cdnFallbacks ? bundle.cdnFallbacks[filePath] : null;
 
             var matchPromises = [];
             openCaches.forEach(function(c) {
               matchPromises.push(c.match(req));
               matchPromises.push(c.match(fullUrl));
+              if (cdnUrl) matchPromises.push(c.match(cdnUrl));
             });
             matchPromises.push(caches.match(req));
             matchPromises.push(caches.match(fullUrl));
+            if (cdnUrl) matchPromises.push(caches.match(cdnUrl));
 
             return Promise.all(matchPromises).then(function(matches) {
               return matches.some(function(m) {
@@ -2926,7 +2946,7 @@ PB.offlineAssets = (function() {
 
   function downloadBundles(bundleIds, onProgress) {
     return new Promise(function(resolve, reject) {
-      if (!('caches' in window)) {
+      if (!('caches' in window) || isFileProtocol()) {
         bundleIds.forEach(function(bId) {
           localStorage.setItem('pb_offline_bundle_' + bId, 'true');
         });
@@ -2967,6 +2987,14 @@ PB.offlineAssets = (function() {
           var fullUrl = resolveUrl(file);
           var req = new Request(fullUrl);
 
+          // Locate CDN fallback if defined for this file
+          var cdnUrl = null;
+          bundleIds.forEach(function(bId) {
+            if (BUNDLES[bId] && BUNDLES[bId].cdnFallbacks && BUNDLES[bId].cdnFallbacks[file]) {
+              cdnUrl = BUNDLES[bId].cdnFallbacks[file];
+            }
+          });
+
           if (onProgress) {
             var pct = Math.round((index / targetFiles.length) * 100);
             onProgress({ loaded: index, total: targetFiles.length, percent: pct, file: file, done: false });
@@ -2976,7 +3004,8 @@ PB.offlineAssets = (function() {
             cache.match(req),
             cache.match(fullUrl),
             caches.match(req),
-            caches.match(fullUrl)
+            caches.match(fullUrl),
+            cdnUrl ? caches.match(cdnUrl) : Promise.resolve(null)
           ]).then(function(matches) {
             var alreadyValidInCache = matches.some(function(m) {
               return m && (m.ok || m.status === 0 || m.type === 'opaque');
@@ -2987,35 +3016,49 @@ PB.offlineAssets = (function() {
               return;
             }
 
+            // 1. Try fetching local vendor file
             fetch(req).then(function(res) {
               if (res.ok || res.status === 0 || res.type === 'opaque') {
                 return cache.put(req, res.clone());
               } else {
-                throw new Error('HTTP ' + res.status + ' fetching ' + file);
+                throw new Error('Local HTTP ' + res.status);
               }
             }).then(function() {
               completed++;
               processFile(index + 1);
-            }).catch(function(err) {
-              if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
-              errors.push({ file: file, error: String(err) });
-              processFile(index + 1);
-            });
-          }).catch(function() {
-            fetch(req).then(function(res) {
-              if (res.ok || res.status === 0 || res.type === 'opaque') {
-                return cache.put(req, res.clone());
+            }).catch(function(localErr) {
+              // 2. If local fails and CDN fallback exists, fetch from CDN
+              if (cdnUrl) {
+                var cdnReq = new Request(cdnUrl);
+                fetch(cdnReq).then(function(cRes) {
+                  if (cRes.ok || cRes.status === 0 || cRes.type === 'opaque') {
+                    var c1 = cRes.clone();
+                    var c2 = cRes.clone();
+                    return Promise.all([
+                      cache.put(req, c1).catch(function(){}),
+                      cache.put(cdnReq, c2).catch(function(){})
+                    ]);
+                  } else {
+                    throw new Error('CDN HTTP ' + cRes.status);
+                  }
+                }).then(function() {
+                  completed++;
+                  processFile(index + 1);
+                }).catch(function(cdnErr) {
+                  if (PB.log) PB.log.warn('Failed to cache file from local & CDN', { file: file, localError: String(localErr), cdnError: String(cdnErr) });
+                  errors.push({ file: file, error: String(cdnErr) });
+                  processFile(index + 1);
+                });
               } else {
-                throw new Error('HTTP ' + res.status + ' fetching ' + file);
+                if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(localErr) });
+                errors.push({ file: file, error: String(localErr) });
+                processFile(index + 1);
               }
-            }).then(function() {
-              completed++;
-              processFile(index + 1);
-            }).catch(function(err) {
-              if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
-              errors.push({ file: file, error: String(err) });
-              processFile(index + 1);
             });
+          }).catch(function(err) {
+            if (PB.log) PB.log.warn('Failed to cache file', { file: file, error: String(err) });
+            errors.push({ file: file, error: String(err) });
+            processFile(index + 1);
           });
         }
 
@@ -5148,7 +5191,14 @@ PB.legacy.far117 = (function() {
       var s = document.createElement('script');
       s.src = './vendor/tesseract/tesseract.min.js';
       s.onload  = function() { resolve(); };
-      s.onerror = function() { reject(new Error('Failed to load OCR engine')); };
+      s.onerror = function() {
+        if (window.location.protocol === 'file:') return reject(new Error('Failed to load OCR engine from local vendor.'));
+        var cs = document.createElement('script');
+        cs.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+        cs.onload = function() { resolve(); };
+        cs.onerror = function() { reject(new Error('Failed to load OCR engine')); };
+        document.head.appendChild(cs);
+      };
       document.head.appendChild(s);
     });
   }
@@ -10504,7 +10554,14 @@ function renderDayPairingsPanel(dk) {
       var s = document.createElement('script');
       s.src = './vendor/tesseract/tesseract.min.js';
       s.onload = function() { _tessLoaded = true; resolve(); };
-      s.onerror = function() { reject(new Error('Could not load Tesseract.js')); };
+      s.onerror = function() {
+        if (window.location.protocol === 'file:') return reject(new Error('Could not load Tesseract.js'));
+        var cs = document.createElement('script');
+        cs.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+        cs.onload = function() { _tessLoaded = true; resolve(); };
+        cs.onerror = function() { reject(new Error('Could not load Tesseract.js')); };
+        document.head.appendChild(cs);
+      };
       document.head.appendChild(s);
     });
   }
@@ -12982,8 +13039,12 @@ function renderDayPairingsPanel(dk) {
     });
   }
 
-  /* Register Service Worker with toast update notification */
-  if ('serviceWorker' in navigator) {
+  /* Register Service Worker with toast update notification (HTTP/HTTPS only) */
+  var hasWindowLoc = (typeof window !== 'undefined' && window.location);
+  var isHttpProto = hasWindowLoc && (window.location.protocol === 'https:' || window.location.protocol === 'http:' || window.location.hostname === 'localhost');
+  var isFileProto = hasWindowLoc && (window.location.protocol === 'file:');
+
+  if ('serviceWorker' in navigator && isHttpProto) {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('./sw.js').then(function(reg) {
         if (PB.log) PB.log.info('ServiceWorker registered', { scope: reg.scope });
@@ -13003,6 +13064,8 @@ function renderDayPairingsPanel(dk) {
         if (PB.log) PB.log.error('ServiceWorker registration failed', { error: String(err) });
       });
     });
+  } else if (PB.log && isFileProto) {
+    PB.log.info('Running from local file system (file://). ServiceWorker and Cache API require HTTP/HTTPS.');
   }
 
   PB.log.info('PairBoard Tools booted', {
@@ -13290,28 +13353,58 @@ window.ensurePdfEngine = function() {
     } catch(e) {}
     s.src = targetSrc;
 
+    function initLib(lib, workerSrc) {
+      window.pdfjsLib = lib;
+      try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc || workerAbsUrl; } catch(e) {}
+      window._pdfjsReady = true;
+      window._pdfjsLoadError = false;
+      window.dispatchEvent(new Event('pdfjs-ready'));
+      resolve(window.pdfjsLib);
+    }
+
     s.onload = function() {
       var lib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
-      if (lib) {
-        window.pdfjsLib = lib;
-        try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerAbsUrl; } catch(e) {}
-        window._pdfjsReady = true;
-        window._pdfjsLoadError = false;
-        window.dispatchEvent(new Event('pdfjs-ready'));
-        resolve(window.pdfjsLib);
-      } else {
+      if (lib) initLib(lib, workerAbsUrl);
+      else {
         window._pdfjsLoadError = true;
         reject(new Error('PDF engine script loaded but pdfjsLib object is undefined.'));
       }
     };
 
     s.onerror = function() {
+      function tryCdn() {
+        if (window.location.protocol === 'file:') {
+          window._pdfjsLoadError = true;
+          return reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure file exists locally.'));
+        }
+        var cdnScript = document.createElement('script');
+        cdnScript.setAttribute('data-pdfjs-engine', 'true');
+        cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        cdnScript.onload = function() {
+          var lib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
+          if (lib) initLib(lib, 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
+          else {
+            window._pdfjsLoadError = true;
+            reject(new Error('PDF engine CDN script loaded but pdfjsLib is undefined.'));
+          }
+        };
+        cdnScript.onerror = function() {
+          window._pdfjsLoadError = true;
+          reject(new Error('Failed to load PDF engine from local vendor and CDN. Check internet connection.'));
+        };
+        document.head.appendChild(cdnScript);
+      }
+
       // Offline fallback: try loading script text directly from Cache Storage as a Blob
-      caches.match(targetSrc).then(function(res) {
-        if (!res) return caches.match('./vendor/pdfjs/pdf.min.js');
-        return res;
-      }).then(function(cachedRes) {
-        if (cachedRes && (cachedRes.ok || cachedRes.status === 0 || cachedRes.type === 'opaque')) {
+      var matchPromises = [];
+      if ('caches' in window) {
+        matchPromises.push(caches.match(targetSrc));
+        matchPromises.push(caches.match('./vendor/pdfjs/pdf.min.js'));
+        matchPromises.push(caches.match('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'));
+      }
+      Promise.all(matchPromises).then(function(matches) {
+        var cachedRes = matches.find(function(m) { return m && (m.ok || m.status === 0 || m.type === 'opaque'); });
+        if (cachedRes) {
           return cachedRes.text().then(function(jsText) {
             var blob = new Blob([jsText], { type: 'application/javascript' });
             var blobUrl = URL.createObjectURL(blob);
@@ -13320,32 +13413,20 @@ window.ensurePdfEngine = function() {
             bs.onload = function() {
               URL.revokeObjectURL(blobUrl);
               var lib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
-              if (lib) {
-                window.pdfjsLib = lib;
-                try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerAbsUrl; } catch(e) {}
-                window._pdfjsReady = true;
-                window._pdfjsLoadError = false;
-                window.dispatchEvent(new Event('pdfjs-ready'));
-                resolve(window.pdfjsLib);
-              } else {
-                window._pdfjsLoadError = true;
-                reject(new Error('PDF engine script loaded from cache blob but pdfjsLib is undefined.'));
-              }
+              if (lib) initLib(lib, workerAbsUrl);
+              else tryCdn();
             };
             bs.onerror = function() {
               URL.revokeObjectURL(blobUrl);
-              window._pdfjsLoadError = true;
-              reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+              tryCdn();
             };
             document.head.appendChild(bs);
           });
         } else {
-          window._pdfjsLoadError = true;
-          reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+          tryCdn();
         }
       }).catch(function() {
-        window._pdfjsLoadError = true;
-        reject(new Error('Failed to load PDF engine from ./vendor/pdfjs/pdf.min.js. Ensure offline assets are downloaded in Settings.'));
+        tryCdn();
       });
     };
     document.head.appendChild(s);
