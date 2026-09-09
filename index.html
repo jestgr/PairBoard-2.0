@@ -2423,7 +2423,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.7</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.8</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2454,13 +2454,13 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
-        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.7</span>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.8</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
         </button>
-        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.7" style="margin-right:4px;" onclick="PB.forceUpdate()">
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.8" style="margin-right:4px;" onclick="PB.forceUpdate()">
           <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
@@ -2759,8 +2759,8 @@ PB.modules = (function() {
 PB.version = {
   major: 2,
   minor: 0,
-  patch: 7,
-  build: '2026.09.09-p7',
+  patch: 8,
+  build: '2026.09.09-p8',
   toString: function() {
     return this.major + '.' + this.minor + '.' + this.patch;
   }
@@ -2817,7 +2817,7 @@ PB.offlineAssets = (function() {
       cdnFallbacks: {
         './vendor/tesseract/tesseract.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js',
         './vendor/tesseract/worker.min.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/worker.min.js',
-        './vendor/tesseract/tesseract-core.wasm.js': 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js-core/4.0.2/tesseract-core.wasm.js',
+        './vendor/tesseract/tesseract-core.wasm.js': 'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.2/tesseract-core.wasm.js',
         './vendor/tesseract/eng.traineddata.gz': 'https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz'
       }
     },
@@ -2868,11 +2868,26 @@ PB.offlineAssets = (function() {
 
   function auditCache() {
     return new Promise(function(resolve) {
+      var bundleKeys = Object.keys(BUNDLES);
       if (!('caches' in window) || isFileProtocol()) {
+        var localMap = {};
+        bundleKeys.forEach(function(bKey) {
+          var bundle = BUNDLES[bKey];
+          localMap[bKey] = {
+            id: bundle.id,
+            name: bundle.name,
+            size: bundle.size,
+            description: bundle.description,
+            totalFiles: bundle.files.length,
+            cachedFiles: bundle.files.length,
+            ready: true,
+            localMode: true
+          };
+        });
         return resolve({
           supported: !isFileProtocol() && ('caches' in window),
           allReady: true,
-          bundles: {},
+          bundles: localMap,
           missingBundles: []
         });
       }
@@ -2881,24 +2896,25 @@ PB.offlineAssets = (function() {
         var openPromises = keys.map(function(k) { return caches.open(k); });
         return Promise.all(openPromises);
       }).then(function(openCaches) {
-        var bundleKeys = Object.keys(BUNDLES);
         var bundleChecks = bundleKeys.map(function(bKey) {
           var bundle = BUNDLES[bKey];
 
           var fileChecks = bundle.files.map(function(filePath) {
             var fullUrl = resolveUrl(filePath);
-            var req = new Request(fullUrl);
             var cdnUrl = bundle.cdnFallbacks ? bundle.cdnFallbacks[filePath] : null;
+
+            var urlsToCheck = [fullUrl, filePath];
+            if (cdnUrl) urlsToCheck.push(cdnUrl);
 
             var matchPromises = [];
             openCaches.forEach(function(c) {
-              matchPromises.push(c.match(req));
-              matchPromises.push(c.match(fullUrl));
-              if (cdnUrl) matchPromises.push(c.match(cdnUrl));
+              urlsToCheck.forEach(function(u) {
+                matchPromises.push(c.match(u));
+              });
             });
-            matchPromises.push(caches.match(req));
-            matchPromises.push(caches.match(fullUrl));
-            if (cdnUrl) matchPromises.push(caches.match(cdnUrl));
+            urlsToCheck.forEach(function(u) {
+              matchPromises.push(caches.match(u));
+            });
 
             return Promise.all(matchPromises).then(function(matches) {
               return matches.some(function(m) {
@@ -2919,7 +2935,8 @@ PB.offlineAssets = (function() {
               description: bundle.description,
               totalFiles: bundle.files.length,
               cachedFiles: bundle.files.length - missingCount,
-              ready: isReady
+              ready: isReady,
+              localMode: false
             };
           });
         });
@@ -2964,8 +2981,15 @@ PB.offlineAssets = (function() {
 
       if (targetFiles.length === 0) return resolve({ completed: 0, errors: [] });
 
-      var cacheName = 'pb-shell-' + PB.version.toString();
-      caches.open(cacheName).then(function(cache) {
+      var shellCacheName = 'pb-shell-v' + PB.version.toString();
+      var runtimeCacheName = 'pb-runtime-v' + PB.version.toString();
+
+      Promise.all([
+        caches.open(shellCacheName),
+        caches.open(runtimeCacheName)
+      ]).then(function(openedCaches) {
+        var shellCache = openedCaches[0];
+        var runtimeCache = openedCaches[1];
         var completed = 0;
         var errors = [];
 
@@ -2985,7 +3009,6 @@ PB.offlineAssets = (function() {
 
           var file = targetFiles[index];
           var fullUrl = resolveUrl(file);
-          var req = new Request(fullUrl);
 
           // Locate CDN fallback if defined for this file
           var cdnUrl = null;
@@ -3001,9 +3024,10 @@ PB.offlineAssets = (function() {
           }
 
           Promise.all([
-            cache.match(req),
-            cache.match(fullUrl),
-            caches.match(req),
+            shellCache.match(fullUrl),
+            shellCache.match(file),
+            runtimeCache.match(fullUrl),
+            cdnUrl ? runtimeCache.match(cdnUrl) : Promise.resolve(null),
             caches.match(fullUrl),
             cdnUrl ? caches.match(cdnUrl) : Promise.resolve(null)
           ]).then(function(matches) {
@@ -3016,10 +3040,24 @@ PB.offlineAssets = (function() {
               return;
             }
 
-            // 1. Try fetching local vendor file
-            fetch(req).then(function(res) {
+            // Function to put response under all relevant URL keys in caches
+            function storeResponse(resp) {
+              var puts = [
+                shellCache.put(fullUrl, resp.clone()).catch(function(){}),
+                shellCache.put(file, resp.clone()).catch(function(){}),
+                runtimeCache.put(fullUrl, resp.clone()).catch(function(){})
+              ];
+              if (cdnUrl) {
+                puts.push(runtimeCache.put(cdnUrl, resp.clone()).catch(function(){}));
+                puts.push(shellCache.put(cdnUrl, resp.clone()).catch(function(){}));
+              }
+              return Promise.all(puts);
+            }
+
+            // 1. Try fetching local vendor file (string URL)
+            fetch(fullUrl).then(function(res) {
               if (res.ok || res.status === 0 || res.type === 'opaque') {
-                return cache.put(req, res.clone());
+                return storeResponse(res);
               } else {
                 throw new Error('Local HTTP ' + res.status);
               }
@@ -3027,17 +3065,11 @@ PB.offlineAssets = (function() {
               completed++;
               processFile(index + 1);
             }).catch(function(localErr) {
-              // 2. If local fails and CDN fallback exists, fetch from CDN
+              // 2. If local fails and CDN fallback exists, fetch from CDN (string URL)
               if (cdnUrl) {
-                var cdnReq = new Request(cdnUrl);
-                fetch(cdnReq).then(function(cRes) {
+                fetch(cdnUrl).then(function(cRes) {
                   if (cRes.ok || cRes.status === 0 || cRes.type === 'opaque') {
-                    var c1 = cRes.clone();
-                    var c2 = cRes.clone();
-                    return Promise.all([
-                      cache.put(req, c1).catch(function(){}),
-                      cache.put(cdnReq, c2).catch(function(){})
-                    ]);
+                    return storeResponse(cRes);
                   } else {
                     throw new Error('CDN HTTP ' + cRes.status);
                   }
@@ -3070,17 +3102,21 @@ PB.offlineAssets = (function() {
   function clearBundle(bundleId) {
     localStorage.removeItem('pb_offline_bundle_' + bundleId);
     if (!('caches' in window) || !BUNDLES[bundleId]) return Promise.resolve(false);
-    var files = BUNDLES[bundleId].files;
+    var bundle = BUNDLES[bundleId];
+    var files = bundle.files;
     return caches.keys().then(function(keys) {
       return Promise.all(keys.map(function(k) { return caches.open(k); }));
     }).then(function(openCaches) {
       var deletes = [];
       files.forEach(function(f) {
         var fullUrl = resolveUrl(f);
-        var req = new Request(fullUrl);
+        var cdnUrl = bundle.cdnFallbacks ? bundle.cdnFallbacks[f] : null;
+        var keysToDelete = [f, fullUrl];
+        if (cdnUrl) keysToDelete.push(cdnUrl);
         openCaches.forEach(function(c) {
-          deletes.push(c.delete(req));
-          deletes.push(c.delete(fullUrl));
+          keysToDelete.forEach(function(k) {
+            deletes.push(c.delete(k));
+          });
         });
       });
       return Promise.all(deletes);
@@ -4464,13 +4500,18 @@ PB.legacy.far117 = (function() {
             var b = bundles[k];
             var status = audit.bundles[k];
             var isReady = status && status.ready;
-            var badge = isReady ?
-              '<span class="badge badge--success" style="background:#10b98122;color:#10b981;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">✅ Cached &amp; Ready</span>' :
-              '<span class="badge badge--warning" style="background:#f59e0b22;color:#f59e0b;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">⚠️ Not Cached</span>';
+            var isLocal = status && status.localMode;
+            var badge = isLocal ?
+              '<span class="badge badge--success" style="background:#10b98122;color:#10b981;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">✅ Ready (Local File)</span>' :
+              (isReady ?
+                '<span class="badge badge--success" style="background:#10b98122;color:#10b981;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">✅ Cached &amp; Ready</span>' :
+                '<span class="badge badge--warning" style="background:#f59e0b22;color:#f59e0b;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">⚠️ Not Cached</span>');
 
-            var actionBtn = isReady ?
-              '<button class="btn btn--ghost btn--xs pb-btn-clear-asset" data-id="' + b.id + '" style="font-size:12px;">Clear</button>' :
-              '<button class="btn btn--primary btn--xs pb-btn-download-asset" data-id="' + b.id + '" style="font-size:12px;">Download (' + b.size + ')</button>';
+            var actionBtn = isLocal ?
+              '<button class="btn btn--ghost btn--xs" disabled style="opacity:0.6;font-size:12px;">Local</button>' :
+              (isReady ?
+                '<button class="btn btn--ghost btn--xs pb-btn-clear-asset" data-id="' + b.id + '" style="font-size:12px;">Clear</button>' :
+                '<button class="btn btn--primary btn--xs pb-btn-download-asset" data-id="' + b.id + '" style="font-size:12px;">Download (' + b.size + ')</button>');
 
             return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color,#2a3447);gap:12px;">' +
               '<div>' +
@@ -5338,7 +5379,25 @@ PB.legacy.far117 = (function() {
 
     return Promise.all(files.map(function(f) {
       var url = base + f;
-      return fetch(url, { method: 'HEAD' }).then(function(res) {
+      if ('caches' in window) {
+        return caches.match(url).then(function(cached) {
+          if (cached && (cached.ok || cached.status === 0 || cached.type === 'opaque')) {
+            return { file: f, url: url, ok: true };
+          }
+          return fetch(url).then(function(res) {
+            return { file: f, url: url, ok: res.ok, status: res.status };
+          }).catch(function(err) {
+            return { file: f, url: url, ok: false, error: err.message || String(err) };
+          });
+        }).catch(function() {
+          return fetch(url).then(function(res) {
+            return { file: f, url: url, ok: res.ok, status: res.status };
+          }).catch(function(err) {
+            return { file: f, url: url, ok: false, error: err.message || String(err) };
+          });
+        });
+      }
+      return fetch(url).then(function(res) {
         return { file: f, url: url, ok: res.ok, status: res.status };
       }).catch(function(err) {
         return { file: f, url: url, ok: false, error: err.message || String(err) };

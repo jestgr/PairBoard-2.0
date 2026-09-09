@@ -13,7 +13,7 @@
 // deletes the old one, and notifies the user to refresh.
 // ============================================================
 
-const CACHE_VERSION  = 'v2.0.7';
+const CACHE_VERSION  = 'v2.0.8';
 const SHELL_CACHE    = 'pb-shell-'   + CACHE_VERSION;
 const RUNTIME_CACHE  = 'pb-runtime-' + CACHE_VERSION;
 
@@ -82,7 +82,7 @@ self.addEventListener('fetch', function(e) {
         return fetch(req).then(function(response) {
           if (response.ok) {
             var clone = response.clone();
-            caches.open(SHELL_CACHE).then(function(c) { c.put(req, clone); });
+            caches.open(SHELL_CACHE).then(function(c) { c.put(req.url, clone); });
           }
           return response;
         });
@@ -98,7 +98,7 @@ self.addEventListener('fetch', function(e) {
         return fetch(req).then(function(response) {
           if (response.ok) {
             var clone = response.clone();
-            caches.open(RUNTIME_CACHE).then(function(c) { c.put(req, clone); });
+            caches.open(RUNTIME_CACHE).then(function(c) { c.put(req.url, clone); });
           }
           return response;
         }).catch(function() {
