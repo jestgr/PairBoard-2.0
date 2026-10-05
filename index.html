@@ -186,6 +186,22 @@
   --info:           #0B5CAD;
   --info-bg:        rgba(11, 92, 173, 0.10);
 
+  /* Reserve X-Day Simulator 7-day-type palette (high-contrast, distinct) */
+  --sim-xday:       #2563EB;
+  --sim-xday-bg:    rgba(37, 99, 235, 0.14);
+  --sim-vac:        #0891B2;
+  --sim-vac-bg:     rgba(8, 145, 178, 0.14);
+  --sim-cq:         #059669;
+  --sim-cq-bg:      rgba(5, 150, 105, 0.14);
+  --sim-qual:       #D97706;
+  --sim-qual-bg:    rgba(217, 119, 6, 0.14);
+  --sim-alp:        #7C3AED;
+  --sim-alp-bg:     rgba(124, 58, 237, 0.16);
+  --sim-leave:      #DC2626;
+  --sim-leave-bg:   rgba(220, 38, 38, 0.14);
+  --sim-other:      #64748B;
+  --sim-other-bg:   rgba(100, 116, 139, 0.16);
+
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
   --shadow-md:      0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
   --shadow-lg:      0 8px 32px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04);
@@ -228,6 +244,21 @@
     --danger-bg:      rgba(255, 69, 58, 0.18);
     --info:           #64A8FF;
     --info-bg:        rgba(100, 168, 255, 0.18);
+
+    --sim-xday:       #60A5FA;
+    --sim-xday-bg:    rgba(96, 165, 250, 0.20);
+    --sim-vac:        #22D3EE;
+    --sim-vac-bg:     rgba(34, 211, 238, 0.20);
+    --sim-cq:         #34D399;
+    --sim-cq-bg:      rgba(52, 211, 153, 0.20);
+    --sim-qual:       #FBBF24;
+    --sim-qual-bg:    rgba(251, 191, 36, 0.20);
+    --sim-alp:        #A78BFA;
+    --sim-alp-bg:     rgba(167, 139, 250, 0.22);
+    --sim-leave:      #F87171;
+    --sim-leave-bg:   rgba(248, 113, 113, 0.20);
+    --sim-other:      #94A3B8;
+    --sim-other-bg:   rgba(148, 163, 184, 0.22);
 
     --shadow-sm:      0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
     --shadow-md:      0 4px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
@@ -314,6 +345,21 @@
   --danger-bg:      rgba(255, 69, 58, 0.18);
   --info:           #64A8FF;
   --info-bg:        rgba(100, 168, 255, 0.18);
+
+  --sim-xday:       #60A5FA;
+  --sim-xday-bg:    rgba(96, 165, 250, 0.20);
+  --sim-vac:        #22D3EE;
+  --sim-vac-bg:     rgba(34, 211, 238, 0.20);
+  --sim-cq:         #34D399;
+  --sim-cq-bg:      rgba(52, 211, 153, 0.20);
+  --sim-qual:       #FBBF24;
+  --sim-qual-bg:    rgba(251, 191, 36, 0.20);
+  --sim-alp:        #A78BFA;
+  --sim-alp-bg:     rgba(167, 139, 250, 0.22);
+  --sim-leave:      #F87171;
+  --sim-leave-bg:   rgba(248, 113, 113, 0.20);
+  --sim-other:      #94A3B8;
+  --sim-other-bg:   rgba(148, 163, 184, 0.22);
 
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
   --shadow-md:      0 4px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
@@ -2408,6 +2454,200 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
 .progress-bar { height:100%; background:var(--amber); border-radius:20px; transition:width 0.3s ease; width:0%; }
 .progress-text { font-size:12px; color:var(--text-muted); text-align:center; }
 @keyframes pbToastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
+
+/* ============================================================
+   RES COVERAGE & TRIP TRADE MODULE STYLES
+   ============================================================ */
+.rc-container { display:flex; flex-direction:column; gap:16px; max-width:1080px; margin:0 auto; }
+.rc-header-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
+.rc-top-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+
+.rc-eval-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-xl);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rc-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--r-lg);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+.rc-status-banner--pass {
+  background: var(--success-bg);
+  border: 1px solid var(--success);
+  color: var(--success);
+}
+.rc-status-banner--fail {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+.rc-status-banner--idle {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+}
+
+.rc-breakdown-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .rc-breakdown-row { grid-template-columns: 1fr; }
+}
+
+.rc-summary-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+}
+.rc-summary-box__title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+.rc-summary-box__value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.rc-month-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rc-month-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rc-day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.rc-day-card {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--r-md);
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.15s ease;
+  position: relative;
+}
+.rc-day-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+.rc-day-card--drop {
+  background: var(--danger-bg) !important;
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 1px var(--danger);
+}
+.rc-day-card--pick {
+  background: var(--success-bg) !important;
+  border-color: var(--success) !important;
+  box-shadow: 0 0 0 1px var(--success);
+}
+.rc-day-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rc-day-card__date {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+.rc-day-card__tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.rc-day-card__tag--drop { background: var(--danger); color: #FFF; }
+.rc-day-card__tag--pick { background: var(--success); color: #FFF; }
+
+.rc-day-card__stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+.rc-day-card__margin {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+  margin-top: 2px;
+}
+.rc-margin--pos { background: var(--success-bg); color: var(--success); }
+.rc-margin--zero { background: var(--bg-subtle); color: var(--text-tertiary); }
+.rc-margin--neg { background: var(--danger-bg); color: var(--danger); }
+
+.rc-day-card__actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.rc-day-card__btn {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 0;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s ease;
+}
+.rc-day-card__btn:hover { background: var(--bg-subtle); }
+.rc-day-card__btn--active-drop { background: var(--danger); color: #fff; border-color: var(--danger); }
+.rc-day-card__btn--active-pick { background: var(--success); color: #fff; border-color: var(--success); }
+
+.rc-ocr-zone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg-surface);
+  transition: all 0.2s ease;
+}
+.rc-ocr-zone:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
 </style>
 </head>
 <body>
@@ -2423,7 +2663,7 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
     <div class="sidebar__brand">
       <div class="sidebar__logo" aria-hidden="true">PB</div>
       <div>
-        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.0.9</span></div>
+        <div class="sidebar__title">PairBoard <span style="font-size:10px;padding:1px 5px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;margin-left:4px;vertical-align:middle;">v2.1.0</span></div>
         <div class="sidebar__subtitle">Tools</div>
       </div>
     </div>
@@ -2454,13 +2694,13 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
           <span data-icon="menu"></span>
         </button>
         <h1 class="topbar__title" id="pb-topbar-title">PairBoard Tools</h1>
-        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.0.9</span>
+        <span id="pb-topbar-version" style="font-size:10px;padding:2px 6px;background:var(--amber,#f59e0b);color:#000;border-radius:4px;font-weight:bold;line-height:1.2;flex-shrink:0;">v2.1.0</span>
       </div>
       <div class="topbar__right">
         <button class="btn btn--sm btn--secondary" onclick="openImportModal()" title="Import pairing PDF" style="margin-right:4px;">
           <span data-icon="upload"></span><span class="topbar__btn-label">Import PDF</span>
         </button>
-        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.0.9" style="margin-right:4px;" onclick="PB.forceUpdate()">
+        <button class="icon-btn" id="pb-topbar-update-btn" type="button" aria-label="Force app update" title="Force update app build v2.1.0" style="margin-right:4px;" onclick="PB.forceUpdate()">
           <span data-icon="refresh"></span>
         </button>
         <button class="icon-btn" id="pb-reset-btn" type="button" aria-label="Reset data" title="Reset data" style="margin-right:4px;" onclick="openResetModal()">
@@ -2549,7 +2789,9 @@ PB.icons = {
   'check-circle': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
   'refresh'   : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
   'upload'    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
-  'layout-dashboard': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>'
+  'layout-dashboard': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+  'repeat'    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>',
+  'arrow-left-right': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 3 4 7 8 11"/><polyline points="16 21 20 17 16 13"/><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/></svg>'
 };
 
 /* inject icons on load */
@@ -7564,6 +7806,7 @@ function getPreAwardStyle(type) {
     'SICK':     { label: 'Sick (S)',        abbr: 'S',   color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: '#b91c1c' },
     'TRAINING': { label: 'Training (CQ)',   abbr: 'CQ',  color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', text: '#6d28d9' },
     'MIL':      { label: 'Mil (MIL)',       abbr: 'MIL', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', text: '#b45309' },
+    'ALP':      { label: 'ALP',             abbr: 'ALP', color: '#7c3aed', bg: 'rgba(124, 58, 237, 0.15)', text: '#6d28d9' },
     'OTHER':    { label: 'Other (OTH)',     abbr: 'OTH', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', text: '#334155' }
   };
   return map[type] || { label: type || 'Pre-Award', abbr: type || 'PA', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', text: '#334155' };
@@ -7666,6 +7909,7 @@ function checkPairingPreAwardConflict(p) {
     'SICK':     { label: 'Sick (S)',     color: '#ef4444' },
     'TRAINING': { label: 'Training (CQ)',color: '#8b5cf6' },
     'MIL':      { label: 'Mil (MIL)',    color: '#f59e0b' },
+    'ALP':      { label: 'ALP',          color: '#7c3aed' },
     'OTHER':    { label: 'Other (OTH)',  color: '#64748b' }
   };
 
@@ -7751,6 +7995,63 @@ function pairingLayovers(p) {
   return layovers;
 }
 
+function pairingCheckInStation(p) {
+  if (!p || !p.tripDays || !p.tripDays.length) return null;
+  var d0 = p.tripDays[0];
+  if (!d0 || !d0.legs || !d0.legs.length) return null;
+  return (d0.legs[0].depCity || '').toUpperCase();
+}
+
+function pairingCheckOutStation(p) {
+  if (!p || !p.tripDays || !p.tripDays.length) return null;
+  var dN = p.tripDays[p.tripDays.length - 1];
+  if (!dN || !dN.legs || !dN.legs.length) return null;
+  return (dN.legs[dN.legs.length - 1].arrCity || '').toUpperCase();
+}
+
+function pairingWorkStartStation(p) {
+  if (!p || !p.tripDays || !p.tripDays.length) return null;
+  for (var i = 0; i < p.tripDays.length; i++) {
+    var day = p.tripDays[i];
+    for (var j = 0; j < (day.legs || []).length; j++) {
+      var leg = day.legs[j];
+      if (!leg.isDH && leg.depCity) return leg.depCity.toUpperCase();
+    }
+  }
+  return pairingCheckInStation(p);
+}
+
+function pairingWorkEndStation(p) {
+  if (!p || !p.tripDays || !p.tripDays.length) return null;
+  for (var i = p.tripDays.length - 1; i >= 0; i--) {
+    var day = p.tripDays[i];
+    for (var j = (day.legs || []).length - 1; j >= 0; j--) {
+      var leg = day.legs[j];
+      if (!leg.isDH && leg.arrCity) return leg.arrCity.toUpperCase();
+    }
+  }
+  return pairingCheckOutStation(p);
+}
+
+function pairingMaxDutyLegs(p) {
+  if (!p || !p.tripDays || !p.tripDays.length) return 0;
+  var maxL = 0;
+  for (var i = 0; i < p.tripDays.length; i++) {
+    var cnt = (p.tripDays[i].legs || []).length;
+    if (cnt > maxL) maxL = cnt;
+  }
+  return maxL;
+}
+
+function pairingTotalLegs(p) {
+  if (!p || !p.tripDays || !p.tripDays.length) return 0;
+  var tot = 0;
+  for (var i = 0; i < p.tripDays.length; i++) {
+    tot += (p.tripDays[i].legs || []).length;
+  }
+  return tot;
+}
+
 function fbParseTimeInput(val) {
   if (!val) return null;
   var s = String(val).trim();
@@ -7780,6 +8081,9 @@ function pairingMatchesAwardFilter(p, f) {
   }
   if (f.type === 'layovers-in') {
     var cities = new Set(f.params.cities.map(function(c) { return c.toUpperCase(); }));
+    if (f.params && f.params.match === 'every') {
+      return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cities.has(s.toUpperCase()); });
+    }
     return p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); });
   }
   if (f.type === 'landings-in') {
@@ -7798,6 +8102,9 @@ function pairingMatchesAwardFilter(p, f) {
   if (f.type === 'pairing' && f.subtype === 'has-redeye') return f.params.value ? !!p.containsRedeye : !p.containsRedeye;
   if (f.type === 'layover' && f.subtype === 'station') {
     var cs = new Set((f.params.stations||[]).map(function(c) { return c.toUpperCase(); }));
+    if (f.params && f.params.match === 'every') {
+      return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cs.has(s.toUpperCase()); });
+    }
     return p.layoverStations.some(function(s) { return cs.has(s.toUpperCase()); });
   }
   if (f.type === 'layover' && f.subtype === 'duration') {
@@ -7809,6 +8116,61 @@ function pairingMatchesAwardFilter(p, f) {
       if (f.params.op === 'range') return hrs >= f.params.min && hrs <= f.params.max;
       return false;
     });
+  }
+  if (f.type === 'station') {
+    var stSet = new Set((f.params.stations || []).map(function(c) { return c.toUpperCase(); }));
+    if (f.subtype === 'checkin') {
+      var cis = pairingCheckInStation(p);
+      return cis ? stSet.has(cis) : false;
+    }
+    if (f.subtype === 'checkout') {
+      var cos = pairingCheckOutStation(p);
+      return cos ? stSet.has(cos) : false;
+    }
+    if (f.subtype === 'work-start') {
+      var wss = pairingWorkStartStation(p);
+      return wss ? stSet.has(wss) : false;
+    }
+    if (f.subtype === 'work-end') {
+      var wes = pairingWorkEndStation(p);
+      return wes ? stSet.has(wes) : false;
+    }
+  }
+  if (f.type === 'legs') {
+    var vLegs = f.params.value;
+    if (f.subtype === 'duty-legs') {
+      var maxDl = pairingMaxDutyLegs(p);
+      if (f.params.op === 'lt')    return maxDl < vLegs;
+      if (f.params.op === 'exact') return maxDl === vLegs;
+      if (f.params.op === 'gt')    return maxDl > vLegs;
+      if (f.params.op === 'max')   return maxDl <= vLegs;
+      if (f.params.op === 'min')   return maxDl >= vLegs;
+    }
+    if (f.subtype === 'total-legs') {
+      var totL = pairingTotalLegs(p);
+      if (f.params.op === 'lt')    return totL < vLegs;
+      if (f.params.op === 'exact') return totL === vLegs;
+      if (f.params.op === 'gt')    return totL > vLegs;
+      if (f.params.op === 'max')   return totL <= vLegs;
+      if (f.params.op === 'min')   return totL >= vLegs;
+      if (f.params.op === 'range') return totL >= f.params.min && totL <= f.params.max;
+    }
+  }
+  if (f.type === 'block-time') {
+    var bVal = f.subtype === 'avg-daily' ? (p.days > 0 ? (p.blockHours || 0) / p.days : 0) : (p.blockHours || 0);
+    if (f.params.op === 'min')   return bVal >= f.params.min;
+    if (f.params.op === 'max')   return bVal <= f.params.max;
+    if (f.params.op === 'range') return bVal >= f.params.min && bVal <= f.params.max;
+  }
+  if (f.type === 'avg-credit') {
+    var acVal = p.days > 0 ? (p.creditHours || 0) / p.days : 0;
+    if (f.params.op === 'min')   return acVal >= f.params.min;
+    if (f.params.op === 'max')   return acVal <= f.params.max;
+    if (f.params.op === 'range') return acVal >= f.params.min && acVal <= f.params.max;
+  }
+  if (f.type === 'pairing-number') {
+    var pNums = new Set((f.params.numbers || []).map(function(n) { return String(n).trim().toUpperCase(); }));
+    return pNums.has(String(p.number).toUpperCase());
   }
   return false;
 }
@@ -7829,16 +8191,17 @@ function applyOccurrenceFilters(startDays, p) {
 
   for (var _i = 0; _i < appState.occurrenceFilters.length; _i++) {
     var f = appState.occurrenceFilters[_i];
-    if (f.type === 'pairing-length' || f.type === 'credit' || f.type === 'layovers-in' ||
-        f.type === 'landings-in' || f.type === 'commutable' || f.type === 'pairing' || f.type === 'layover') continue;
+    if (f.type !== 'prefer-off' && f.type !== 'pairing-dow' && f.type !== 'layover-dow' && f.type !== 'layover-range' && f.type !== 'carry-out') continue;
 
     if (f.type === 'prefer-off' && f.subtype === 'dates' && f.mode === 'avoid') {
       var blocked = new Set(f.params.dates || []);
+      var mn = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
       surviving.forEach(function(startDay) {
         for (var offset = 0; offset < tripLen; offset++) {
           var d = new Date(year, effMonth, startDay + offset);
           var key = localDKey(d.getFullYear(), d.getMonth(), d.getDate());
-          if (blocked.has(key)) { surviving.delete(startDay); break; }
+          var pbsKey = mn[d.getMonth()] + String(d.getDate()).padStart(2, '0');
+          if (blocked.has(key) || blocked.has(pbsKey)) { surviving.delete(startDay); break; }
         }
       });
     }
@@ -7953,8 +8316,13 @@ function applyFilters() {
     }
     if (f.type === 'layovers-in') {
       var cities = new Set(f.params.cities.map(function(c) { return c.toUpperCase(); }));
-      if (f.subtype === 'avoid' || f.mode === 'avoid') result = result.filter(function(p) { return !p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); }); });
-      else result = result.filter(function(p) { return p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); }); });
+      var isEvery = f.params && f.params.match === 'every';
+      var hasMatch = function(p) {
+        if (isEvery) return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cities.has(s.toUpperCase()); });
+        return p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); });
+      };
+      if (f.subtype === 'avoid' || f.mode === 'avoid') result = result.filter(function(p) { return !hasMatch(p); });
+      else result = result.filter(function(p) { return hasMatch(p); });
     }
     if (f.type === 'landings-in') {
       var stations = new Set(f.params.stations.map(function(c) { return c.toUpperCase(); }));
@@ -7968,6 +8336,67 @@ function applyFilters() {
         if (f.params.checkInAfter   != null && ci != null) ok = ok && (ci >= f.params.checkInAfter);
         if (f.params.checkOutBefore != null && co != null) ok = ok && (co <= f.params.checkOutBefore);
         return ok;
+      });
+    }
+    if (f.type === 'station') {
+      var stSet = new Set((f.params.stations || []).map(function(c) { return c.toUpperCase(); }));
+      var checkFn = f.subtype === 'checkin' ? pairingCheckInStation :
+                    f.subtype === 'checkout' ? pairingCheckOutStation :
+                    f.subtype === 'work-start' ? pairingWorkStartStation : pairingWorkEndStation;
+      result = result.filter(function(p) {
+        var sVal = checkFn(p);
+        var match = sVal ? stSet.has(sVal) : false;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
+      });
+    }
+    if (f.type === 'legs') {
+      var vL = f.params.value;
+      result = result.filter(function(p) {
+        var match = false;
+        if (f.subtype === 'duty-legs') {
+          var maxDl = pairingMaxDutyLegs(p);
+          if (f.params.op === 'lt')    match = maxDl < vL;
+          else if (f.params.op === 'exact') match = maxDl === vL;
+          else if (f.params.op === 'gt')    match = maxDl > vL;
+          else if (f.params.op === 'max')   match = maxDl <= vL;
+          else if (f.params.op === 'min')   match = maxDl >= vL;
+        } else if (f.subtype === 'total-legs') {
+          var totL = pairingTotalLegs(p);
+          if (f.params.op === 'lt')    match = totL < vL;
+          else if (f.params.op === 'exact') match = totL === vL;
+          else if (f.params.op === 'gt')    match = totL > vL;
+          else if (f.params.op === 'max')   match = totL <= vL;
+          else if (f.params.op === 'min')   match = totL >= vL;
+          else if (f.params.op === 'range') match = totL >= f.params.min && totL <= f.params.max;
+        }
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
+      });
+    }
+    if (f.type === 'block-time') {
+      result = result.filter(function(p) {
+        var bVal = f.subtype === 'avg-daily' ? (p.days > 0 ? (p.blockHours || 0) / p.days : 0) : (p.blockHours || 0);
+        var match = false;
+        if (f.params.op === 'min')   match = bVal >= f.params.min;
+        else if (f.params.op === 'max')   match = bVal <= f.params.max;
+        else if (f.params.op === 'range') match = bVal >= f.params.min && bVal <= f.params.max;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
+      });
+    }
+    if (f.type === 'avg-credit') {
+      result = result.filter(function(p) {
+        var acVal = p.days > 0 ? (p.creditHours || 0) / p.days : 0;
+        var match = false;
+        if (f.params.op === 'min')   match = acVal >= f.params.min;
+        else if (f.params.op === 'max')   match = acVal <= f.params.max;
+        else if (f.params.op === 'range') match = acVal >= f.params.min && acVal <= f.params.max;
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
+      });
+    }
+    if (f.type === 'pairing-number') {
+      var pNums = new Set((f.params.numbers || []).map(function(n) { return String(n).trim().toUpperCase(); }));
+      result = result.filter(function(p) {
+        var match = pNums.has(String(p.number).toUpperCase());
+        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
       });
     }
     if (f.type === 'pairing' && f.subtype === 'checkin-time') {
@@ -8027,8 +8456,13 @@ function applyFilters() {
     }
     if (f.type === 'layover' && f.subtype === 'station') {
       var cs2 = new Set((f.params.stations||[]).map(function(c) { return c.toUpperCase(); }));
-      if (f.params.op === 'exclude' || f.mode === 'avoid') result = result.filter(function(p) { return !p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); }); });
-      else                                                  result = result.filter(function(p) { return  p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); }); });
+      var isEvery2 = f.params && f.params.match === 'every';
+      var hasMatch2 = function(p) {
+        if (isEvery2) return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cs2.has(s.toUpperCase()); });
+        return p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); });
+      };
+      if (f.params.op === 'exclude' || f.mode === 'avoid') result = result.filter(function(p) { return !hasMatch2(p); });
+      else                                                  result = result.filter(function(p) { return  hasMatch2(p); });
     }
     if (f.type === 'layover' && f.subtype === 'duration') {
       result = result.filter(function(p) {
@@ -8222,6 +8656,14 @@ function buildPairingCard(p) {
   if (p.holPay   > 0) badges.push('<span style="' + pBS + '" data-tip="Holiday pay: '        + p.holPay.toFixed(2)             + '" tabindex="0" onclick="event.stopPropagation()">H</span>');
   if (p.carvePay > 0) badges.push('<span style="' + pBS + '" data-tip="Carve pay: '          + p.carvePay.toFixed(2)           + '" tabindex="0" onclick="event.stopPropagation()">C</span>');
 
+  // Occurrence Filtering Badge
+  var allOccs = computeOccurrences(p);
+  var survivingOccs = appState.survivingMap ? appState.survivingMap.get(p.number) : null;
+  if (survivingOccs && allOccs.length > survivingOccs.size) {
+    var diff = allOccs.length - survivingOccs.size;
+    badges.push('<span style="background:rgba(245,158,11,0.15);border:1px solid #f59e0b;color:#d97706;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;cursor:default;" data-tip="Filtered: ' + diff + ' of ' + allOccs.length + ' departure dates were excluded by your day/date filters" tabindex="0" onclick="event.stopPropagation()">⚠️ ' + diff + ' Excluded</span>');
+  }
+
   var paRes = checkPairingPreAwardConflict(p);
   var effMetrics = computeEfficiencyMetrics(p);
   if (paRes.hasConflict) {
@@ -8409,6 +8851,17 @@ function showPairingDetail(p, survivingDays) {
     '<span><b>Pay / TAFB Ratio:</b> <span style="color:var(--pb-blue);font-weight:700;">' + (effMetrics.payTafbRatio * 100).toFixed(1) + '%</span></span>' +
     '<span><b>Credit / Block Density:</b> <span style="color:var(--pb-purple);font-weight:700;">' + effMetrics.creditBlockRatio + 'x</span></span>' +
     '</div>';
+
+  var activeOccFilters = (appState.occurrenceFilters || []).filter(function(f) {
+    return f.type === 'prefer-off' || f.type === 'pairing-dow' || f.type === 'layover-dow' || f.type === 'layover-range' || f.type === 'carry-out';
+  });
+  if (activeOccFilters.length > 0) {
+    var fStrs = activeOccFilters.map(function(f) { return '• ' + (window.filterDescription ? window.filterDescription(f) : f.type); }).join('<br>');
+    headerBannerHtml += '<div style="background:rgba(245,158,11,0.08);border:1px solid #f59e0b;color:#b45309;padding:8px 12px;border-radius:6px;font-size:11px;margin-bottom:10px;">' +
+      '<div style="font-weight:700;margin-bottom:4px;">⚠️ Active Day/Date Filters (Graying out calendar dates)</div>' +
+      fStrs +
+      '</div>';
+  }
 
   document.getElementById('pb-pairing-modal-body').innerHTML = headerBannerHtml + highlighted;
 
@@ -8600,10 +9053,17 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
       var leftPct  = (seg.left  * 100).toFixed(1);
       var widthPct = (seg.width * 100).toFixed(1);
       var top      = 14 + si * (BAR_H + BAR_GAP);
-      barsHtml += '<div style="position:absolute;top:' + top + 'px;left:' + leftPct + '%;width:' + widthPct + '%;height:' + BAR_H + 'px;background:' + color + ';border-radius:2px;"></div>';
+      var barInner = seg.isAlive ? '' : '<div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);"></div>';
+      barsHtml += '<div style="position:absolute;top:' + top + 'px;left:' + leftPct + '%;width:' + widthPct + '%;height:' + BAR_H + 'px;background:' + color + ';border-radius:2px;overflow:hidden;">' + barInner + '</div>';
     });
+    
+    var dayStartKey = dateKey(cur);
+    var isStartDay = occDates.some(function(od) { return dateKey(od) === dayStartKey; });
+    var cellCursor = isStartDay ? 'cursor:pointer;' : 'cursor:default;';
+    var clickAttr = isStartDay ? ' onclick="if(window.pbToggleOccurrence) window.pbToggleOccurrence(event, \'' + p.number + '\', \'' + dayStartKey + '\')"' : '';
+
     html += '<div style="position:relative;background:' + bgColor + ';border:1px solid ' + borderColor + ';' +
-      'border-radius:3px;height:' + cellH + 'px;overflow:hidden;min-width:0;opacity:' + opacity + ';">' +
+      'border-radius:3px;height:' + cellH + 'px;overflow:hidden;min-width:0;opacity:' + opacity + ';' + cellCursor + '"' + clickAttr + '>' +
       '<span style="position:absolute;top:2px;left:0;right:0;text-align:center;font-size:10px;color:' + textColor + ';line-height:1;">' + dayNum + '</span>' +
       barsHtml + '</div>';
     cur.setDate(cur.getDate() + 1);
@@ -8727,6 +9187,7 @@ function openDayInspectorDrawer(dateKey, catFilter) {
     { type: 'SICK',     label: 'Sick (S)',        color: '#ef4444' },
     { type: 'TRAINING', label: 'Training (CQ)',   color: '#8b5cf6' },
     { type: 'MIL',      label: 'Mil (MIL)',       color: '#f59e0b' },
+    { type: 'ALP',      label: 'ALP',             color: '#7c3aed' },
     { type: 'OTHER',    label: 'Other (OTH)',     color: '#64748b' }
   ];
 
@@ -9045,8 +9506,11 @@ function renderCalendar() {
     var dowNames  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     var anc = bpStartLocal || new Date(y, m, 1);
     var ancY = anc.getFullYear(), ancM = anc.getMonth();
+    var useSurv = (_calMode === 'filtered');
     pool.forEach(function(p) {
-      var sDays = (appState.survivingMap && appState.survivingMap.get(p.number)) || computeOccurrences(p);
+      var sDays = (useSurv && appState.survivingMap && appState.survivingMap.has(p.number))
+        ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(appState.survivingMap.get(p.number))
+        : computeOccurrences(p);
       sDays.forEach(function(sd) {
         var d = new Date(ancY, ancM, sd);
         dowCounts[d.getDay()]++;
@@ -9073,8 +9537,9 @@ function renderCalendar() {
     var survMap = appState.survivingMap || new Map();
     var anchor  = bpStartLocal || new Date(y, m, 1);
     var ancY = anchor.getFullYear(), ancM = anchor.getMonth(), ancD = anchor.getDate();
+    var useSurv = (_calMode === 'filtered');
     pool.forEach(function(p) {
-      var startDays = survMap.has(p.number)
+      var startDays = (useSurv && survMap.has(p.number))
         ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMap.get(p.number))
         : computeOccurrences(p);
       startDays.forEach(function(sd) {
@@ -9160,8 +9625,9 @@ function renderCalendar() {
       var ancC = bpStartLocal || new Date(y, m, 1);
       var ancCY = ancC.getFullYear(), ancCM = ancC.getMonth(), ancCD = ancC.getDate();
       var survMapComp = appState.survivingMap || new Map();
+      var useSurv = (_calMode === 'filtered');
       poolForComp.forEach(function(p) {
-        var sDays = survMapComp.has(p.number)
+        var sDays = (useSurv && survMapComp.has(p.number))
           ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMapComp.get(p.number))
           : computeOccurrences(p);
         sDays.forEach(function(sd) {
@@ -9550,6 +10016,7 @@ PB.modules.register({
     { id: 'SICK',     label: 'Sick',              abbr: 'S',   color: '#ef4444' },
     { id: 'TRAINING', label: 'Training (CQ, IQ)', abbr: 'CQ',  color: '#8b5cf6' },
     { id: 'MIL',      label: 'Military',          abbr: 'MIL', color: '#f59e0b' },
+    { id: 'ALP',      label: 'ALP',               abbr: 'ALP', color: '#7c3aed' },
     { id: 'OTHER',    label: 'Other',             abbr: 'OTH', color: '#64748b' }
   ];
   var PA_MAP = {};
@@ -11036,9 +11503,9 @@ function renderDayPairingsPanel(dk) {
   var activeTab = 'structure';
   var simState = {
     // Day-type Sets (key = YYYY-MM-DD)
-    days: { xday: new Set(), vac: new Set(), cq: new Set(), qual: new Set(), leave: new Set(), other: new Set() },
+    days: { xday: new Set(), vac: new Set(), cq: new Set(), qual: new Set(), alp: new Set(), leave: new Set(), other: new Set() },
     // Absence-day input values from Structure tab (persisted while module mounted)
-    inputs: { vac: 0, cq: 0, qual: 0, leave: 0, other: 0 },
+    inputs: { vac: 0, cq: 0, qual: 0, alp: 0, leave: 0, other: 0 },
     // Calculated values (populated by calcReserveStructure)
     calc: null,
     // Active placement mode
@@ -11047,12 +11514,13 @@ function renderDayPairingsPanel(dk) {
 
   // Day-type config: label, color (CSS var), allowance source
   var DAY_TYPES = [
-    { k: 'xday',  label: 'X-Day',    color: 'var(--accent)',  bg: 'var(--accent-subtle)',  source: 'xdays'   },
-    { k: 'vac',   label: 'Vacation', color: 'var(--info)',    bg: 'var(--info-bg)',        source: 'vac'     },
-    { k: 'cq',    label: 'CQ',       color: 'var(--success)', bg: 'var(--success-bg)',     source: 'cq'      },
-    { k: 'qual',  label: 'Qual',     color: 'var(--warning)', bg: 'var(--warning-bg)',     source: 'qual'    },
-    { k: 'leave', label: 'Leave',    color: 'var(--danger)',  bg: 'var(--danger-bg)',      source: 'leave'   },
-    { k: 'other', label: 'Other',    color: 'var(--text-secondary)', bg: 'var(--bg-subtle)', source: 'other' }
+    { k: 'xday',  label: 'X-Day',    color: 'var(--sim-xday)',  bg: 'var(--sim-xday-bg)',  source: 'xdays' },
+    { k: 'vac',   label: 'Vacation', color: 'var(--sim-vac)',   bg: 'var(--sim-vac-bg)',   source: 'vac'   },
+    { k: 'cq',    label: 'CQ',       color: 'var(--sim-cq)',    bg: 'var(--sim-cq-bg)',    source: 'cq'    },
+    { k: 'qual',  label: 'Qual',     color: 'var(--sim-qual)',  bg: 'var(--sim-qual-bg)',  source: 'qual'  },
+    { k: 'alp',   label: 'ALP',      color: 'var(--sim-alp)',   bg: 'var(--sim-alp-bg)',   source: 'alp'   },
+    { k: 'leave', label: 'Leave',    color: 'var(--sim-leave)', bg: 'var(--sim-leave-bg)', source: 'leave' },
+    { k: 'other', label: 'Other',    color: 'var(--sim-other)', bg: 'var(--sim-other-bg)', source: 'other' }
   ];
 
   function hhmmToDec(s) {
@@ -11083,14 +11551,19 @@ function renderDayPairingsPanel(dk) {
     var list = buildDayList(s);
     if (list.length === 0) return { ok: true, errors: [] };
 
-    // Build per-day schedule code: 'X' = X-day, 'A' = absence (vac/cq/qual/leave/other/pre-award), 'W' = work
+    // Build per-day schedule code: 'X' = X-day, 'ALP' = ALP, 'A' = absence (vac/cq/qual/leave/other/pre-award), 'W' = work
     var preAwards = (window._appStateRef && window._appStateRef.preAwards) || new Map();
     var sched = list.map(function(d) {
       if (simState.days.xday.has(d.key)) return 'X';
+      if (simState.days.alp && simState.days.alp.has(d.key)) return 'ALP';
       for (var i = 0; i < DAY_TYPES.length; i++) {
-        if (DAY_TYPES[i].k !== 'xday' && simState.days[DAY_TYPES[i].k].has(d.key)) return 'A';
+        if (DAY_TYPES[i].k !== 'xday' && DAY_TYPES[i].k !== 'alp' && simState.days[DAY_TYPES[i].k] && simState.days[DAY_TYPES[i].k].has(d.key)) return 'A';
       }
-      if (preAwards.has(d.key)) return 'A'; // pre-award counts as absence
+      if (preAwards.has(d.key)) {
+        var paType = preAwards.get(d.key);
+        if (paType === 'ALP') return 'ALP';
+        return 'A'; // pre-award counts as absence
+      }
       return 'W';
     });
 
@@ -11109,22 +11582,34 @@ function renderDayPairingsPanel(dk) {
       }
     }
 
-    // Min work-row check (interior runs only — orphans at start/end are OK)
-    // Only fires when the run is bounded by X-days on BOTH sides.
-    // Any non-X absence (CQ, vacation, leave, pre-award, etc.) on either
-    // boundary satisfies the scheduling rule — no violation.
+    // Min work-row check:
+    // - Beginning of period (start === 0): CANNOT have fewer than minWorkRow if bounded on right by X or ALP.
+    // - End of period (end === sched.length - 1): permitted to have fewer than minWorkRow days (end of month exempt / can orphan).
+    // - Interior runs: Any boundary touching ALP or X-days on both sides must satisfy minWorkRow.
+    //   Any run adjacent to ALP must be at least minWorkRow (ALP does not excuse short work runs).
     workRuns.forEach(function(r) {
+      if (r.length >= rule.minWorkRow) return;
       var isFirst = (r.start === 0);
       var isLast  = (r.end === sched.length - 1);
-      if (isFirst || isLast) return;
-      if (r.length >= rule.minWorkRow) return;
-      // Only error if surrounded by X-days on both sides
-      if (sched[r.start - 1] !== 'X' || sched[r.end + 1] !== 'X') return;
+      if (isLast) return; // End of bid period is exempt (can orphan at end)
+
+      var left = isFirst ? 'START' : sched[r.start - 1];
+      var right = sched[r.end + 1];
+
+      var bordersAlp = (left === 'ALP' || right === 'ALP');
+      var bordersXorStart = (right === 'X' && (left === 'X' || left === 'START'));
+
+      if (!bordersAlp && !bordersXorStart) return;
+
       var dayStart = list[r.start].date.getDate();
       var dayEnd   = list[r.end].date.getDate();
+      var reason = bordersAlp
+        ? 'Work days adjacent to ALP must meet minimum grouping of ' + rule.minWorkRow + '.'
+        : (isFirst ? 'Work run starting the bid period must meet minimum grouping of ' + rule.minWorkRow + '.' : 'Surround it with absences/X-days or extend it.');
+
       errors.push('Work run on days ' + dayStart + '–' + dayEnd +
         ' is ' + r.length + ' day' + (r.length !== 1 ? 's' : '') +
-        ', minimum is ' + rule.minWorkRow + '. Surround it with absences/X-days or extend it.');
+        ', minimum is ' + rule.minWorkRow + '. ' + reason);
     });
 
     // Count X-day groupings
@@ -11432,7 +11917,8 @@ function renderDayPairingsPanel(dk) {
     var prorationCol = bracket72 ? (is31 ? 1 : 0) : (is31 ? 3 : 2);
 
     var vac = simState.inputs.vac, cq = simState.inputs.cq, qual = simState.inputs.qual,
-        leave = simState.inputs.leave, other = simState.inputs.other;
+        alp = simState.inputs.alp || 0, leave = simState.inputs.leave, other = simState.inputs.other;
+    // ALP days count as available work days for X-day proration (12.M)
     var nonCQAbsence = vac + qual + leave + other;
     var daysFor12M = Math.max(0, bidDays - nonCQAbsence - cq);
 
@@ -11452,7 +11938,7 @@ function renderDayPairingsPanel(dk) {
     }
     if (s.extraXDay) xdays += 1;
 
-    var onCallDays = Math.max(0, daysFor12M - xdays - cq);
+    var onCallDays = Math.max(0, daysFor12M - xdays - cq - alp);
     var scRow = SHORT_CALL_TABLE[lookupIdx];
     var shortCallDays = scRow ? (scRow[bracket72 ? 1 : 2] || 0) : 0;
 
@@ -11461,7 +11947,7 @@ function renderDayPairingsPanel(dk) {
       shortCallDays: shortCallDays, bracket72: bracket72, prorationCol: prorationCol,
       source: source,
       // Allowances for sim — number of cells you can place per type
-      allow: { xday: xdays, vac: vac, cq: cq, qual: qual, leave: leave, other: other },
+      allow: { xday: xdays, vac: vac, cq: cq, qual: qual, alp: alp, leave: leave, other: other },
       guarDec: guarDec
     };
     simState.calc = calc;
@@ -11470,14 +11956,14 @@ function renderDayPairingsPanel(dk) {
 
   function renderStructure(body) {
     body.innerHTML =
-      '<div class="card"><div class="card__header"><h3 class="card__title">Absence Days This Period</h3></div>' +
+      '<div class="card"><div class="card__header"><h3 class="card__title">Absence & Leave Days This Period</h3></div>' +
         '<div class="card__body">' +
           '<div style="font-size:12px;color:var(--text-tertiary);margin-bottom:12px;">' +
-            'Enter days where you are not available. CQ counts separately in the on-call formula. ' +
+            'Enter days where you are not available. ALP counts as work availability for X-day proration. ' +
             'Numbers persist while the app is open and feed the X-Day Simulator.</div>' +
-          '<div class="field-row">' +
+          '<div class="field-row" style="display:flex;flex-wrap:wrap;gap:8px;">' +
             absField('Vacation','vac') + absField('CQ','cq') + absField('Qual','qual') +
-            absField('Unpaid Leave','leave') + absField('Other','other') +
+            absField('ALP','alp') + absField('Unpaid Leave','leave') + absField('Other','other') +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -11497,7 +11983,7 @@ function renderDayPairingsPanel(dk) {
 
     function absField(label, id) {
       return '<div class="field"><div class="field__label">' + label + '</div>' +
-        '<input type="number" class="input u-mono" min="0" max="31" value="' + simState.inputs[id] + '" id="res-input-' + id + '" style="width:90px;"></div>';
+        '<input type="number" class="input u-mono" min="0" max="31" value="' + (simState.inputs[id] || 0) + '" id="res-input-' + id + '" style="width:90px;"></div>';
     }
   }
 
@@ -11511,16 +11997,17 @@ function renderDayPairingsPanel(dk) {
       return;
     }
     var brackets = ['30-day/72', '31-day/72', '30-day/75', '31-day/75'];
-    var totalAbs = calc.allow.vac + calc.allow.cq + calc.allow.qual + calc.allow.leave + calc.allow.other;
+    var totalAbs = calc.allow.vac + calc.allow.cq + calc.allow.qual + (calc.allow.alp || 0) + calc.allow.leave + calc.allow.other;
     var srcLabel = calc.source === 'golden'
       ? '<span style="font-size:10px;color:var(--text-tertiary);font-weight:normal;">(Golden X-Day fallback)</span>'
       : '';
     body.innerHTML =
       row('Bid period length', calc.bidDays + ' days') +
-      row('Total absence', totalAbs + ' days') +
+      (calc.allow.alp ? row('ALP days (paid leave)', calc.allow.alp + ' days') : '') +
+      row('Total non-work days', totalAbs + ' days') +
       row('Days available (12.M)', calc.daysFor12M) +
       row('X-days allowed', calc.xdays + (s.extraXDay ? ' (+1 from 20% rule)' : '') + ' ' + srcLabel) +
-      row('On-call days', calc.onCallDays) +
+      row('Target on-call days', calc.onCallDays) +
       row('Short-call days', calc.shortCallDays) +
       row('Guarantee bracket', calc.bracket72 ? '72:00–74:59' : '75:00–80:00') +
       row('Proration column', brackets[calc.prorationCol]);
@@ -11665,7 +12152,7 @@ function renderDayPairingsPanel(dk) {
       return head +
         '<div class="pb-sim-rule-row pb-sim-rule-row--ok">✓ All rules satisfied</div>' +
         '<ul class="pb-sim-rule-list">' +
-          '<li>Min ' + rule.minWorkRow + ' consecutive work day' + (rule.minWorkRow !== 1 ? 's' : '') + ' (orphans at start/end OK)</li>' +
+          '<li>Min ' + rule.minWorkRow + ' consecutive work day' + (rule.minWorkRow !== 1 ? 's' : '') + ' (end of month exempt)</li>' +
           '<li>Max ' + rule.maxXBlocks + ' X-day grouping' + (rule.maxXBlocks !== 1 ? 's' : '') + '</li>' +
           (rule.maxWork < 999 ? '<li>Max ' + rule.maxWork + ' work days</li>' : '') +
         '</ul>';
@@ -11676,19 +12163,29 @@ function renderDayPairingsPanel(dk) {
   }
 
   function summaryHtml(calc) {
-    var totalPlaced = DAY_TYPES.reduce(function(sum, t) { return sum + simState.days[t.k].size; }, 0);
+    var totalPlaced = DAY_TYPES.reduce(function(sum, t) { return sum + (simState.days[t.k] ? simState.days[t.k].size : 0); }, 0);
+    var remainingOnCall = Math.max(0, calc.bidDays - totalPlaced);
+    var targetOnCall = calc.onCallDays || 0;
+
     var unplacedXdays = (calc.allow.xday   || 0) - simState.days.xday.size;
     var unplacedVac   = (calc.allow.vac    || 0) - simState.days.vac.size;
     var unplacedCq    = (calc.allow.cq     || 0) - simState.days.cq.size;
+    var unplacedAlp   = (calc.allow.alp    || 0) - (simState.days.alp ? simState.days.alp.size : 0);
+
     var bits = [];
     if (unplacedXdays > 0) bits.push(unplacedXdays + ' X-day' + (unplacedXdays !== 1 ? 's' : '') + ' left');
     if (unplacedVac > 0)   bits.push(unplacedVac   + ' vacation left');
     if (unplacedCq > 0)    bits.push(unplacedCq    + ' CQ left');
+    if (unplacedAlp > 0)   bits.push(unplacedAlp   + ' ALP left');
+
     var status = bits.length === 0
       ? '<span style="color:var(--success);">✓ All required days placed</span>'
       : '<span style="color:var(--warning);">' + bits.join(' · ') + '</span>';
+
+    var onCallColor = remainingOnCall === targetOnCall ? 'var(--success)' : (remainingOnCall < targetOnCall ? 'var(--danger)' : 'var(--accent)');
+
     return '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--font-mono);font-size:12px;">' +
-      '<span>Placed: <b>' + totalPlaced + '</b> · Period: ' + calc.bidDays + ' days</span>' +
+      '<span>Non-Work Placed: <b>' + totalPlaced + '</b>/' + (calc.bidDays - targetOnCall) + ' · On-Call: <b style="color:' + onCallColor + ';">' + remainingOnCall + '</b> (target ' + targetOnCall + ')</span>' +
       status +
     '</div>';
   }
@@ -11756,6 +12253,7 @@ function renderDayPairingsPanel(dk) {
     var vacDaysPlaced   = simState.inputs.vac   || 0;
     var cqDaysPlaced    = simState.inputs.cq    || 0;
     var qualDaysPlaced  = simState.inputs.qual  || 0;
+    var alpDaysPlaced   = simState.inputs.alp   || 0;
     var leaveDaysPlaced = simState.inputs.leave || 0;
     var otherDaysPlaced = simState.inputs.other || 0;
 
@@ -11813,14 +12311,22 @@ function renderDayPairingsPanel(dk) {
 
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">',
               '<div>',
-                '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Pro-Rata ALV Activity</div>',
-                '<input type="number" class="input u-mono" id="pay-proalv" min="0" max="31" value="0" style="width:100%;">',
-                '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;" id="pay-proalv-rate">—/day</div>',
+                '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">ALP Days</div>',
+                '<input type="number" class="input u-mono" id="pay-alp" min="0" max="31" value="' + alpDaysPlaced + '" style="width:100%;">',
+                '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;">5:40/day</div>',
               '</div>',
               '<div>',
                 '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Unpaid Leave</div>',
                 '<input type="number" class="input u-mono" id="pay-leave" min="0" max="31" value="' + leaveDaysPlaced + '" style="width:100%;">',
                 '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;">0:00 credit</div>',
+              '</div>',
+            '</div>',
+
+            '<div style="display:grid;grid-template-columns:1fr;gap:8px;">',
+              '<div>',
+                '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Pro-Rata ALV Activity</div>',
+                '<input type="number" class="input u-mono" id="pay-proalv" min="0" max="31" value="0" style="width:100%;">',
+                '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;" id="pay-proalv-rate">—/day</div>',
               '</div>',
             '</div>',
 
@@ -11869,7 +12375,7 @@ function renderDayPairingsPanel(dk) {
     ].join('');
 
     // Wire all inputs to trigger recalc
-    ['pay-alv','pay-extra-xday','pay-vac','pay-cq','pay-qual','pay-parental','pay-proalv','pay-leave',
+    ['pay-alv','pay-extra-xday','pay-vac','pay-cq','pay-qual','pay-parental','pay-alp','pay-proalv','pay-leave',
      'pay-other1-days','pay-other1-rate','pay-other2-days','pay-other2-rate',
      'pay-override-days','pay-override-rate','pay-carryin'].forEach(function(id) {
       var el = body.querySelector('#' + id);
@@ -11944,6 +12450,7 @@ function renderDayPairingsPanel(dk) {
     var cqDays = parseInt(body.querySelector('#pay-cq').value) || 0;
     var qualDays = parseInt(body.querySelector('#pay-qual').value) || 0;
     var parentalDays = parseInt(body.querySelector('#pay-parental').value) || 0;
+    var alpDays = parseInt(body.querySelector('#pay-alp') ? body.querySelector('#pay-alp').value : 0) || 0;
     var proAlvDays = parseInt(body.querySelector('#pay-proalv').value) || 0;
     var leaveDays = parseInt(body.querySelector('#pay-leave').value) || 0;
     var other1Days = parseInt(body.querySelector('#pay-other1-days').value) || 0;
@@ -11955,10 +12462,17 @@ function renderDayPairingsPanel(dk) {
     var carryIn = hhmm4ToDecimal(body.querySelector('#pay-carryin').value);
 
     // Calculate credits
+    var alpRate = 5 + 40/60; // 5:40 per day
     var decVacCredit = vacDays * vacRate;
     var decCQCredit = cqDays * cqRate;
     var decQualCredit = qualDays * (3 + 5/60);
     var decParentalCredit = parentalDays * vacRate;
+    var decAlpCredit = alpDays * alpRate;
+
+    // Remaining work days for guarantee proration under ALP
+    var remainingWorkDays = Math.max(0, daysForShare - alpDays);
+    var decProratedGuar = alpDays > 0 ? (remainingWorkDays * decProRataShare) : decGuar;
+
     var decProAlvCredit = proAlvDays * decProRataALV;
     var decOther1Credit = other1Days * other1Rate;
     var decOther2Credit = other2Days * other2Rate;
@@ -11968,23 +12482,32 @@ function renderDayPairingsPanel(dk) {
     var proRataReducedDays = reduced12N + cqDays;
     var decProRataReduction = proRataReducedDays * decProRataGuar;
 
-    var totalCredit = decGuar + decVacCredit + decCQCredit + decQualCredit + decParentalCredit 
-      + decProAlvCredit + decOther1Credit + decOther2Credit - decProRataReduction;
+    var totalCredit = decProratedGuar + decVacCredit + decCQCredit + decQualCredit + decParentalCredit 
+      + decAlpCredit + decProAlvCredit + decOther1Credit + decOther2Credit - decProRataReduction;
 
     var lineItems = [];
     if (vacDays > 0) lineItems.push({label:'Vacation ('+vacDays+'d)',credit:decVacCredit,rate:vacRate});
     if (cqDays > 0) lineItems.push({label:'CQ ('+cqDays+'d)',credit:decCQCredit,rate:cqRate});
     if (qualDays > 0) lineItems.push({label:'Qual Training ('+qualDays+'d)',credit:decQualCredit,rate:3+5/60});
     if (parentalDays > 0) lineItems.push({label:'Parental Leave ('+parentalDays+'d)',credit:decParentalCredit,rate:vacRate});
+    if (alpDays > 0) {
+      lineItems.push({label:'ALP ('+alpDays+'d @ 5:40)',credit:decAlpCredit,rate:alpRate});
+    }
     if (proAlvDays > 0) lineItems.push({label:'Pro-Rata ALV ('+proAlvDays+'d)',credit:decProAlvCredit,rate:decProRataALV});
     if (other1Days > 0) lineItems.push({label:'Other 1 ('+other1Days+'d)',credit:decOther1Credit,rate:other1Rate});
     if (other2Days > 0) lineItems.push({label:'Other 2 ('+other2Days+'d)',credit:decOther2Credit,rate:other2Rate});
     if (proRataReducedDays > 0) lineItems.push({label:'Pro-Rata Reduction ('+proRataReducedDays+'d)',credit:-decProRataReduction,rate:decProRataGuar});
 
     var totalWithOverride = totalCredit + (overrideDays > 0 ? decOverrideCredit : 0);
-    var c27Guar = decGuar - decProRataReduction;
+    var c27Guar = decProratedGuar - decProRataReduction;
     var extraCredit = carryIn > 0 ? Math.max(0, carryIn - c27Guar) : 0;
     var baseForPostPBS = totalWithOverride + extraCredit;
+
+    var guarRowLabel = alpDays > 0 
+      ? 'Reserve Guarantee Proration (' + remainingWorkDays + 'd @ ' + decimalToDisplay(decProRataShare) + ')' 
+      : 'Reserve Guarantee';
+    var guarRowRate = alpDays > 0 ? decimalToDisplay(decProRataShare) : '—';
+    var guarRowCredit = decimalToDisplay(decProratedGuar);
 
     resultsEl.innerHTML = [
       '<div style="display:grid;grid-template-columns:auto auto;gap:16px 24px;margin-bottom:16px;">',
@@ -12010,9 +12533,9 @@ function renderDayPairingsPanel(dk) {
         '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-tertiary);font-size:10px;text-transform:uppercase;">Item</div>',
         '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-tertiary);font-size:10px;text-transform:uppercase;text-align:right;">Rate</div>',
         '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-tertiary);font-size:10px;text-transform:uppercase;text-align:right;">Credit</div>',
-        '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-muted);">Reserve Guarantee</div>',
-        '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-muted);text-align:right;">—</div>',
-        '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-primary);text-align:right;font-weight:600;">'+decimalToDisplay(decGuar)+'</div>'
+        '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-muted);">'+guarRowLabel+'</div>',
+        '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-muted);text-align:right;">'+guarRowRate+'</div>',
+        '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-primary);text-align:right;font-weight:600;">'+guarRowCredit+'</div>'
       ].join('');
 
     lineItems.forEach(function(item) {
@@ -12107,6 +12630,9 @@ function renderDayPairingsPanel(dk) {
         'color:var(--text-secondary);margin:14px 0 6px;">' + t + '</div>';
     }
 
+    var alpCreditHrs = (simState.inputs.alp || 0) * (5 + 40/60);
+    var a1Default = alpCreditHrs > 0 ? decimalToDisplay(alpCreditHrs) : '';
+
     body.innerHTML = [
       '<div class="card">',
         '<div class="card__header">',
@@ -12123,7 +12649,7 @@ function renderDayPairingsPanel(dk) {
 
           sec('A — Credit Hours'),
           grid([
-            ['A1 — Credit Flown', tInp('rr-a1', '', '0:00'), null],
+            ['A1 — Credit Flown', tInp('rr-a1', a1Default, '0:00'), 'Trip credit + ALP credit (5:40/day)'],
             ['A2 — Other Days',   nInp('rr-a2', 0), 'Vacation + Training + Qualifying']
           ]),
 
@@ -12446,8 +12972,42 @@ function renderDayPairingsPanel(dk) {
         if (f.subtype === 'checkin-time')  return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Check-In ' + (p.op === 'after' ? 'After ' : 'Before ') + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
         if (f.subtype === 'checkout-time') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Check-Out ' + (p.op === 'after' ? 'After ' : 'Before ') + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
         return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + f.subtype;
+      case 'station':
+        var stLabel = f.subtype === 'checkin' ? 'Check-In Station' :
+                      f.subtype === 'checkout' ? 'Check-Out Station' :
+                      f.subtype === 'work-start' ? 'Work Start Station' : 'Work End Station';
+        return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + stLabel + ' ' + (p.stations || []).join(', ');
+      case 'legs':
+        var legMode = f.mode === 'award' ? 'Award Pairings If EVERY' : 'Avoid Pairings If ANY';
+        if (f.subtype === 'duty-legs') {
+          var legOp = p.op === 'lt' ? '< ' : p.op === 'gt' ? '> ' : p.op === 'exact' ? '= ' : p.op === 'max' ? '≤ ' : '≥ ';
+          return legMode + ' Duty Legs ' + legOp + p.value + (p.value === 1 ? ' Leg' : ' Legs');
+        }
+        if (f.subtype === 'total-legs') {
+          var totMode = f.mode === 'award' ? 'Award' : 'Avoid';
+          if (p.op === 'range') return totMode + ' Pairings If Total Legs In Pairing ' + p.min + '–' + p.max + ' Legs';
+          var totOp = p.op === 'lt' ? '< ' : p.op === 'gt' ? '> ' : p.op === 'exact' ? '= ' : p.op === 'max' ? '≤ ' : '≥ ';
+          return totMode + ' Pairings If Total Legs In Pairing ' + totOp + (p.value != null ? p.value : p.min) + ' Legs';
+        }
+        return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + f.subtype;
+      case 'block-time':
+        var bMode = f.mode === 'award' ? 'Award' : 'Avoid';
+        var bTitle = f.subtype === 'avg-daily' ? 'Average Daily Block Time' : 'Pairing Total Block Time';
+        if (p.op === 'range') return bMode + ' Pairings If ' + bTitle + ' Between ' + p.min + ':00 and ' + p.max + ':00';
+        var bOp = p.op === 'min' ? '≥ ' : '≤ ';
+        return bMode + ' Pairings If ' + bTitle + ' ' + bOp + (p.op === 'min' ? p.min : p.max) + ':00';
+      case 'avg-credit':
+        var acMode = f.mode === 'award' ? 'Award' : 'Avoid';
+        if (p.op === 'range') return acMode + ' Pairings If Average Daily Credit Between ' + p.min + ':00 and ' + p.max + ':00';
+        var acOp = p.op === 'min' ? '≥ ' : '≤ ';
+        return acMode + ' Pairings If Average Daily Credit ' + acOp + (p.op === 'min' ? p.min : p.max) + ':00';
+      case 'pairing-number':
+        return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Pairing Number' + ((p.numbers||[]).length > 1 ? 's ' : ' ') + (p.numbers || []).join(', ');
       case 'layover':
-        if (f.subtype === 'station')  return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover In ' + (p.stations || []).join(', ');
+        if (f.subtype === 'station') {
+          var matchWord = p.match === 'every' ? 'Every' : '';
+          return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + (matchWord ? matchWord + ' ' : '') + 'Layover In ' + (p.stations || []).join(', ');
+        }
         if (f.subtype === 'duration') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover Duration ' + (p.op === 'range' ? p.min + '–' + p.max + ' Hours' : (p.op === 'gt' ? '> ' : '< ') + p.val + ' Hours');
         return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover ' + f.subtype;
       case 'prefer-off':
@@ -12523,6 +13083,30 @@ function renderDayPairingsPanel(dk) {
         '</div>' +
       '</div>';
     mo.setAttribute('data-open', 'true');
+  };
+
+  window.pbToggleOccurrence = function(event, pNum, dateKey) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    var s = window._appStateRef || {};
+    if (!s.excludedOccurrences) s.excludedOccurrences = new Map();
+    var set = s.excludedOccurrences.get(pNum);
+    if (!set) {
+      set = new Set();
+      s.excludedOccurrences.set(pNum, set);
+    }
+    if (set.has(dateKey)) {
+      set.delete(dateKey);
+    } else {
+      set.add(dateKey);
+    }
+    if (window.applyFilters) window.applyFilters();
+    if (PB && PB.pairings && PB.pairings.showPairingDetail) {
+      var p = (s.pairings || []).find(function(x) { return x.number === pNum; });
+      if (p) PB.pairings.showPairingDetail(p);
+    }
   };
 
   window.pbMoveFilter = function(idx, dir) {
@@ -12615,33 +13199,56 @@ function renderDayPairingsPanel(dk) {
       }
     });
 
-    var mo = ensureModal();
+    // 3. Build Raw Script
+    var rawLines = [];
+    rawLines.push('1. Pairing Bid Group');
+    rawLines.push('Set Condition Minimum Credit ' + fmtHHMM(proratedMinPay));
+    rawLines.push('Set Condition Max Consecutive Duty Days 4');
+    
+    var lineNum = 1;
+    
+    var exclusionsScript = exclusions.map(function(f) {
+      return 'Line ' + (lineNum++) + ': ' + filterDescription(f);
+    });
+    rawLines = rawLines.concat(exclusionsScript);
+    
+    var awardsScript = awards.map(function(f) {
+      return 'Line ' + (lineNum++) + ': ' + filterDescription(f);
+    });
+    rawLines = rawLines.concat(awardsScript);
+    
+    rawLines.push('Line ' + (lineNum++) + ': Clear Schedule and Start Next Bid Group');
+    rawLines.push('Line ' + (lineNum++) + ': Award Pairings');
+    
+    var rawScriptText = rawLines.join('\n');
+
+    // 4. Build Tabs HTML
+    // Interactive Tab
     var step1Html =
       '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
-        '<div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">📌 STEP 1: SET LINE OPTIONS & WAIVES</div>' +
+        '<div style="font-weight:700;font-size:13px;color:var(--purple,#7e22ce);margin-bottom:4px;">1. SET CONDITIONS & WAIVES</div>' +
         '<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">' +
-          '1. Go to <strong>Bid Options</strong> tab in NAVBLUE web app.<br>' +
-          '2. Select <strong>Set Condition</strong> ➔ <strong>Minimum Credit</strong> ➔ Enter <strong>' + fmtHHMM(proratedMinPay) + '</strong> ' + (vacCount > 0 ? '(Prorated for your ' + vacCount + ' Vacation days)' : '(Standard Line Floor)') + '<br>' +
-          '3. Select <strong>Set Condition</strong> ➔ <strong>Max Consecutive Duty Days</strong> ➔ Enter <strong>4</strong><br>' +
-          '4. <em>(Optional)</em> If bidding tight trip spacing, select <strong>Waive</strong> ➔ <strong>Waive 30/168 Rest Requirement</strong>.' +
+          '<div style="background:rgba(126,34,206,0.08);border:1px solid rgba(126,34,206,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;font-family:var(--font-mono);color:#6b21a8;">1. Pairing Bid Group</div>' +
+          '<div style="background:rgba(126,34,206,0.08);border:1px solid rgba(126,34,206,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;font-family:var(--font-mono);color:#6b21a8;">Set Condition Minimum Credit ' + fmtHHMM(proratedMinPay) + '</div>' +
+          '<div style="background:rgba(126,34,206,0.08);border:1px solid rgba(126,34,206,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;font-family:var(--font-mono);color:#6b21a8;">Set Condition Max Consecutive Duty Days 4</div>' +
+          '<div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;">* Minimum Credit prorated for ' + vacCount + ' Vacation days (Standard 75:00)</div>' +
         '</div>' +
       '</div>';
 
-    var lineNum = 1;
+    var displayLineNum = 1;
     var step2Rows = exclusions.length === 0
       ? '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">No exclusion/avoid filters active.</div>'
       : exclusions.map(function(f) {
           var lineDesc = filterDescription(f);
-          var html = '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#b91c1c;">' +
-            'Line ' + (lineNum++) + ': ' + PB.escapeHtml(lineDesc) +
+          return '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#b91c1c;">' +
+            'Line ' + (displayLineNum++) + ': ' + PB.escapeHtml(lineDesc) +
           '</div>';
-          return html;
         }).join('');
 
     var step2Html =
       '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
-        '<div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">📌 STEP 2: EXCLUSION LINES (Placed FIRST in NAVBLUE)</div>' +
-        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">*Critical: Exclude dates & unwanted trips BEFORE adding positive awards so NAVBLUE doesn\'t award them first.</div>' +
+        '<div style="font-weight:700;font-size:13px;color:var(--red,#dc2626);margin-bottom:4px;">2. EXCLUSION LINES</div>' +
+        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">* Placed FIRST in NAVBLUE to prevent unwanted awards.</div>' +
         step2Rows +
       '</div>';
 
@@ -12649,19 +13256,37 @@ function renderDayPairingsPanel(dk) {
       ? '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">No positive award filters active.</div>'
       : awards.map(function(f) {
           var lineDesc = filterDescription(f);
-          var html = '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#047857;">' +
-            'Line ' + (lineNum++) + ': ' + PB.escapeHtml(lineDesc) +
+          return '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#047857;">' +
+            'Line ' + (displayLineNum++) + ': ' + PB.escapeHtml(lineDesc) +
           '</div>';
-          return html;
         }).join('');
 
     var step3Html =
       '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
-        '<div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">📌 STEP 3: POSITIVE AWARD LINES (Placed BELOW Exclusions)</div>' +
-        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">Target your preferred layover cities, trip lengths, and report/release times.</div>' +
+        '<div style="font-weight:700;font-size:13px;color:var(--green,#10b981);margin-bottom:4px;">3. POSITIVE AWARD LINES</div>' +
+        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">* Placed BELOW exclusions.</div>' +
         step3Rows +
       '</div>';
 
+    var step4Html =
+      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
+        '<div style="font-weight:700;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">4. SYSTEM FALLBACK</div>' +
+        '<div style="font-size:12px;font-family:var(--font-mono);background:var(--bg-surface);border:1px solid var(--border-subtle);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:var(--text-secondary);">' +
+          'Line ' + (displayLineNum++) + ': Clear Schedule and Start Next Bid Group<br>' +
+          'Line ' + (displayLineNum++) + ': Award Pairings' +
+        '</div>' +
+      '</div>';
+
+    var interactiveTabHtml = step1Html + step2Html + step3Html + step4Html;
+
+    // Raw Tab
+    var rawTabHtml = 
+      '<div style="position:relative;">' +
+        '<textarea id="pb-raw-script-area" readonly style="width:100%;height:350px;background:var(--bg-app);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;padding:12px;border:1px solid var(--border-subtle);border-radius:var(--r-md);resize:none;">' + PB.escapeHtml(rawScriptText) + '</textarea>' +
+        '<button onclick="navigator.clipboard.writeText(document.getElementById(\'pb-raw-script-area\').value);this.innerText=\'Copied!\';setTimeout(()=>this.innerText=\'📋 Copy Full Bid\',2000)" style="position:absolute;top:8px;right:18px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer;color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,0.1);">📋 Copy Full Bid</button>' +
+      '</div>';
+
+    // Total stats
     var totalCredit = 0;
     pairings.forEach(function(p) { totalCredit += (p.creditHours || 0); });
     var avgCredit = pairings.length > 0 ? (totalCredit / pairings.length).toFixed(2) : '0.00';
@@ -12673,6 +13298,7 @@ function renderDayPairingsPanel(dk) {
         '<div><div style="font-size:11px;color:var(--text-tertiary);">Target Min Pay</div><div style="font-weight:700;font-size:16px;color:var(--accent);">' + fmtHHMM(proratedMinPay) + '</div></div>' +
       '</div>';
 
+    var mo = ensureModal();
     mo.innerHTML =
       '<div class="pb-port-modal__inner" style="max-width:620px;">' +
         '<div class="pb-port-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle);">' +
@@ -12680,13 +13306,24 @@ function renderDayPairingsPanel(dk) {
             '<div class="pb-port-modal__title" style="font-weight:700;font-size:16px;">NAVBLUE PBS Step-by-Step Bidding Guide</div>' +
             '<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Follow these steps in NAVBLUE web app to build this schedule</div>' +
           '</div>' +
-          '<button class="pb-port-modal__close" onclick="window.pbOpenFiltersPanel();">‹ Back</button>' +
+          '<button class="pb-port-modal__close" onclick="window.pbOpenFiltersPanel();">❮ Back</button>' +
         '</div>' +
-        '<div class="pb-port-modal__body" style="padding:16px 18px;max-height:65vh;overflow-y:auto;">' +
-          step1Html +
-          step2Html +
-          step3Html +
-          summaryHtml +
+        
+        // Tabs Header
+        '<div style="display:flex;border-bottom:1px solid var(--border-subtle);">' +
+          '<div id="pb-tab-interactive" onclick="document.getElementById(\'pb-panel-interactive\').style.display=\'block\';document.getElementById(\'pb-panel-raw\').style.display=\'none\';this.style.borderBottom=\'2px solid var(--accent)\';this.style.color=\'var(--accent)\';document.getElementById(\'pb-tab-raw\').style.borderBottom=\'none\';document.getElementById(\'pb-tab-raw\').style.color=\'var(--text-secondary)\';" style="flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;color:var(--accent);border-bottom:2px solid var(--accent);">Interactive Walkthrough</div>' +
+          '<div id="pb-tab-raw" onclick="document.getElementById(\'pb-panel-raw\').style.display=\'block\';document.getElementById(\'pb-panel-interactive\').style.display=\'none\';this.style.borderBottom=\'2px solid var(--accent)\';this.style.color=\'var(--accent)\';document.getElementById(\'pb-tab-interactive\').style.borderBottom=\'none\';document.getElementById(\'pb-tab-interactive\').style.color=\'var(--text-secondary)\';" style="flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-secondary);">Raw NAVBLUE Script</div>' +
+        '</div>' +
+
+        '<div class="pb-port-modal__body" style="padding:16px 18px;max-height:60vh;overflow-y:auto;">' +
+          '<div id="pb-panel-interactive">' +
+            interactiveTabHtml +
+            summaryHtml +
+          '</div>' +
+          '<div id="pb-panel-raw" style="display:none;">' +
+            rawTabHtml +
+            '<div style="margin-top:12px;">' + summaryHtml + '</div>' +
+          '</div>' +
         '</div>' +
         '<div style="padding:12px 18px;border-top:1px solid var(--border-subtle);display:flex;justify-content:flex-end;">' +
           '<button class="btn btn--primary btn--sm" onclick="document.getElementById(\'pb-fb-modal\').removeAttribute(\'data-open\');">Done</button>' +
@@ -12699,19 +13336,27 @@ function renderDayPairingsPanel(dk) {
   window.pbShowFilterTypes = function() {
     var mo = ensureModal();
     var cats = [
-      { k: 'length',     l: 'Pairing Length' },
-      { k: 'credit',     l: 'Credit Hours' },
-      { k: 'tafb',       l: 'TAFB' },
-      { k: 'dh',         l: 'Deadhead' },
-      { k: 'redeye',     l: 'Redeye' },
-      { k: 'ci',         l: 'Check-In Time' },
-      { k: 'co',         l: 'Check-Out Time' },
-      { k: 'commutable', l: 'Commutable' },
-      { k: 'layoverCity',l: 'Layover Cities' },
-      { k: 'layoverDur', l: 'Layover Duration' },
-      { k: 'landings',   l: 'Landing Cities' },
-      { k: 'preferOff',  l: 'Prefer Off (dates / DOW)' },
-      { k: 'carryOut',   l: 'Carry-Out Past Bid End' }
+      { k: 'ciStation',   l: 'Check-In Station (Base / Co-terminal)' },
+      { k: 'coStation',   l: 'Check-Out Station (Base / Co-terminal)' },
+      { k: 'workStation', l: 'Work Start / Work End Station' },
+      { k: 'dutyLegs',    l: 'Duty Legs (Max Legs per Duty Day)' },
+      { k: 'totalLegs',   l: 'Total Legs in Pairing' },
+      { k: 'blockTime',   l: 'Block Time (Daily / Total)' },
+      { k: 'avgCredit',   l: 'Average Daily Credit' },
+      { k: 'length',      l: 'Pairing Length (Days)' },
+      { k: 'credit',      l: 'Credit Hours (Total)' },
+      { k: 'tafb',        l: 'TAFB (Time Away From Base)' },
+      { k: 'dh',          l: 'Deadhead (Any / Front / Back)' },
+      { k: 'redeye',      l: 'Redeye' },
+      { k: 'ci',          l: 'Check-In Time' },
+      { k: 'co',          l: 'Check-Out Time' },
+      { k: 'commutable',  l: 'Commutable Window' },
+      { k: 'layoverCity', l: 'Layover Cities (Any / Every)' },
+      { k: 'layoverDur',  l: 'Layover Duration' },
+      { k: 'landings',    l: 'Landing Cities' },
+      { k: 'preferOff',   l: 'Prefer Off (Dates / DOW / Range)' },
+      { k: 'carryOut',    l: 'Carry-Out Past Bid End' },
+      { k: 'pairingNum',  l: 'Specific Pairing Numbers' }
     ];
     var html = cats.map(function(c) {
       return '<button class="pb-chip" style="width:100%;justify-content:space-between;margin-bottom:6px;text-align:left;padding:10px 14px;" onclick="window.pbBuildFilter(\'' + c.k + '\')">' + c.l + ' <span style="color:var(--text-muted);">›</span></button>';
@@ -12731,19 +13376,27 @@ function renderDayPairingsPanel(dk) {
     var mo = ensureModal();
     var body = '', title = '', postWire = null;
     switch (kind) {
-      case 'length':     title = 'Pairing Length'; body = lenBody(); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
-      case 'credit':     title = 'Credit Hours'; body = rangeBody('credit', 'hrs', 0, 50); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
-      case 'tafb':       title = 'TAFB'; body = rangeBody('tafb', 'hrs', 0, 200); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
-      case 'dh':         title = 'Deadhead'; body = dhBody(); postWire = function() { wireSegAll(['fb-mode','fb-pos']); }; break;
-      case 'redeye':     title = 'Redeye'; body = boolBody('Has redeye', 'redeye'); postWire = function() { wireSegAll(['fb-mode','fb-val']); }; break;
-      case 'ci':         title = 'Check-In Time'; body = timeBody('ci'); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
-      case 'co':         title = 'Check-Out Time'; body = timeBody('co'); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
-      case 'commutable': title = 'Commutable'; body = commBody(); break;
-      case 'layoverCity':title = 'Layover Cities'; body = cityBody('layoverCity'); postWire = function() { wireSegAll(['fb-mode']); }; break;
-      case 'layoverDur': title = 'Layover Duration'; body = rangeBody('layoverDur', 'hrs', 0, 50); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
-      case 'landings':   title = 'Landing Cities'; body = cityBody('landings'); postWire = function() { wireSegAll(['fb-mode']); }; break;
-      case 'preferOff':  title = 'Prefer Off'; body = preferOffBody(); postWire = preferOffWire; break;
-      case 'carryOut':   title = 'Carry-Out'; body = carryOutBody(); break;
+      case 'ciStation':   title = 'Check-In Station'; body = stationBody('checkin'); postWire = function() { wireSegAll(['fb-mode']); wireBaseChips('fb-st-val'); }; break;
+      case 'coStation':   title = 'Check-Out Station'; body = stationBody('checkout'); postWire = function() { wireSegAll(['fb-mode']); wireBaseChips('fb-st-val'); }; break;
+      case 'workStation': title = 'Work Start / End Station'; body = workStationBody(); postWire = function() { wireSegAll(['fb-mode','fb-work-pos']); wireBaseChips('fb-st-val'); }; break;
+      case 'dutyLegs':    title = 'Duty Legs'; body = dutyLegsBody(); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'totalLegs':   title = 'Total Legs in Pairing'; body = totalLegsBody(); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'blockTime':   title = 'Block Time'; body = blockTimeBody(); postWire = function() { wireSegAll(['fb-mode','fb-scope','fb-op']); }; break;
+      case 'avgCredit':   title = 'Average Daily Credit'; body = avgCreditBody(); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'pairingNum':  title = 'Specific Pairing Numbers'; body = pairingNumBody(); postWire = function() { wireSegAll(['fb-mode']); }; break;
+      case 'length':      title = 'Pairing Length'; body = lenBody(); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'credit':      title = 'Credit Hours'; body = rangeBody('credit', 'hrs', 0, 50); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'tafb':        title = 'TAFB'; body = rangeBody('tafb', 'hrs', 0, 200); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'dh':          title = 'Deadhead'; body = dhBody(); postWire = function() { wireSegAll(['fb-mode','fb-pos']); }; break;
+      case 'redeye':      title = 'Redeye'; body = boolBody('Has redeye', 'redeye'); postWire = function() { wireSegAll(['fb-mode','fb-val']); }; break;
+      case 'ci':          title = 'Check-In Time'; body = timeBody('ci'); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'co':          title = 'Check-Out Time'; body = timeBody('co'); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'commutable':  title = 'Commutable'; body = commBody(); break;
+      case 'layoverCity': title = 'Layover Cities'; body = cityBody('layoverCity'); postWire = function() { wireSegAll(['fb-mode','fb-match']); }; break;
+      case 'layoverDur':  title = 'Layover Duration'; body = rangeBody('layoverDur', 'hrs', 0, 50); postWire = function() { wireSegAll(['fb-mode','fb-op']); }; break;
+      case 'landings':    title = 'Landing Cities'; body = cityBody('landings'); postWire = function() { wireSegAll(['fb-mode']); }; break;
+      case 'preferOff':   title = 'Prefer Off'; body = preferOffBody(); postWire = preferOffWire; break;
+      case 'carryOut':    title = 'Carry-Out'; body = carryOutBody(); break;
       default: body = '<div>Coming soon</div>';
     }
     mo.innerHTML =
@@ -12918,9 +13571,220 @@ function renderDayPairingsPanel(dk) {
     commit({ type: 'commutable', mode: 'avoid', params: params });
   };
 
+  // Base Airport helpers for Co-terminals
+  function getBaseAirports() {
+    var s = window._appStateRef || {};
+    var b = (s.base || '').toUpperCase();
+    if (b === 'NYC') return ['LGA', 'JFK', 'EWR'];
+    if (b === 'LAX') return ['LAX', 'BUR', 'SNA', 'ONT', 'LGB'];
+    if (b === 'SFO') return ['SFO', 'OAK', 'SJC'];
+    if (b === 'MIA') return ['MIA', 'FLL', 'PBI'];
+    if (b === 'CHI' || b === 'ORD') return ['ORD', 'MDW'];
+    if (b === 'WAS') return ['DCA', 'IAD', 'BWI'];
+    if (b) return [b];
+    return ['LGA', 'JFK', 'EWR', 'LAX', 'BUR', 'SNA', 'ATL', 'DTW', 'MSP', 'SLC', 'SEA', 'BOS'];
+  }
+
+  function wireBaseChips(targetInputId) {
+    var inp = document.getElementById(targetInputId);
+    if (!inp) return;
+    document.querySelectorAll('.pb-apt-chip').forEach(function(btn) {
+      btn.onclick = function() {
+        var apt = btn.getAttribute('data-apt');
+        var curr = inp.value ? inp.value.split(/[,\s]+/).filter(Boolean) : [];
+        if (curr.indexOf(apt) === -1) {
+          curr.push(apt);
+          inp.value = curr.join(', ');
+        } else {
+          curr = curr.filter(function(x) { return x !== apt; });
+          inp.value = curr.join(', ');
+        }
+      };
+    });
+  }
+
+  // Station bodies (Check-In & Check-Out)
+  function stationBody(subtype) {
+    var label = subtype === 'checkin' ? 'Check-In Station' : 'Check-Out Station';
+    var airports = getBaseAirports();
+    var chips = airports.map(function(apt) {
+      return '<button type="button" class="pb-chip pb-apt-chip" style="padding:4px 10px;font-weight:700;font-size:11px;" data-apt="' + apt + '">' + apt + '</button>';
+    }).join(' ');
+
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">' + label + ' Airport(s)</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">' + chips + '</div>' +
+        '<input class="input u-mono" id="fb-st-val" placeholder="e.g. LGA, JFK" style="text-transform:uppercase;">' +
+        '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">Select base co-terminals above or type airport codes</div>' +
+      '</div>' +
+      '<button class="btn btn--primary" onclick="window.pbCommitStation(\'' + subtype + '\')">Add Filter</button>';
+  }
+
+  window.pbCommitStation = function(subtype) {
+    var raw = document.getElementById('fb-st-val').value.toUpperCase();
+    var stList = raw.split(/[,\s]+/).filter(Boolean);
+    if (stList.length === 0) { toast('Enter or select at least one airport', 'error'); return; }
+    commit({ type: 'station', subtype: subtype, mode: modeVal('fb-mode'), params: { stations: stList } });
+  };
+
+  // Work Start / End Station body
+  function workStationBody() {
+    var airports = getBaseAirports();
+    var chips = airports.map(function(apt) {
+      return '<button type="button" class="pb-chip pb-apt-chip" style="padding:4px 10px;font-weight:700;font-size:11px;" data-apt="' + apt + '">' + apt + '</button>';
+    }).join(' ');
+
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">Station Position</div>' +
+        '<div class="segmented" id="fb-work-pos">' +
+          '<button class="segmented__item" data-v="work-start" aria-pressed="true">Work Start (First flying leg)</button>' +
+          '<button class="segmented__item" data-v="work-end" aria-pressed="false">Work End (Last flying leg)</button>' +
+        '</div></div>' +
+      '<div class="field"><div class="field__label">Station(s)</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">' + chips + '</div>' +
+        '<input class="input u-mono" id="fb-st-val" placeholder="e.g. SFO, ATL" style="text-transform:uppercase;">' +
+      '</div>' +
+      '<button class="btn btn--primary" onclick="window.pbCommitWorkStation()">Add Filter</button>';
+  }
+
+  window.pbCommitWorkStation = function() {
+    var raw = document.getElementById('fb-st-val').value.toUpperCase();
+    var stList = raw.split(/[,\s]+/).filter(Boolean);
+    if (stList.length === 0) { toast('Enter or select at least one airport', 'error'); return; }
+    var subtype = modeVal('fb-work-pos');
+    commit({ type: 'station', subtype: subtype, mode: modeVal('fb-mode'), params: { stations: stList } });
+  };
+
+  // Duty Legs body
+  function dutyLegsBody() {
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">Comparison (Max legs in any single duty day)</div>' +
+        '<div class="segmented" id="fb-op">' +
+          '<button class="segmented__item" data-v="max" aria-pressed="false">≤ (At most)</button>' +
+          '<button class="segmented__item" data-v="exact" aria-pressed="false">= (Exact)</button>' +
+          '<button class="segmented__item" data-v="gt" aria-pressed="true">> (More than)</button>' +
+        '</div></div>' +
+      '<div class="field"><div class="field__label">Number of Legs</div>' +
+        '<input class="input u-mono" id="fb-dl-v" type="number" min="1" max="6" value="2" style="width:100px;">' +
+        '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">e.g. Avoid ANY Duty Legs > 2 keeps only 1 or 2-leg days</div>' +
+      '</div>' +
+      '<button class="btn btn--primary" onclick="window.pbCommitDutyLegs()">Add Filter</button>';
+  }
+
+  window.pbCommitDutyLegs = function() {
+    var op = modeVal('fb-op');
+    var val = parseInt(document.getElementById('fb-dl-v').value) || 2;
+    commit({ type: 'legs', subtype: 'duty-legs', mode: modeVal('fb-mode'), params: { op: op, value: val } });
+  };
+
+  // Total Legs body
+  function totalLegsBody() {
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">Comparison</div>' +
+        '<div class="segmented" id="fb-op">' +
+          '<button class="segmented__item" data-v="max" aria-pressed="true">≤ (At most)</button>' +
+          '<button class="segmented__item" data-v="exact" aria-pressed="false">= (Exact)</button>' +
+          '<button class="segmented__item" data-v="gt" aria-pressed="false">> (More than)</button>' +
+          '<button class="segmented__item" data-v="range" aria-pressed="false">Range</button>' +
+        '</div></div>' +
+      '<div class="field-row" style="display:flex;gap:10px;">' +
+        '<div class="field"><div class="field__label">Legs (or Min)</div><input class="input u-mono" id="fb-tl-v1" type="number" min="1" max="20" value="4" style="width:90px;"></div>' +
+        '<div class="field"><div class="field__label">Max (Range only)</div><input class="input u-mono" id="fb-tl-v2" type="number" min="1" max="20" value="6" style="width:90px;"></div>' +
+      '</div>' +
+      '<button class="btn btn--primary" onclick="window.pbCommitTotalLegs()">Add Filter</button>';
+  }
+
+  window.pbCommitTotalLegs = function() {
+    var op = modeVal('fb-op');
+    var v1 = parseInt(document.getElementById('fb-tl-v1').value) || 1;
+    var v2 = parseInt(document.getElementById('fb-tl-v2').value) || v1;
+    var params = op === 'range' ? { op: 'range', min: v1, max: v2 } : { op: op, value: v1 };
+    commit({ type: 'legs', subtype: 'total-legs', mode: modeVal('fb-mode'), params: params });
+  };
+
+  // Block Time body
+  function blockTimeBody() {
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">Scope</div>' +
+        '<div class="segmented" id="fb-scope">' +
+          '<button class="segmented__item" data-v="avg-daily" aria-pressed="true">Average Daily Block</button>' +
+          '<button class="segmented__item" data-v="total" aria-pressed="false">Total Block Time</button>' +
+        '</div></div>' +
+      '<div class="field"><div class="field__label">Operation</div>' +
+        '<div class="segmented" id="fb-op">' +
+          '<button class="segmented__item" data-v="min" aria-pressed="true">Minimum (≥)</button>' +
+          '<button class="segmented__item" data-v="max" aria-pressed="false">Maximum (≤)</button>' +
+          '<button class="segmented__item" data-v="range" aria-pressed="false">Range</button>' +
+        '</div></div>' +
+      '<div class="field-row" style="display:flex;gap:10px;">' +
+        '<div class="field"><div class="field__label">From (Hours)</div><input class="input u-mono" id="fb-blk-lo" type="number" step="0.5" min="0" max="40" value="5"></div>' +
+        '<div class="field"><div class="field__label">To (Hours)</div><input class="input u-mono" id="fb-blk-hi" type="number" step="0.5" min="0" max="40" value="7"></div>' +
+      '</div>' +
+      '<button class="btn btn--primary" onclick="window.pbCommitBlockTime()">Add Filter</button>';
+  }
+
+  window.pbCommitBlockTime = function() {
+    var scope = modeVal('fb-scope');
+    var op = modeVal('fb-op');
+    var lo = parseFloat(document.getElementById('fb-blk-lo').value) || 0;
+    var hi = parseFloat(document.getElementById('fb-blk-hi').value) || lo;
+    var params = op === 'min' ? { op: 'min', min: lo } : (op === 'max' ? { op: 'max', max: hi } : { op: 'range', min: lo, max: hi });
+    commit({ type: 'block-time', subtype: scope, mode: modeVal('fb-mode'), params: params });
+  };
+
+  // Average Daily Credit body
+  function avgCreditBody() {
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">Operation</div>' +
+        '<div class="segmented" id="fb-op">' +
+          '<button class="segmented__item" data-v="min" aria-pressed="true">Minimum (≥)</button>' +
+          '<button class="segmented__item" data-v="max" aria-pressed="false">Maximum (≤)</button>' +
+          '<button class="segmented__item" data-v="range" aria-pressed="false">Range</button>' +
+        '</div></div>' +
+      '<div class="field-row" style="display:flex;gap:10px;">' +
+        '<div class="field"><div class="field__label">From (Hours)</div><input class="input u-mono" id="fb-ac-lo" type="number" step="0.25" min="0" max="15" value="5.25"></div>' +
+        '<div class="field"><div class="field__label">To (Hours)</div><input class="input u-mono" id="fb-ac-hi" type="number" step="0.25" min="0" max="15" value="7"></div>' +
+      '</div>' +
+      '<button class="btn btn--primary" onclick="window.pbCommitAvgCredit()">Add Filter</button>';
+  }
+
+  window.pbCommitAvgCredit = function() {
+    var op = modeVal('fb-op');
+    var lo = parseFloat(document.getElementById('fb-ac-lo').value) || 0;
+    var hi = parseFloat(document.getElementById('fb-ac-hi').value) || lo;
+    var params = op === 'min' ? { op: 'min', min: lo } : (op === 'max' ? { op: 'max', max: hi } : { op: 'range', min: lo, max: hi });
+    commit({ type: 'avg-credit', subtype: op, mode: modeVal('fb-mode'), params: params });
+  };
+
+  // Specific Pairing Numbers body
+  function pairingNumBody() {
+    return modeToggle('fb-mode') +
+      '<div class="field"><div class="field__label">Pairing Number(s)</div>' +
+        '<input class="input u-mono" id="fb-pnum-val" placeholder="e.g. 1001, 1002, 1003" style="text-transform:uppercase;">' +
+        '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">Comma-separated pairing numbers</div>' +
+      '</div>' +
+      '<button class="btn btn--primary" onclick="window.pbCommitPairingNum()">Add Filter</button>';
+  }
+
+  window.pbCommitPairingNum = function() {
+    var raw = document.getElementById('fb-pnum-val').value.toUpperCase();
+    var nums = raw.split(/[,\s]+/).filter(Boolean);
+    if (nums.length === 0) { toast('Enter at least one pairing number', 'error'); return; }
+    commit({ type: 'pairing-number', mode: modeVal('fb-mode'), params: { numbers: nums } });
+  };
+
   // City bodies (layoverCity + landings)
   function cityBody(kind) {
+    var matchHtml = kind === 'layoverCity'
+      ? '<div class="field"><div class="field__label">Matching Rule</div>' +
+          '<div class="segmented" id="fb-match">' +
+            '<button class="segmented__item" data-v="any" aria-pressed="true">Any Layover In List</button>' +
+            '<button class="segmented__item" data-v="every" aria-pressed="false">Every Layover In List</button>' +
+          '</div></div>'
+      : '';
+
     return modeToggle('fb-mode') +
+      matchHtml +
       '<div class="field"><div class="field__label">Cities (comma-separated IATA codes)</div>' +
         '<input class="input u-mono" id="fb-cities" placeholder="e.g. BOS, DTW, SLC" style="text-transform:uppercase;"></div>' +
       '<button class="btn btn--primary" onclick="window.pbCommitCities(\'' + kind + '\')">Add Filter</button>';
@@ -12931,7 +13795,8 @@ function renderDayPairingsPanel(dk) {
     if (cities.length === 0) { toast('Enter at least one city', 'error'); return; }
     var mode = modeVal('fb-mode');
     if (kind === 'layoverCity') {
-      commit({ type: 'layovers-in', subtype: mode === 'avoid' ? 'avoid' : 'prefer', mode: mode, params: { cities: cities } });
+      var matchMode = modeVal('fb-match') || 'any';
+      commit({ type: 'layovers-in', subtype: mode === 'avoid' ? 'avoid' : 'prefer', mode: mode, params: { cities: cities, match: matchMode } });
     } else {
       commit({ type: 'landings-in', mode: mode, params: { stations: cities } });
     }
@@ -13122,6 +13987,933 @@ function renderDayPairingsPanel(dk) {
       '<button class="btn btn--primary" onclick="window.pbCommitCarry()">Add Filter</button>';
   }
   window.pbCommitCarry = function() { commit({ type: 'carry-out', mode: 'avoid', params: {} }); };
+
+})();
+</script>
+
+<!-- ============================================================
+     RES COVERAGE & TRIP TRADE MODULE
+     Reserve requirements analyzer & trip trade validator
+     ============================================================ -->
+<script>
+(function() {
+  "use strict";
+
+  var STORAGE_KEY = 'res_coverage.state';
+
+  var _state = {
+    activeTab: 'both', // 'current' | 'next' | 'both'
+    editMode: false,
+    months: {
+      current: {
+        id: 'current',
+        label: 'Current Month',
+        monthCode: 'SEP',
+        asOf: '',
+        meta: '',
+        days: []
+      },
+      next: {
+        id: 'next',
+        label: 'Next Month',
+        monthCode: 'OCT',
+        asOf: '',
+        meta: '',
+        days: []
+      }
+    },
+    trades: {} // e.g. { '20SEP': 'drop', '01OCT': 'pick' }
+  };
+
+  var _root = null;
+  var _tessLoading = false;
+
+  function loadState() {
+    try {
+      var saved = PB.storage.get(STORAGE_KEY, null);
+      if (saved && typeof saved === 'object') {
+        if (saved.months) {
+          if (saved.months.current) _state.months.current = saved.months.current;
+          if (saved.months.next) _state.months.next = saved.months.next;
+        }
+        if (saved.trades) _state.trades = saved.trades;
+        if (saved.activeTab) _state.activeTab = saved.activeTab;
+      }
+    } catch (e) {
+      if (PB.log) PB.log.warn('Could not load res_coverage state', { error: String(e) });
+    }
+  }
+
+  function saveState() {
+    try {
+      PB.storage.set(STORAGE_KEY, {
+        activeTab: _state.activeTab,
+        months: _state.months,
+        trades: _state.trades
+      });
+    } catch (e) {
+      if (PB.log) PB.log.warn('Could not save res_coverage state', { error: String(e) });
+    }
+  }
+
+  function calculateDayMargin(reqd, avail) {
+    return (parseInt(avail, 10) || 0) - (parseInt(reqd, 10) || 0);
+  }
+
+  function parseCoverageText(text) {
+    if (!text || typeof text !== 'string') return null;
+    var res = {
+      month: null,
+      base: null,
+      equipment: null,
+      position: null,
+      bidPeriod: null,
+      asOf: null,
+      days: []
+    };
+
+    // Header patterns
+    var baseM = text.match(/Base:\s*([A-Za-z0-9]+)/i);
+    if (baseM) res.base = baseM[1].toUpperCase();
+    var eqpM = text.match(/Eqp:\s*([A-Za-z0-9]+)/i);
+    if (eqpM) res.equipment = eqpM[1].toUpperCase();
+    var posM = text.match(/Pos:\s*([A-Za-z0-9]+)/i);
+    if (posM) res.position = posM[1].toUpperCase();
+    var bpM = text.match(/Bid\s*period:\s*([0-9]{1,2}[A-Za-z]{3}[0-9]{0,2})/i);
+    if (bpM) res.bidPeriod = bpM[1];
+    var asOfM = text.match(/(?:As\s+of|As_of)[.\s]+([0-9]{1,2}[A-Za-z]{3}\s+[0-9]{1,2}:[0-9]{2})/i);
+    if (asOfM) res.asOf = asOfM[1];
+
+    // Pre-clean text for OCR character confusions in day codes
+    var cleaned = text.replace(/\r/g, '');
+    cleaned = cleaned.replace(/\b[O|o]([0-9][A-Za-z]{3})\b/g, '0$1');
+    cleaned = cleaned.replace(/\b[l|I]([0-9][A-Za-z]{3})\b/g, '1$1');
+
+    // Day tuples: Date (DDMMM), Reqd (integer), Avail (integer)
+    var dayRegex = /\b([0-3]?[0-9])\s*([A-Za-z]{3})\b[|\s]+(\d+)[|\s]+(\d+)\b/g;
+    var m;
+    var seenDates = {};
+    var monthCounts = {};
+    var validMonths = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+    while ((m = dayRegex.exec(cleaned)) !== null) {
+      var dayNum = parseInt(m[1], 10);
+      var mon = m[2].toUpperCase();
+      var reqd = parseInt(m[3], 10);
+      var avail = parseInt(m[4], 10);
+
+      if (validMonths.indexOf(mon) === -1) continue;
+      if (dayNum < 1 || dayNum > 31) continue;
+
+      var dateStr = (dayNum < 10 ? '0' + dayNum : '' + dayNum) + mon;
+      if (seenDates[dateStr]) continue;
+      seenDates[dateStr] = true;
+
+      monthCounts[mon] = (monthCounts[mon] || 0) + 1;
+
+      res.days.push({
+        date: dateStr,
+        dayNum: dayNum,
+        month: mon,
+        reqd: reqd,
+        avail: avail,
+        margin: avail - reqd
+      });
+    }
+
+    res.days.sort(function(a, b) { return a.dayNum - b.dayNum; });
+
+    var bestMon = null, maxCount = 0;
+    for (var k in monthCounts) {
+      if (monthCounts[k] > maxCount) {
+        maxCount = monthCounts[k];
+        bestMon = k;
+      }
+    }
+    res.month = bestMon;
+
+    return res;
+  }
+
+  function evaluateTripTrade(coverageMap, selectedTrades) {
+    var droppedDays = [];
+    var pickedDays = [];
+
+    for (var dateKey in selectedTrades) {
+      var action = selectedTrades[dateKey];
+      if (!action) continue;
+
+      var dayData = coverageMap ? coverageMap[dateKey] : null;
+      var reqd = (dayData && dayData.reqd !== undefined) ? dayData.reqd : 0;
+      var avail = (dayData && dayData.avail !== undefined) ? dayData.avail : 0;
+      var margin = (dayData && dayData.margin !== undefined) ? dayData.margin : (avail - reqd);
+
+      var entry = {
+        date: dateKey,
+        reqd: reqd,
+        avail: avail,
+        margin: margin
+      };
+
+      if (action === 'drop') {
+        droppedDays.push(entry);
+      } else if (action === 'pick') {
+        pickedDays.push(entry);
+      }
+    }
+
+    if (droppedDays.length === 0 && pickedDays.length === 0) {
+      return {
+        status: 'IDLE',
+        shouldGoThrough: null,
+        tradeType: 'none',
+        droppedDays: [],
+        pickedDays: [],
+        dropSum: 0,
+        pickSum: 0,
+        failingDays: [],
+        explanation: 'Select days on the calendar to evaluate trip trade coverage.'
+      };
+    }
+
+    // 1. Pick Up Only
+    if (droppedDays.length === 0 && pickedDays.length > 0) {
+      var pSum = pickedDays.reduce(function(acc, d) { return acc + d.margin; }, 0);
+      return {
+        status: 'PASS',
+        shouldGoThrough: true,
+        tradeType: 'pick_only',
+        droppedDays: [],
+        pickedDays: pickedDays,
+        dropSum: 0,
+        pickSum: pSum,
+        failingDays: [],
+        explanation: 'Pick up only: Unrestricted by reserve coverage. Trade should go through.'
+      };
+    }
+
+    // 2. Drop Only
+    if (droppedDays.length > 0 && pickedDays.length === 0) {
+      var dSum = droppedDays.reduce(function(acc, d) { return acc + d.margin; }, 0);
+      var failing = droppedDays.filter(function(d) { return d.margin <= 0; });
+
+      if (failing.length === 0) {
+        return {
+          status: 'PASS',
+          shouldGoThrough: true,
+          tradeType: 'drop_only',
+          droppedDays: droppedDays,
+          pickedDays: [],
+          dropSum: dSum,
+          pickSum: 0,
+          failingDays: [],
+          explanation: 'Drop only: All dropped days have positive coverage (> 0). Trade should go through.'
+        };
+      } else {
+        var failingLabels = failing.map(function(d) {
+          return d.date + ' (' + (d.margin > 0 ? '+' : '') + d.margin + ')';
+        });
+        return {
+          status: 'FAIL',
+          shouldGoThrough: false,
+          tradeType: 'drop_only',
+          droppedDays: droppedDays,
+          pickedDays: [],
+          dropSum: dSum,
+          pickSum: 0,
+          failingDays: failing.map(function(d) { return d.date; }),
+          explanation: 'Drop only requires every day to be positive (> 0). Day(s) ' + failingLabels.join(', ') + ' have zero or negative coverage. Trade will not go through.'
+        };
+      }
+    }
+
+    // 3. Drop AND Pick Up
+    var dropTotal = droppedDays.reduce(function(acc, d) { return acc + d.margin; }, 0);
+    var pickTotal = pickedDays.reduce(function(acc, d) { return acc + d.margin; }, 0);
+
+    if (dropTotal > pickTotal) {
+      return {
+        status: 'PASS',
+        shouldGoThrough: true,
+        tradeType: 'drop_and_pick',
+        droppedDays: droppedDays,
+        pickedDays: pickedDays,
+        dropSum: dropTotal,
+        pickSum: pickTotal,
+        failingDays: [],
+        explanation: 'Drop & Pick trade: Drop coverage sum (' + (dropTotal > 0 ? '+' : '') + dropTotal + ') is strictly greater than pick coverage sum (' + (pickTotal > 0 ? '+' : '') + pickTotal + '). Trade should go through.'
+      };
+    } else if (dropTotal === pickTotal) {
+      return {
+        status: 'FAIL',
+        shouldGoThrough: false,
+        tradeType: 'drop_and_pick',
+        droppedDays: droppedDays,
+        pickedDays: pickedDays,
+        dropSum: dropTotal,
+        pickSum: pickTotal,
+        failingDays: [],
+        explanation: 'Drop & Pick trade: Drop coverage sum equals pick coverage sum (' + (dropTotal > 0 ? '+' : '') + dropTotal + '). Ties will not come through. Trade will not go through.'
+      };
+    } else {
+      return {
+        status: 'FAIL',
+        shouldGoThrough: false,
+        tradeType: 'drop_and_pick',
+        droppedDays: droppedDays,
+        pickedDays: pickedDays,
+        dropSum: dropTotal,
+        pickSum: pickTotal,
+        failingDays: [],
+        explanation: 'Drop & Pick trade: Drop coverage sum (' + (dropTotal > 0 ? '+' : '') + dropTotal + ') is worse than pick coverage sum (' + (pickTotal > 0 ? '+' : '') + pickTotal + '). Trade will not go through.'
+      };
+    }
+  }
+
+  // Build combined days map across both loaded months
+  function getCombinedCoverageMap() {
+    var map = {};
+    ['current', 'next'].forEach(function(mKey) {
+      var m = _state.months[mKey];
+      if (m && m.days) {
+        m.days.forEach(function(d) {
+          map[d.date] = d;
+        });
+      }
+    });
+    return map;
+  }
+
+  function loadTesseractModule() {
+    return new Promise(function(resolve, reject) {
+      if (window._tessLoaded || window.Tesseract) { window._tessLoaded = true; resolve(); return; }
+      var s = document.createElement('script');
+      s.src = './vendor/tesseract/tesseract.min.js';
+      s.onload = function() { window._tessLoaded = true; resolve(); };
+      s.onerror = function() {
+        if (window.location.protocol === 'file:') return reject(new Error('Could not load Tesseract.js from local vendor'));
+        var cs = document.createElement('script');
+        cs.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js';
+        cs.onload = function() { window._tessLoaded = true; resolve(); };
+        cs.onerror = function() {
+          var cs2 = document.createElement('script');
+          cs2.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+          cs2.onload = function() { window._tessLoaded = true; resolve(); };
+          cs2.onerror = function() { reject(new Error('Could not load Tesseract.js from local vendor and CDNs')); };
+          document.head.appendChild(cs2);
+        };
+        document.head.appendChild(cs);
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function handleOcrFile(file, targetMonthKey) {
+    if (!file || _tessLoading) return;
+    _tessLoading = true;
+    updateOcrProgress('Loading OCR engine…', 0);
+
+    loadTesseractModule().then(function() {
+      updateOcrProgress('Recognizing table text…', 10);
+      var base = new URL('./vendor/tesseract/', window.location.href).href;
+      return Tesseract.recognize(file, 'eng', {
+        workerPath: base + 'worker.min.js',
+        corePath: base + 'tesseract-core.wasm.js',
+        langPath: base.replace(/\/$/, ''),
+        logger: function(m) {
+          if (m.status === 'recognizing text') {
+            updateOcrProgress('Recognizing text…', Math.round((m.progress || 0) * 100));
+          } else if (m.status) {
+            updateOcrProgress('OCR: ' + String(m.status).replace(/_/g, ' ') + '…', 0);
+          }
+        }
+      });
+    }).then(function(result) {
+      _tessLoading = false;
+      hideOcrModal();
+      var text = (result && result.data && result.data.text) ? result.data.text : '';
+      if (!text.trim()) {
+        toast('No text recognized in screenshot', 'warning');
+        return;
+      }
+      applyParsedText(text, targetMonthKey);
+    }).catch(function(err) {
+      _tessLoading = false;
+      hideOcrModal();
+      toast('OCR failed: ' + (err.message || String(err)), 'danger');
+    });
+  }
+
+  function applyParsedText(text, targetMonthKey) {
+    var parsed = parseCoverageText(text);
+    if (!parsed || parsed.days.length === 0) {
+      toast('Could not find Reserve table columns in text/screenshot', 'warning');
+      return;
+    }
+
+    // Auto-detect target month if not specified or 'auto'
+    var destKey = targetMonthKey;
+    if (!destKey || destKey === 'auto') {
+      // If parsed month matches next month's existing code or next month is empty
+      if (parsed.month && _state.months.current.monthCode === parsed.month) {
+        destKey = 'current';
+      } else if (parsed.month && _state.months.next.monthCode === parsed.month) {
+        destKey = 'next';
+      } else if (_state.months.current.days.length === 0) {
+        destKey = 'current';
+      } else {
+        destKey = 'next';
+      }
+    }
+
+    var target = _state.months[destKey];
+    target.days = parsed.days;
+    target.monthCode = parsed.month || target.monthCode;
+    target.asOf = parsed.asOf || '';
+    target.meta = [parsed.base, parsed.equipment, parsed.position, parsed.bidPeriod].filter(Boolean).join(' · ');
+
+    saveState();
+    renderModule(_root);
+    toast('Imported ' + parsed.days.length + ' days for ' + (parsed.month || destKey) + ' coverage', 'success');
+  }
+
+  function cycleDayTrade(dateKey) {
+    var cur = _state.trades[dateKey];
+    if (!cur) {
+      _state.trades[dateKey] = 'drop';
+    } else if (cur === 'drop') {
+      _state.trades[dateKey] = 'pick';
+    } else {
+      delete _state.trades[dateKey];
+    }
+    saveState();
+    renderModule(_root);
+  }
+
+  function setDayTrade(dateKey, action) {
+    if (_state.trades[dateKey] === action) {
+      delete _state.trades[dateKey];
+    } else {
+      _state.trades[dateKey] = action;
+    }
+    saveState();
+    renderModule(_root);
+  }
+
+  function clearAllTrades() {
+    _state.trades = {};
+    saveState();
+    renderModule(_root);
+    toast('Cleared trade selection', 'info');
+  }
+
+  function resetMonthData(mKey) {
+    if (!confirm('Clear coverage data for ' + _state.months[mKey].label + '?')) return;
+    _state.months[mKey].days = [];
+    _state.months[mKey].asOf = '';
+    _state.months[mKey].meta = '';
+    saveState();
+    renderModule(_root);
+    toast('Month cleared', 'info');
+  }
+
+  function seedMonth(mKey, monCode, numDays) {
+    var mon = monCode || (mKey === 'current' ? 'SEP' : 'OCT');
+    var count = numDays || 30;
+    var days = [];
+    for (var i = 1; i <= count; i++) {
+      var dStr = (i < 10 ? '0' + i : '' + i) + mon;
+      days.push({
+        date: dStr,
+        dayNum: i,
+        month: mon,
+        reqd: 0,
+        avail: 0,
+        margin: 0
+      });
+    }
+    _state.months[mKey].days = days;
+    _state.months[mKey].monthCode = mon;
+    _state.editMode = true;
+    saveState();
+    renderModule(_root);
+    toast('Seeded ' + count + ' days for ' + mon + '. Edit mode enabled.', 'success');
+  }
+
+  // --- Modal Helpers ---
+  function showOcrModal(targetKey) {
+    var modal = document.getElementById('rc-ocr-modal');
+    if (!modal) return;
+    modal.setAttribute('data-target-month', targetKey || 'auto');
+    modal.style.display = 'flex';
+    var bar = modal.querySelector('#rc-ocr-progress-bar');
+    if (bar) bar.style.width = '0%';
+    var txt = modal.querySelector('#rc-ocr-status-text');
+    if (txt) txt.textContent = 'Drag and drop, paste from clipboard, or click to upload';
+  }
+
+  function hideOcrModal() {
+    var modal = document.getElementById('rc-ocr-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function updateOcrProgress(text, pct) {
+    var modal = document.getElementById('rc-ocr-modal');
+    if (!modal) return;
+    var bar = modal.querySelector('#rc-ocr-progress-bar');
+    if (bar) bar.style.width = (pct || 0) + '%';
+    var txt = modal.querySelector('#rc-ocr-status-text');
+    if (txt) txt.textContent = text || '';
+  }
+
+  function showPasteModal(targetKey) {
+    var modal = document.getElementById('rc-paste-modal');
+    if (!modal) return;
+    modal.setAttribute('data-target-month', targetKey || 'auto');
+    var ta = modal.querySelector('#rc-paste-text');
+    if (ta) ta.value = '';
+    modal.style.display = 'flex';
+  }
+
+  function hidePasteModal() {
+    var modal = document.getElementById('rc-paste-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // --- Render Functions ---
+  function renderEvaluationPanel(evalResult) {
+    var bannerClass = 'rc-status-banner--idle';
+    var bannerIcon = 'alert-triangle';
+    var bannerText = 'SELECT TRIP DAYS TO EVALUATE';
+
+    if (evalResult.status === 'PASS') {
+      bannerClass = 'rc-status-banner--pass';
+      bannerIcon = 'check-circle';
+      bannerText = 'TRADE SHOULD GO THROUGH';
+    } else if (evalResult.status === 'FAIL') {
+      bannerClass = 'rc-status-banner--fail';
+      bannerIcon = 'alert-triangle';
+      bannerText = 'TRADE WILL NOT GO THROUGH';
+    }
+
+    var dropChips = evalResult.droppedDays.map(function(d) {
+      var s = (d.margin > 0 ? '+' : '') + d.margin;
+      return '<span class="rc-day-card__tag rc-day-card__tag--drop" style="font-size:11px;margin:2px;">' + d.date + ' (' + s + ')</span>';
+    }).join('') || '<span style="color:var(--text-tertiary);font-size:12px;">None selected</span>';
+
+    var pickChips = evalResult.pickedDays.map(function(d) {
+      var s = (d.margin > 0 ? '+' : '') + d.margin;
+      return '<span class="rc-day-card__tag rc-day-card__tag--pick" style="font-size:11px;margin:2px;">' + d.date + ' (' + s + ')</span>';
+    }).join('') || '<span style="color:var(--text-tertiary);font-size:12px;">None selected</span>';
+
+    var dropSumStr = (evalResult.dropSum > 0 ? '+' : '') + evalResult.dropSum;
+    var pickSumStr = (evalResult.pickSum > 0 ? '+' : '') + evalResult.pickSum;
+
+    var mathHtml = '';
+    if (evalResult.tradeType === 'drop_and_pick') {
+      var sym = evalResult.dropSum > evalResult.pickSum ? '>' : (evalResult.dropSum === evalResult.pickSum ? '=' : '<');
+      var verdict = evalResult.shouldGoThrough ? 'PASS' : 'FAIL';
+      mathHtml = '<div style="font-family:var(--font-mono);font-size:13px;font-weight:700;margin-top:6px;padding:6px 10px;background:var(--bg-elevated);border-radius:var(--r-sm);border:1px solid var(--border-subtle);">' +
+        'Drop Sum (' + dropSumStr + ') ' + sym + ' Pick Sum (' + pickSumStr + ') → ' +
+        '<span style="color:' + (evalResult.shouldGoThrough ? 'var(--success)' : 'var(--danger)') + ';">' + verdict + '</span>' +
+        '</div>';
+    } else if (evalResult.tradeType === 'drop_only') {
+      mathHtml = '<div style="font-family:var(--font-mono);font-size:12px;margin-top:6px;color:var(--text-secondary);">' +
+        'Drop Only Rule: Every dropped day must have positive coverage (> 0).' +
+        '</div>';
+    } else if (evalResult.tradeType === 'pick_only') {
+      mathHtml = '<div style="font-family:var(--font-mono);font-size:12px;margin-top:6px;color:var(--text-secondary);">' +
+        'Pick Up Only Rule: Unrestricted by reserve coverage.' +
+        '</div>';
+    }
+
+    return [
+      '<div class="rc-eval-panel">',
+        '<div class="rc-status-banner ' + bannerClass + '">',
+          '<span data-icon="' + bannerIcon + '" style="flex-shrink:0;width:20px;height:20px;"></span>',
+          '<div style="flex:1;">' + bannerText + '</div>',
+          (evalResult.status !== 'IDLE' ? '<button class="btn btn--sm btn--ghost" id="rc-clear-trades-btn" style="font-size:11px;">Clear Selection</button>' : ''),
+        '</div>',
+
+        '<div class="rc-breakdown-row">',
+          '<div class="rc-summary-box">',
+            '<div class="rc-summary-box__title">Dropped Days (Open Coverage Cost)</div>',
+            '<div style="margin-bottom:6px;">' + dropChips + '</div>',
+            '<div class="rc-summary-box__value" style="color:var(--danger);">Total Drop Coverage: ' + dropSumStr + '</div>',
+          '</div>',
+
+          '<div class="rc-summary-box">',
+            '<div class="rc-summary-box__title">Picked Up Days (Relief Coverage)</div>',
+            '<div style="margin-bottom:6px;">' + pickChips + '</div>',
+            '<div class="rc-summary-box__value" style="color:var(--success);">Total Pick Coverage: ' + pickSumStr + '</div>',
+          '</div>',
+        '</div>',
+
+        '<div style="font-size:13px;color:var(--text-secondary);line-height:1.4;">' +
+          '<strong>Analysis: </strong>' + evalResult.explanation +
+          mathHtml +
+        '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function renderMonthSection(mKey, mData, editMode) {
+    var title = mData.label + (mData.monthCode ? ' (' + mData.monthCode + ')' : '');
+    var meta = mData.meta ? '<span style="font-size:12px;color:var(--text-tertiary);margin-left:8px;">' + mData.meta + '</span>' : '';
+    var asOf = mData.asOf ? '<span style="font-size:11px;color:var(--text-tertiary);">As of ' + mData.asOf + '</span>' : '';
+
+    if (!mData.days || mData.days.length === 0) {
+      return [
+        '<div class="rc-month-section card"><div class="card__body">',
+          '<div class="rc-month-title-row">',
+            '<div><strong style="font-size:15px;">' + title + '</strong>' + meta + '</div>',
+          '</div>',
+          '<div class="pb-empty" style="padding:28px 16px;">',
+            '<div class="pb-empty__icon">📊</div>',
+            '<div class="pb-empty__title">No coverage data for ' + mData.label + '</div>',
+            '<div class="pb-empty__sub">Import an iCrew screenshot or paste table text to view reserve margins.</div>',
+            '<div style="display:flex;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap;">',
+              '<button class="btn btn--sm btn--primary" onclick="PB.resCoverage.openOcrModal(\'' + mKey + '\')"><span data-icon="upload"></span> Import Screenshot</button>',
+              '<button class="btn btn--sm btn--secondary" onclick="PB.resCoverage.openPasteModal(\'' + mKey + '\')">Paste Text</button>',
+              '<button class="btn btn--sm btn--ghost" onclick="PB.resCoverage.seedMonthPrompt(\'' + mKey + '\')">Manual Seed</button>',
+            '</div>',
+          '</div>',
+        '</div></div>'
+      ].join('');
+    }
+
+    var cardsHtml = mData.days.map(function(d) {
+      var tradeState = _state.trades[d.date];
+      var cardClass = 'rc-day-card';
+      var tagHtml = '';
+      if (tradeState === 'drop') {
+        cardClass += ' rc-day-card--drop';
+        tagHtml = '<span class="rc-day-card__tag rc-day-card__tag--drop">DROP</span>';
+      } else if (tradeState === 'pick') {
+        cardClass += ' rc-day-card--pick';
+        tagHtml = '<span class="rc-day-card__tag rc-day-card__tag--pick">PICK</span>';
+      }
+
+      var margin = (d.avail - d.reqd);
+      var marginClass = 'rc-margin--zero';
+      var marginStr = '0';
+      if (margin > 0) { marginClass = 'rc-margin--pos'; marginStr = '+' + margin; }
+      else if (margin < 0) { marginClass = 'rc-margin--neg'; marginStr = '' + margin; }
+
+      var bodyStats = '';
+      if (editMode) {
+        bodyStats = [
+          '<div style="display:flex;gap:4px;align-items:center;margin:4px 0;">',
+            '<label style="font-size:10px;color:var(--text-tertiary);">R:</label>',
+            '<input type="number" value="' + d.reqd + '" min="0" max="99" style="width:36px;padding:2px;font-size:11px;font-family:var(--font-mono);border:1px solid var(--border-default);border-radius:3px;" onchange="PB.resCoverage.updateDayValue(\'' + mKey + '\',\'' + d.date + '\',\'reqd\',this.value)">',
+            '<label style="font-size:10px;color:var(--text-tertiary);margin-left:2px;">A:</label>',
+            '<input type="number" value="' + d.avail + '" min="0" max="99" style="width:36px;padding:2px;font-size:11px;font-family:var(--font-mono);border:1px solid var(--border-default);border-radius:3px;" onchange="PB.resCoverage.updateDayValue(\'' + mKey + '\',\'' + d.date + '\',\'avail\',this.value)">',
+          '</div>'
+        ].join('');
+      } else {
+        bodyStats = [
+          '<div class="rc-day-card__stats">',
+            '<span>Reqd: <strong>' + d.reqd + '</strong></span>',
+            '<span>Avail: <strong>' + d.avail + '</strong></span>',
+          '</div>'
+        ].join('');
+      }
+
+      return [
+        '<div class="' + cardClass + '" data-date="' + d.date + '" onclick="PB.resCoverage.onCardClick(event, \'' + d.date + '\')">',
+          '<div class="rc-day-card__header">',
+            '<div class="rc-day-card__date">' + d.date + '</div>',
+            tagHtml,
+          '</div>',
+          bodyStats,
+          '<div class="rc-day-card__margin ' + marginClass + '">Margin: ' + marginStr + '</div>',
+          '<div class="rc-day-card__actions" onclick="event.stopPropagation()">',
+            '<button class="rc-day-card__btn ' + (tradeState === 'drop' ? 'rc-day-card__btn--active-drop' : '') + '" onclick="PB.resCoverage.setTradeAction(\'' + d.date + '\', \'drop\')">Drop</button>',
+            '<button class="rc-day-card__btn ' + (tradeState === 'pick' ? 'rc-day-card__btn--active-pick' : '') + '" onclick="PB.resCoverage.setTradeAction(\'' + d.date + '\', \'pick\')">Pick</button>',
+          '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+
+    return [
+      '<div class="rc-month-section card">',
+        '<div class="card__header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">',
+          '<div><strong style="font-size:15px;">' + title + '</strong>' + meta + '</div>',
+          '<div style="display:flex;align-items:center;gap:8px;">',
+            asOf,
+            '<button class="btn btn--sm btn--secondary" onclick="PB.resCoverage.openOcrModal(\'' + mKey + '\')"><span data-icon="upload"></span> Import</button>',
+            '<button class="btn btn--sm btn--ghost" onclick="PB.resCoverage.openPasteModal(\'' + mKey + '\')">Paste</button>',
+            '<button class="btn btn--sm btn--ghost" style="color:var(--danger);" onclick="PB.resCoverage.resetMonth(\'' + mKey + '\')">Reset</button>',
+          '</div>',
+        '</div>',
+        '<div class="card__body">',
+          '<div class="rc-day-grid">' + cardsHtml + '</div>',
+        '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function renderModule(root) {
+    if (!root) return;
+    _root = root;
+
+    var coverageMap = getCombinedCoverageMap();
+    var evalResult = evaluateTripTrade(coverageMap, _state.trades);
+
+    var curMonth = _state.months.current;
+    var nextMonth = _state.months.next;
+
+    var curLabel = curMonth.monthCode || 'Current';
+    var nextLabel = nextMonth.monthCode || 'Next';
+
+    var monthSectionsHtml = '';
+    if (_state.activeTab === 'current') {
+      monthSectionsHtml = renderMonthSection('current', curMonth, _state.editMode);
+    } else if (_state.activeTab === 'next') {
+      monthSectionsHtml = renderMonthSection('next', nextMonth, _state.editMode);
+    } else {
+      monthSectionsHtml = renderMonthSection('current', curMonth, _state.editMode) +
+                          renderMonthSection('next', nextMonth, _state.editMode);
+    }
+
+    root.innerHTML = [
+      '<div class="rc-container">',
+        '<div class="rc-header-bar">',
+          '<div>',
+            '<h2 class="page-title">Res Coverage &amp; Trip Trades</h2>',
+            '<p class="page-subtitle">Evaluate trip drop and pickup viability based on required vs available reserve margins.</p>',
+          '</div>',
+          '<div class="rc-top-controls">',
+            '<div class="segmented" role="group" aria-label="Month View">',
+              '<button class="segmented__item" data-tab="both" ' + (_state.activeTab === 'both' ? 'aria-pressed="true"' : '') + '>Both Months</button>',
+              '<button class="segmented__item" data-tab="current" ' + (_state.activeTab === 'current' ? 'aria-pressed="true"' : '') + '>' + curLabel + '</button>',
+              '<button class="segmented__item" data-tab="next" ' + (_state.activeTab === 'next' ? 'aria-pressed="true"' : '') + '>' + nextLabel + '</button>',
+            '</div>',
+            '<button class="btn btn--sm ' + (_state.editMode ? 'btn--primary' : 'btn--secondary') + '" id="rc-toggle-edit-btn">' + (_state.editMode ? 'Done Editing' : 'Edit Values') + '</button>',
+            '<button class="btn btn--sm btn--primary" id="rc-top-import-btn"><span data-icon="upload"></span> Import Screenshot</button>',
+          '</div>',
+        '</div>',
+
+        // Evaluation Panel
+        renderEvaluationPanel(evalResult),
+
+        // Month Grid Sections
+        monthSectionsHtml,
+
+        // Modal for OCR File Drop
+        '<div class="modal-scrim" id="rc-ocr-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:var(--z-modal);align-items:center;justify-content:center;padding:20px;">',
+          '<div class="modal" style="max-width:500px;width:100%;" onclick="event.stopPropagation()">',
+            '<div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">',
+              '<div>',
+                '<div class="modal-title">Import iCrew Coverage Screenshot</div>',
+                '<div class="modal-sub">Offline OCR automatically extracts Date, Reqd, and Avail columns</div>',
+              '</div>',
+              '<button class="icon-btn" onclick="PB.resCoverage.closeOcrModal()"><span data-icon="x"></span></button>',
+            '</div>',
+            '<div class="modal-body">',
+              '<div class="rc-ocr-zone" id="rc-drop-target">',
+                '<div style="font-size:32px;margin-bottom:8px;">📷</div>',
+                '<div style="font-weight:600;font-size:14px;margin-bottom:4px;">Drag &amp; Drop or Paste Screenshot Here</div>',
+                '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Supports PNG, JPEG. You can also press Ctrl+V / Cmd+V anytime.</div>',
+                '<input type="file" id="rc-file-input" accept="image/*" style="display:none;">',
+                '<button class="btn btn--sm btn--secondary" onclick="document.getElementById(\'rc-file-input\').click()">Browse Images</button>',
+              '</div>',
+              '<div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">',
+                '<label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Target Month:</label>',
+                '<select id="rc-target-month-select" class="select" style="font-size:12px;padding:4px 8px;">',
+                  '<option value="auto">Auto-detect from image</option>',
+                  '<option value="current">Current Month (' + curLabel + ')</option>',
+                  '<option value="next">Next Month (' + nextLabel + ')</option>',
+                '</select>',
+              '</div>',
+              '<div style="margin-top:16px;">',
+                '<div class="progress-bar-wrap"><div class="progress-bar" id="rc-ocr-progress-bar" style="width:0%;"></div></div>',
+                '<div class="progress-text" id="rc-ocr-status-text" style="margin-top:6px;">Ready</div>',
+              '</div>',
+            '</div>',
+            '<div class="modal-footer">',
+              '<button class="btn btn--secondary" onclick="PB.resCoverage.closeOcrModal()">Cancel</button>',
+            '</div>',
+          '</div>',
+        '</div>',
+
+        // Modal for Direct Text Paste
+        '<div class="modal-scrim" id="rc-paste-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:var(--z-modal);align-items:center;justify-content:center;padding:20px;">',
+          '<div class="modal" style="max-width:540px;width:100%;" onclick="event.stopPropagation()">',
+            '<div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">',
+              '<div>',
+                '<div class="modal-title">Paste iCrew Reserves Text</div>',
+                '<div class="modal-sub">Paste copied table text directly from iCrew web</div>',
+              '</div>',
+              '<button class="icon-btn" onclick="PB.resCoverage.closePasteModal()"><span data-icon="x"></span></button>',
+            '</div>',
+            '<div class="modal-body">',
+              '<textarea id="rc-paste-text" style="width:100%;height:180px;font-family:var(--font-mono);font-size:12px;padding:10px;border:1px solid var(--border-default);border-radius:var(--r-md);resize:vertical;" placeholder="Date Reqd Avail&#10;01OCT 9 7&#10;02OCT 10 5..."></textarea>',
+              '<div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">',
+                '<label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Target Month:</label>',
+                '<select id="rc-paste-target-select" class="select" style="font-size:12px;padding:4px 8px;">',
+                  '<option value="auto">Auto-detect from text</option>',
+                  '<option value="current">Current Month (' + curLabel + ')</option>',
+                  '<option value="next">Next Month (' + nextLabel + ')</option>',
+                '</select>',
+              '</div>',
+            '</div>',
+            '<div class="modal-footer">',
+              '<button class="btn btn--secondary" onclick="PB.resCoverage.closePasteModal()">Cancel</button>',
+              '<button class="btn btn--primary" onclick="PB.resCoverage.applyPasteText()">Parse &amp; Load</button>',
+            '</div>',
+          '</div>',
+        '</div>',
+
+      '</div>'
+    ].join('');
+
+    PB.renderIcons(root);
+    attachEvents(root);
+  }
+
+  function attachEvents(root) {
+    var clearBtn = root.querySelector('#rc-clear-trades-btn');
+    if (clearBtn) clearBtn.onclick = clearAllTrades;
+
+    var editToggleBtn = root.querySelector('#rc-toggle-edit-btn');
+    if (editToggleBtn) {
+      editToggleBtn.onclick = function() {
+        _state.editMode = !_state.editMode;
+        renderModule(root);
+      };
+    }
+
+    var importBtn = root.querySelector('#rc-top-import-btn');
+    if (importBtn) {
+      importBtn.onclick = function() { showOcrModal('auto'); };
+    }
+
+    // Segmented month view buttons
+    root.querySelectorAll('.segmented__item[data-tab]').forEach(function(btn) {
+      btn.onclick = function() {
+        _state.activeTab = btn.getAttribute('data-tab');
+        saveState();
+        renderModule(root);
+      };
+    });
+
+    // File input inside OCR modal
+    var fileInp = root.querySelector('#rc-file-input');
+    if (fileInp) {
+      fileInp.onchange = function(e) {
+        var f = e.target.files && e.target.files[0];
+        if (f) {
+          var targetSel = root.querySelector('#rc-target-month-select');
+          var targetKey = targetSel ? targetSel.value : 'auto';
+          handleOcrFile(f, targetKey);
+        }
+      };
+    }
+
+    // Drag and drop zone inside modal
+    var dropTarget = root.querySelector('#rc-drop-target');
+    if (dropTarget) {
+      dropTarget.ondragover = function(e) { e.preventDefault(); dropTarget.classList.add('drag-over'); };
+      dropTarget.ondragleave = function() { dropTarget.classList.remove('drag-over'); };
+      dropTarget.ondrop = function(e) {
+        e.preventDefault();
+        dropTarget.classList.remove('drag-over');
+        var f = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) {
+          var targetSel = root.querySelector('#rc-target-month-select');
+          var targetKey = targetSel ? targetSel.value : 'auto';
+          handleOcrFile(f, targetKey);
+        }
+      };
+    }
+
+    // Global paste listener for images when module is active
+    if (!window._rcPasteHandlerAttached) {
+      window._rcPasteHandlerAttached = true;
+      document.addEventListener('paste', function(e) {
+        var activeMod = PB.modules.active && PB.modules.active();
+        if (!activeMod || activeMod.id !== 'res_coverage') return;
+
+        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        if (!items) return;
+
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            var blob = items[i].getAsFile();
+            if (blob) {
+              showOcrModal('auto');
+              handleOcrFile(blob, 'auto');
+              break;
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // Exposed namespace API for testing and UI callbacks
+  PB.resCoverage = {
+    calculateDayMargin: calculateDayMargin,
+    parseCoverageText: parseCoverageText,
+    evaluateTripTrade: evaluateTripTrade,
+    getState: function() { return _state; },
+    openOcrModal: function(targetKey) { showOcrModal(targetKey); },
+    closeOcrModal: hideOcrModal,
+    openPasteModal: function(targetKey) { showPasteModal(targetKey); },
+    closePasteModal: hidePasteModal,
+    applyPasteText: function() {
+      var modal = document.getElementById('rc-paste-modal');
+      if (!modal) return;
+      var ta = modal.querySelector('#rc-paste-text');
+      var sel = modal.querySelector('#rc-paste-target-select');
+      var text = ta ? ta.value : '';
+      var targetKey = sel ? sel.value : 'auto';
+      hidePasteModal();
+      applyParsedText(text, targetKey);
+    },
+    onCardClick: function(e, dateKey) {
+      if (_state.editMode) return;
+      cycleDayTrade(dateKey);
+    },
+    setTradeAction: function(dateKey, action) {
+      setDayTrade(dateKey, action);
+    },
+    updateDayValue: function(mKey, dateKey, field, val) {
+      var num = parseInt(val, 10) || 0;
+      var m = _state.months[mKey];
+      if (m && m.days) {
+        var d = m.days.find(function(x) { return x.date === dateKey; });
+        if (d) {
+          d[field] = num;
+          d.margin = d.avail - d.reqd;
+          saveState();
+          renderModule(_root);
+        }
+      }
+    },
+    resetMonth: function(mKey) { resetMonthData(mKey); },
+    seedMonthPrompt: function(mKey) {
+      var mon = prompt('Enter 3-letter month code (e.g. SEP, OCT):', mKey === 'current' ? 'SEP' : 'OCT');
+      if (!mon) return;
+      var count = parseInt(prompt('Number of days in month (e.g. 30, 31):', '30'), 10) || 30;
+      seedMonth(mKey, mon.toUpperCase(), count);
+    }
+  };
+
+  // Register PB Module
+  PB.modules.register({
+    id: 'res_coverage',
+    title: 'Res Coverage',
+    icon: 'repeat',
+    init: function() {
+      loadState();
+      return Promise.resolve();
+    },
+    render: function(root) {
+      renderModule(root);
+    }
+  });
 
 })();
 </script>
@@ -14878,16 +16670,35 @@ async function processPDF(file) {
         if (!item.str || item.str.trim() === '') continue;
         const y = Math.round(item.transform[5]);
         if (!lines[y]) lines[y] = [];
-        lines[y].push({ x: item.transform[4], str: item.str });
+        lines[y].push({ x: item.transform[4], w: item.width || 0, str: item.str });
       }
       const sortedYs = Object.keys(lines).map(Number).sort((a, b) => b - a);
+
+      function buildLineFromItems(row) {
+        if (!row.length) return '';
+        let line = row[0].str;
+        let lastX = row[0].x;
+        let lastW = row[0].w || 0;
+        for (let i = 1; i < row.length; i++) {
+          const item = row[i];
+          const gap = item.x - (lastX + lastW);
+          if (gap < 1.5) {
+            line += item.str;
+          } else {
+            line += '  ' + item.str;
+          }
+          lastX = item.x;
+          lastW = item.w || 0;
+        }
+        return line;
+      }
 
       // Detect if this is a two-column pairing page by looking for #NNNN items
       // If so, find the x-coordinate gap that separates the two columns.
       const allX = [];
       for (const y of sortedYs) {
         for (const item of lines[y]) {
-          if (/^#(?:[A-Z]\d{3}|\d{4})$/.test(item.str.trim())) allX.push(item.x);
+          if (/^#\s*(?:[A-Z]\d{3}|\d{4})$/.test(item.str.trim())) allX.push(item.x);
         }
       }
       // If we find #NNNN items at two distinct x clusters, the midpoint between
@@ -14914,8 +16725,10 @@ async function processPDF(file) {
         const leftLines = [], rightLines = [];
         for (const y of sortedYs) {
           const row = lines[y].sort((a, b) => a.x - b.x);
-          const left  = row.filter(i => i.x <  colSplitX).map(i => i.str).join('  ');
-          const right = row.filter(i => i.x >= colSplitX).map(i => i.str).join('  ');
+          const leftRow  = row.filter(i => i.x <  colSplitX);
+          const rightRow = row.filter(i => i.x >= colSplitX);
+          const left  = buildLineFromItems(leftRow);
+          const right = buildLineFromItems(rightRow);
           if (left.trim())  leftLines.push(left);
           if (right.trim()) rightLines.push(right);
         }
@@ -14927,7 +16740,7 @@ async function processPDF(file) {
         // Single-column page: join normally
         const pageText = sortedYs.map(y => {
           const lineItems = lines[y].sort((a, b) => a.x - b.x);
-          return lineItems.map(i => i.str).join('  ');
+          return buildLineFromItems(lineItems);
         }).join('\n');
         appState.pdfPages.push(pageText);
       }
@@ -15515,31 +17328,70 @@ function parsePairings(fullText, seat) {
       const norm = raw.replace(/\s+/g, ' ');
 
       // TOTAL CREDIT
-      const tcM = norm.match(/TOTAL CREDIT ([\d.]+)TL ([\d.]+)BL ([\d.]+)CR ([\d.]+)FDP TAFB ([\d.]+)/);
+      let tcM = norm.match(/TOTAL CREDIT ([\d.]+)TL ([\d.]+)BL ([\d.]+)CR ([\d.]+)FDP TAFB ([\d.]+)/);
+      if (!tcM && /CREDIT/i.test(norm) && /TAFB/i.test(norm)) {
+        const tlM   = norm.match(/(?:CREDIT|TOTAL)\s+([\d.\s]+?)\s*TL/i);
+        const blM   = norm.match(/TL\s+([\d.\s]+?)\s*BL/i);
+        const crM   = norm.match(/BL\s+([\d.\s]+?)\s*CR/i);
+        const fdpM  = norm.match(/CR\s+([\d.\s]+?)\s*FDP/i);
+        const tafbM = norm.match(/TAFB\s+([\d.\s]+)/i);
+        if (tlM && blM && crM && fdpM && tafbM) {
+          tcM = [
+            null,
+            tlM[1].replace(/\s+/g, ''),
+            blM[1].replace(/\s+/g, ''),
+            crM[1].replace(/\s+/g, ''),
+            fdpM[1].replace(/\s+/g, ''),
+            tafbM[1].replace(/\s+/g, '')
+          ];
+        }
+      }
       if (tcM) {
         p.creditHours    = hmToDecimal(tcM[1]);
         p.blockHours     = hmToDecimal(tcM[2]);
         p.fdpHours       = hmToDecimal(tcM[4]);
         p.tafbHours      = hmToDecimal(tcM[5]);
         p.tafbRaw        = tcM[5];
-        p.rawTotalCredit = norm;
+        p.rawTotalCredit = 'TOTAL CREDIT ' + tcM[1] + 'TL ' + tcM[2] + 'BL ' + tcM[3] + 'CR ' + tcM[4] + 'FDP TAFB ' + tcM[5];
         continue;
       }
 
       // TOTAL PAY
-      const tpM = norm.match(/TOTAL PAY ([\d:]+)TL\s+([\d.]+)SIT\s+([\d.]+)EDP\s+([\d.]+)HOL\s+([\d.]+)CARVE/);
+      let tpM = norm.match(/TOTAL PAY ([\d:]+)TL\s+([\d.]+)SIT\s+([\d.]+)EDP\s+([\d.]+)HOL\s+([\d.]+)CARVE/);
+      if (!tpM && /PAY/i.test(norm) && /CARVE/i.test(norm)) {
+        const tlM    = norm.match(/(?:TOTAL\s+PAY|PAY)\s+([\d:\s]+?)\s*TL/i);
+        const sitM   = norm.match(/TL\s+([\d.\s]+?)\s*SIT/i);
+        const edpM   = norm.match(/SIT\s+([\d.\s]+?)\s*EDP/i);
+        const holM   = norm.match(/EDP\s+([\d.\s]+?)\s*HOL/i);
+        const carveM = norm.match(/HOL\s+([\d.\s]+?)\s*CARVE/i);
+        if (tlM && sitM && edpM && holM && carveM) {
+          tpM = [
+            null,
+            tlM[1].replace(/\s+/g, ''),
+            sitM[1].replace(/\s+/g, ''),
+            edpM[1].replace(/\s+/g, ''),
+            holM[1].replace(/\s+/g, ''),
+            carveM[1].replace(/\s+/g, '')
+          ];
+        }
+      }
       if (tpM) {
-        p.payTL    = hmToDecimal(tpM[1]);
-        p.sitPay   = parseFloat(tpM[2]) || 0;
-        p.edpPay   = parseFloat(tpM[3]) || 0;
-        p.holPay   = parseFloat(tpM[4]) || 0;
-        p.carvePay = parseFloat(tpM[5]) || 0;
-        p.rawTotalPay = norm;
+        p.payTL       = hmToDecimal(tpM[1]);
+        p.sitPay      = parseFloat(tpM[2]) || 0;
+        p.edpPay      = parseFloat(tpM[3]) || 0;
+        p.holPay      = parseFloat(tpM[4]) || 0;
+        p.carvePay    = parseFloat(tpM[5]) || 0;
+        p.rawTotalPay = 'TOTAL PAY ' + tpM[1] + 'TL ' + tpM[2] + 'SIT ' + tpM[3] + 'EDP ' + tpM[4] + 'HOL ' + tpM[5] + 'CARVE';
         continue;
       }
       // Fallback: just TL
-      const tpM2 = norm.match(/TOTAL PAY ([\d:]+)TL/);
-      if (tpM2) { p.payTL = hmToDecimal(tpM2[1]); p.rawTotalPay = norm; continue; }
+      const tpM2 = norm.match(/(?:TOTAL\s+PAY|PAY)\s+([\d:\s]+?)\s*TL/i);
+      if (tpM2) {
+        const tl = tpM2[1].replace(/\s+/g, '');
+        p.payTL = hmToDecimal(tl);
+        p.rawTotalPay = 'TOTAL PAY ' + tl + 'TL';
+        continue;
+      }
 
       // MCD/TRP/DPA/ADG pairing-level line
       const mcdM = norm.match(/([\d.]+)MCD ([\d.]+)TRP ([\d.]+)DPA ([\d.]+)ADG/);
@@ -15680,7 +17532,7 @@ function parsePairings(fullText, seat) {
     for (const raw of lines) {
       const line = raw.trim();
       if (!line) continue;
-      const hdr = line.match(/^#([A-Z]\d{3}|\d{4})\s/);
+      const hdr = line.match(/^#\s*([A-Z]\d{3}|\d{4})\s/);
       if (hdr) { flush(); currentNum = hdr[1]; currentLines = [line]; }
       else if (currentNum) { currentLines.push(line); }
     }
