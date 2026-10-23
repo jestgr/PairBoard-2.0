@@ -30,6 +30,20 @@ icons/
 > **iOS note:** After visiting the URL in Safari, tap Share → "Add to Home Screen".
 > Android Chrome will show an install banner automatically.
 
+### Checks
+
+Before pushing any change, run (needs Node 20+, no install step):
+
+```sh
+npm run check && npm test
+```
+
+- `npm run check` — every inline `<script>` in `index.html` and `sw.js` parses, `manifest.json` is valid JSON,
+  referenced files (icons, vendor) exist, `sw.js` has a `CACHE_VERSION`. Errors show the `index.html` line number.
+- `npm test` — tests for the check script itself (`tests/`).
+
+Both must print OK / `# fail 0`. Don't push if either fails.
+
 ### Updating the app
 
 1. Edit `index.html` locally
