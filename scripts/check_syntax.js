@@ -5,6 +5,7 @@
 //   • manifest.json is valid JSON
 //   • local files referenced by index.html / sw.js / manifest exist
 //   • sw.js defines CACHE_VERSION
+//   • index.html <head> links manifest.json with a relative path
 //
 // Usage:  node scripts/check_syntax.js [appDir]   (default: repo root)
 // Exits 1 if any check fails. Node built-ins only.
@@ -87,6 +88,21 @@ function extractLocalRefs(text, isHtml) {
   return [...refs];
 }
 
+// href of the first <link rel="manifest"> inside <head> (comments ignored), or null.
+function findManifestLink(html) {
+  const head = html.replace(/<!--[\s\S]*?-->/g, '').match(/<head\b[^>]*>([\s\S]*?)<\/head\s*>/i);
+  if (!head) return null;
+  const linkRe = /<link\b([^>]*)>/gi;
+  let m;
+  while ((m = linkRe.exec(head[1]))) {
+    const rel = m[1].match(/\brel\s*=\s*["']([^"']*)["']/i);
+    if (!rel || !/(^|\s)manifest(\s|$)/i.test(rel[1])) continue;
+    const href = m[1].match(/\bhref\s*=\s*["']([^"']*)["']/i);
+    return href ? href[1] : '';
+  }
+  return null;
+}
+
 function runChecks(appDir) {
   const results = []; // { ok: bool, label, detail }
   const pass = (label) => results.push({ ok: true, label });
@@ -121,6 +137,13 @@ function runChecks(appDir) {
     }
     if (n === 0) fail('index.html', 'no <script> blocks found');
     for (const r of extractLocalRefs(html, true)) if (!refs.has(r)) refs.set(r, 'index.html');
+
+    // Relative href, so it works when GitHub Pages serves the app from a sub-path.
+    const href = findManifestLink(html);
+    if (href === null) fail('index.html manifest link', 'no <link rel="manifest" href="manifest.json"> in <head>');
+    else if (!/^(\.\/)?manifest\.json$/.test(href)) {
+      fail('index.html manifest link', 'href="' + href + '" — expected relative "manifest.json"');
+    } else pass('index.html manifest link');
   }
 
   // ── sw.js ──────────────────────────────────────────────────
@@ -179,4 +202,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { runChecks, extractScripts, extractLocalRefs };
+module.exports = { runChecks, extractScripts, extractLocalRefs, findManifestLink };

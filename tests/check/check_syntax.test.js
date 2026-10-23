@@ -14,6 +14,7 @@ const GOOD_HTML = [
   '<!DOCTYPE html>',
   '<html><head>',
   '<link rel="icon" href="icons/icon.png">',
+  '<link rel="manifest" href="manifest.json">',
   '</head><body>',
   '<script>',
   "  var ok = true;",
@@ -73,7 +74,7 @@ test('a broken inline script fails with the index.html line number', () => {
   const dir = makeApp({ 'index.html': html });
   const { code, out } = runCli(dir);
   assert.strictEqual(code, 1);
-  assert.match(out, /ERROR\s+index\.html <script #1> \(line 5\)/);
+  assert.match(out, /ERROR\s+index\.html <script #1> \(line 6\)/);
   assert.match(out, /SyntaxError/);
   assert.match(out, /CHECK FAILED/);
 });
@@ -111,4 +112,33 @@ test('paths inside HTML / CSS comments are ignored', () => {
     "<style>/* src: url('./fonts/x.woff2') */</style><!-- <img src=\"./gone.png\"> --></head>");
   const dir = makeApp({ 'index.html': html });
   assert.deepStrictEqual(failures(runChecks(dir)), []);
+});
+
+test('a missing manifest link fails', () => {
+  const html = GOOD_HTML.replace('<link rel="manifest" href="manifest.json">\n', '');
+  const dir = makeApp({ 'index.html': html });
+  const f = failures(runChecks(dir));
+  assert.deepStrictEqual(f.map((r) => r.label), ['index.html manifest link']);
+  const { code, out } = runCli(dir);
+  assert.strictEqual(code, 1);
+  assert.match(out, /ERROR\s+index\.html manifest link/);
+});
+
+test('a commented-out manifest link fails', () => {
+  const html = GOOD_HTML.replace('<link rel="manifest" href="manifest.json">',
+    '<!-- <link rel="manifest" href="manifest.json"> -->');
+  const f = failures(runChecks(makeApp({ 'index.html': html })));
+  assert.deepStrictEqual(f.map((r) => r.label), ['index.html manifest link']);
+});
+
+test('an absolute manifest link fails (breaks on a GitHub Pages sub-path)', () => {
+  const html = GOOD_HTML.replace('href="manifest.json"', 'href="/manifest.json"');
+  const f = failures(runChecks(makeApp({ 'index.html': html })));
+  assert.ok(f.some((r) => r.label === 'index.html manifest link'), JSON.stringify(f));
+});
+
+test('"./manifest.json" with attributes in another order passes', () => {
+  const html = GOOD_HTML.replace('<link rel="manifest" href="manifest.json">',
+    "<link href='./manifest.json' crossorigin='use-credentials' rel='manifest'>");
+  assert.deepStrictEqual(failures(runChecks(makeApp({ 'index.html': html }))), []);
 });
