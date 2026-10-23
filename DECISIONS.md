@@ -7,3 +7,9 @@
 - **Script exports `runChecks(dir)` and takes an optional app dir argument**, so tests can run it on temp fixture folders.
 - **Tests live in `tests/check/`, not directly in `tests/`.** `npm test` runs `node --test tests/**/*.test.js` through `sh`, where `**` acts like `*`, so only files one folder deep match. On Node 20 a top-level `tests/x.test.js` would never run. I left package.json unchanged. Alt: change the script to `node --test tests/`.
 - **Test fixtures are temp folders** (`os.tmpdir()`), removed after the run. Tests run the real CLI as well as `runChecks()`, so exit codes and output get tested too.
+
+## 2026-10-23 — manifest link (task/manifest-link)
+- **`href="manifest.json"` (relative), placed right after `<title>`.** GitHub Pages serves the app from `/PairBoard-2.0/`, so `/manifest.json` would 404. The existing CSP `default-src 'self'` already allows it (no `manifest-src` needed). Alt: `./manifest.json` — same effect.
+- **Check accepts only `manifest.json` or `./manifest.json`, inside `<head>`, not in an HTML comment**; attribute order and quote style don't matter. Absolute or other paths fail. Alt: only check the link exists — would miss the `/manifest.json` mistake.
+- **CACHE_VERSION v2.0.9 → v2.0.10** (patch bump, same scheme as before).
+- **Did not add the maskable icon to the "App Shell & Icons" offline-pack list in index.html (~line 3105)**, which mirrors sw.js `SHELL_FILES`. The brief limits changes to the manifest link; asked Jeff instead.
