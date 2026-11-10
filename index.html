@@ -13851,16 +13851,9 @@ function renderDayPairingsPanel(dk) {
     var s = window._appStateRef || {};
     if (!s.excludedOccurrences) s.excludedOccurrences = new Map();
     var set = s.excludedOccurrences.get(pNum);
-    if (!set) {
-      set = new Set();
-      s.excludedOccurrences.set(pNum, set);
-    }
-    if (set.has(dateKey)) {
-      set.delete(dateKey);
-    } else {
-      set.add(dateKey);
-    }
-    if (window.applyFilters) window.applyFilters();
+    // the same calls as the pre-award conflict pop-up: they also SAVE the change (a tap used to be lost on reload)
+    if (set && set.has(dateKey)) window.pbRestoreOccurrence(pNum, dateKey);
+    else window.pbExcludeOccurrence(pNum, dateKey);
     if (PB && PB.pairings && PB.pairings.showPairingDetail) {
       var p = (s.pairings || []).find(function(x) { return x.number === pNum; });
       if (p) PB.pairings.showPairingDetail(p);
