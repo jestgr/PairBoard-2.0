@@ -13,3 +13,11 @@
 - **Check accepts only `manifest.json` or `./manifest.json`, inside `<head>`, not in an HTML comment**; attribute order and quote style don't matter. Absolute or other paths fail. Alt: only check the link exists — would miss the `/manifest.json` mistake.
 - **CACHE_VERSION v2.0.9 → v2.0.10** (patch bump, same scheme as before).
 - **Did not add the maskable icon to the "App Shell & Icons" offline-pack list in index.html (~line 3105)**, which mirrors sw.js `SHELL_FILES`. The brief limits changes to the manifest link; asked Jeff instead.
+
+## 2026-11-09 — PB.reserve (task/reserve-api)
+- **Name what is there; don't restructure.** The Pay and RAW calculations read their inputs from the page and write the results back into it (`calcPayTab(body)`, `calcRawTab(body, s)`). Alt: split each into "calculate" and "draw" so a caller gets plain numbers — cleaner, but it rewrites calculation code that was tuned over many sessions, for no gain to web users. Instead `PB.reserve` lists the existing functions and state, like `PB.pairings` and `PB.resCoverage` already do. A caller builds a tab into an element that is not on the page (`renderPayTab(div)`), fills the inputs, calls `calcPayTab(div)` and reads the result — the same code path as the screen, so the same numbers.
+- **One added block, at the end of the Reserve module.** No existing line edited. Checked by comparing the Reserve screen's HTML (4 tabs, with inputs) on `main` and on this branch: identical.
+- **`state` is the module's live state** (days placed, absence-day counts, last calc), not a copy: a caller that sets a vacation count sees the same thing the Structure tab would, and the other way round. Alt: getters returning copies — then the two could disagree.
+- **`renderStructureBody` still looks up `#res-structure-body` on the page** (unchanged). A caller that wants the Structure rows without the screen uses `calcReserveStructure(s)`, which returns the numbers directly.
+- **Tests run the real module out of index.html** in a Node sandbox with a stand-in `PB` (no browser, no new dependency). Expected X-day / on-call / short-call numbers were read by hand from the proration tables, not copied from the code's output.
+- **CACHE_VERSION v2.0.10 → v2.0.11** (index.html changed, so installed copies need to refresh).

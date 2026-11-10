@@ -1,21 +1,25 @@
-# TASK: link the manifest + cache the maskable icon (task/manifest-link)
+# TASK: PB.reserve — let other code read the Reserve numbers (task/reserve-api)
 
 ## Goal
-Phones pick up PairBoard's name and icons when installing it, and all icons work offline.
+Jeff's Android app (PairBoardDev) can show the same Reserve numbers as this app, by calling this app's own
+Reserve code. For people using the web app nothing changes.
 
 ## Done when
-- [x] index.html `<head>` has `<link rel="manifest" href="manifest.json">` (path that works on GitHub Pages)
-- [x] sw.js caches `icons/icon-maskable-512.png` for offline use
-- [x] `CACHE_VERSION` in sw.js bumped (this change ships)
-- [x] `scripts/check_syntax.js` also fails if the manifest link is missing, with a test for that
-- [x] `npm run check && npm test` pass (Node 20 + 22, 11 tests); preview at http://192.168.68.85:5103 loads, manifest is fetched (server stopped) — checked over HTTP: page has the link, manifest.json + all 4 icons return 200. No browser here, so not checked in a real browser/install.
+- [x] `PB.reserve` names the Reserve module's own state and functions (Structure, X-Day Sim, Pay, RAW, category card)
+- [x] No existing line changed: the only edit in index.html is the added block at the end of the Reserve module
+- [x] Reserve screen is identical with and without the change (all 4 tabs compared in headless Chromium, with a
+      vacation count entered and two X-days placed: same HTML, no page errors)
+- [x] Tests: `tests/reserve/reserve_api.test.js` runs the module out of index.html and checks the doorway and
+      Structure numbers against the proration tables (7 tests)
+- [x] `CACHE_VERSION` bumped (v2.0.10 → v2.0.11), `npm run check && npm test` pass (Node 20: 38 checks, 18 tests)
+- [ ] Jeff: Reserve screen in the preview looks and works as before → OK to merge
 
 ## Progress
-- [x] Read brief, wrote TASK.md
-- [x] Manifest link added, maskable icon in SHELL_FILES, CACHE_VERSION v2.0.10
-- [x] check_syntax.js manifest-link check + 4 tests (missing, commented out, absolute path, alt attribute order); one old test's expected line number moved 5 → 6 because the fixture got one line longer
-- [x] Preview checked over HTTP, server stopped
+- [x] Read the Reserve module; chose "name what is there" over splitting calculation from drawing
+- [x] Added `PB.reserve`, tests, cache bump
+- [x] Checked off-screen use (what the Android app will do): Structure numbers, Pay results, RAW score and the
+      X-Day Sim (place days, rule check) all work through `PB.reserve` without opening the Reserve screen
 
 ## Open questions
-1. index.html has a second copy of the shell file list (offline-pack "PairBoard App Shell & Icons", ~line 3105). It still lacks `icon-maskable-512.png`. Add it there too, so the two lists match? (left alone: outside the brief)
-2. index.html has no `<link rel="apple-touch-icon">`. iPhones usually find `/apple-touch-icon.png` at the site root, but on GitHub Pages the icon lives at `/PairBoard-2.0/icons/`, so iOS home-screen icons may be a screenshot instead. Add the link in a follow-up task?
+1. Res Coverage already has `PB.resCoverage` (calculateDayMargin, parseCoverageText, evaluateTripTrade, getState),
+   so it needed nothing here. Say if the Android app should get more of it later.
