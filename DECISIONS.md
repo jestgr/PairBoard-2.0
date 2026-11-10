@@ -31,3 +31,13 @@
 - **System lines are shown, never numbered**: "Award Pairings" closes a Pairing group unless the group ends with Clear Schedule and Start Next Bid Group.
 - **A stopper ("Avoid Pairings If Pairing Credit > 000:01") is a known shape** (`isStopper`): below an Award line it is the point, so it gets no "Avoid below Award" warning.
 - **Personal bids stay out of git.** Tests use made-up bids; the real-bid test reads `PB_TEST_BID` (or the private path) and skips when the file is absent.
+
+## 2026-11-10 — Stacked filters (task/pbs-bid-lines, step 2)
+- A stacked filter is the old filter plus `and: [conditions]`. Old saved/exported filters have no `and` and behave
+  exactly as before (checked old-vs-new on a real package: 117 cases).
+- Extra Ifs have no mode: the line's Avoid/Award rules, each If is a plain "the trip has this" test.
+- A stacked Avoid with a day/date If removes only the matching departures, like PBS, not the whole trip.
+- Award marking changed from "how many Award filters match" to "the first Award filter that matches", because PBS
+  reads lines top-down. Side effect accepted: Award filters on check-in/out time, TAFB and deadhead position now
+  mark trips; before they silently did nothing.
+- PBS has no ≥ / ≤: a filter "credit ≥ 20" is written "Pairing Credit > 019:59".

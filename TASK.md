@@ -88,14 +88,18 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
   - Old-vs-new check on the real package (private, outside git):
     `/home/dev/apps/pairboard-android/tools/.venv/bin/python /home/dev/data/pairboard-android/tools/diff_filters.py`
     117 cases; the only differences are the 10 Award cases named above (marked 0 → marked N), as intended.
-  - STILL TO DO for step 2 (tick here as done):
-    - [ ] unit tests `tests/filters/filter_matching.test.js` (made-up pairings; load the FILTER MATCHING block with vm)
-          and `tests/bid/from_filter.test.js`
-    - [ ] builder UI in the FILTER BUILDER block: "+ If" button on each ladder row (`pbAddIf(idx)` sets a
-          module-level `stackTarget`, opens the type picker without Prefer Off and without the Mode toggle;
-          `commit(f)` then pushes {type, subtype, params} into `list[idx].and`), "✕" per If (`pbRemoveIf(idx, j)`),
-          `filterDescription` shows every If ("… and …")
-    - [ ] CHANGELOG / DECISIONS, PASSDOWN.md in /home/dev/apps/homelab-audit
+  - Builder (FILTER BUILDER block): "+ If" on every ladder row except Prefer Off → `pbAddIf(idx)` sets the
+    module-level `stackTarget`; the type picker then hides Prefer Off, forms hide the Mode toggle
+    (`modeToggle` returns '' and `modeVal('fb-mode')` returns 'award' while stacking), and `commit(f)` pushes
+    {type, subtype, params} into that line's `and`. `pbRemoveIf(idx, j)` removes one If. `filterDescription`
+    and `ifDescription` (also `window.pbIfDescription`) show every If. `pbOpenFiltersPanel` clears `stackTarget`.
+  - Tests: `tests/filters/filter_matching.test.js`, `tests/bid/from_filter.test.js` (41 tests green).
+    Browser walk-through (private, outside git): `…/.venv/bin/python /home/dev/data/pairboard-android/tools/ui_stack.py`
+  - **Step 2 done (5f73332, engine e35862d).** Not done on purpose, belongs to step 3: `pbGeneratePBSReport` does not
+    know about `and` yet, so today's report prints a stacked filter as its first If only. Step 3 replaces the
+    report with `PB.bid.linesFromFilter` + `PB.bid.render`. Android: the native filter list shows the stacked
+    description (it reads `filterDescription`), but has no "+ If" button until step 7.
+- **Next = step 3** (filters → PBS report). Start in `pbGeneratePBSReport` (FILTER BUILDER block).
   - Known web bug to keep as is until step 6 (#8 on Jeff's reminder list): Deadhead builder, Mode=Avoid +
     Position=Any saves {has-dh, avoid, value:false} = keeps only trips WITH a deadhead.
 - Wordings marked `seen: 'assumed'` in PROPS are guesses by analogy — ask Jeff to check them in NAVBLUE when he
