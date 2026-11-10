@@ -12469,7 +12469,7 @@ function renderDayPairingsPanel(dk) {
     var guarRowRate = alpDays > 0 ? decimalToDisplay(decProRataShare) : '—';
     var guarRowCredit = decimalToDisplay(decProratedGuar);
 
-    resultsEl.innerHTML = [
+    var html = [
       '<div style="display:grid;grid-template-columns:auto auto;gap:16px 24px;margin-bottom:16px;">',
         '<div>',
           '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:4px;">Unadj. Guarantee</div>',
@@ -12501,19 +12501,19 @@ function renderDayPairingsPanel(dk) {
     lineItems.forEach(function(item) {
       var color = item.credit < 0 ? 'var(--destructive)' : 'var(--text-secondary)';
       var sign = item.credit < 0 ? '' : '+';
-      resultsEl.innerHTML += '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-muted);">'+item.label+'</div>' +
+      html += '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-muted);">'+item.label+'</div>' +
         '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-muted);text-align:right;">'+decimalToDisplay(Math.abs(item.rate))+'</div>' +
         '<div style="padding:6px 8px;border-bottom:1px solid var(--border);color:'+color+';text-align:right;">'+sign+decimalToDisplay(Math.abs(item.credit))+'</div>';
     });
 
-    resultsEl.innerHTML += [
+    html += [
       '<div style="padding:6px 8px;border-bottom:2px solid var(--border-bright);color:var(--text-primary);font-weight:600;">Total</div>',
       '<div style="padding:6px 8px;border-bottom:2px solid var(--border-bright);"></div>',
       '<div style="padding:6px 8px;border-bottom:2px solid var(--border-bright);color:var(--text-primary);font-weight:600;text-align:right;">'+decimalToDisplay(totalCredit)+'</div>',
     ].join('');
 
     if (overrideDays > 0) {
-      resultsEl.innerHTML += [
+      html += [
         '<div style="padding:6px 8px;border-bottom:1px dashed var(--border);color:var(--text-muted);">Override ('+overrideDays+'d)</div>',
         '<div style="padding:6px 8px;border-bottom:1px dashed var(--border);color:var(--text-muted);text-align:right;">'+decimalToDisplay(overrideRate)+'</div>',
         '<div style="padding:6px 8px;border-bottom:1px dashed var(--border);color:var(--text-secondary);text-align:right;">+'+decimalToDisplay(decOverrideCredit)+'</div>',
@@ -12523,7 +12523,7 @@ function renderDayPairingsPanel(dk) {
       ].join('');
     }
 
-    resultsEl.innerHTML += [
+    html += [
       '</div>',
       '<div style="padding:8px;background:var(--bg-subtle);border-radius:var(--radius);margin-top:12px;">',
         '<div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;">',
@@ -12533,7 +12533,7 @@ function renderDayPairingsPanel(dk) {
     ].join('');
 
     if (carryIn > 0) {
-      resultsEl.innerHTML += [
+      html += [
         '<div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;">',
           '<span style="color:var(--text-secondary);">Credit over guarantee</span>',
           '<span style="color:var(--success);font-family:var(--font-mono);font-weight:600;">+'+decimalToDisplay(extraCredit)+'</span>',
@@ -12545,7 +12545,8 @@ function renderDayPairingsPanel(dk) {
       ].join('');
     }
 
-    resultsEl.innerHTML += '</div>';
+    html += '</div>';
+    resultsEl.innerHTML = html;   // one write: a partial innerHTML closes the open grid and later rows fall out of it
   }
 
   // ════════════════════════════════════════════════════════════
