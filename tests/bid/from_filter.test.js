@@ -17,6 +17,7 @@ vm.runInNewContext(html.slice(html.indexOf('(function() {', start), html.lastInd
 const bid = sandbox.PB.bid;
 
 const text = (f) => Array.from(bid.linesFromFilter(f).lines, (l) => bid.lineText(l));
+const plainJSON = (x) => JSON.parse(JSON.stringify(x));
 const F = (mode, type, subtype, params, and) => Object.assign({ type, subtype, mode, params }, and ? { and } : {});
 
 test('one filter, one line', () => {
@@ -177,4 +178,50 @@ test('old Prefer Off dates saved without a year get the bid period year', () => 
   // with no bid period the date cannot be read, and the bid check says so instead of printing a wrong date
   const r = bid.fromFilters([old], {});
   assert.ok(Array.from(bid.render(r.bid).problems).some((p) => p.level === 'error'));
+});
+
+// ---- saved bid / export file ----
+test('a bid file round-trips: filters (stacked Ifs too) and report options', () => {
+  const opts = { groups: 'reserve-pairing', creditWindow: 'min', minBaseLayover: '20:00', stoppers: true, cssn: false,
+                 consecutiveDaysOff: 3, pattern: { min: 3, max: 4, off: 3 } };
+  const file = JSON.stringify(bid.savedForm(LIST, opts));
+  const back = bid.readSaved(file);
+  assert.strictEqual(back.ok, true);
+  assert.deepStrictEqual(plainJSON(back.filters), plainJSON(LIST));
+  assert.strictEqual(back.options.minBaseLayover, 1200, 'times are kept in minutes');
+  assert.deepStrictEqual(back.notes.length, 0);
+  // the same bid comes out of the read-back copy
+  const a = bid.render(bid.fromFilters(LIST, opts).bid).text;
+  const b = bid.render(bid.fromFilters(back.filters, back.options).bid).text;
+  assert.strictEqual(b, a);
+  // and saving it again gives the same file
+  assert.strictEqual(JSON.stringify(bid.savedForm(back.filters, back.options)), file);
+});
+
+test('an old filter file (a plain list) still imports, without options', () => {
+  const back = bid.readSaved(JSON.stringify([
+    { type: 'pairing-length', subtype: 'gt', mode: 'avoid', params: { value: 4 } },
+    { type: 'prefer-off', subtype: 'dates', mode: 'award', params: { dates: ['DEC25'] } },
+  ]));
+  assert.strictEqual(back.ok, true);
+  assert.strictEqual(back.hadOptions, false);
+  assert.strictEqual(back.filters.length, 2);
+  assert.strictEqual(back.filters[1].mode, 'avoid', 'Prefer Off is always avoid');
+  assert.deepStrictEqual(Array.from(back.filters[1].params.dates), ['DEC25']);
+});
+
+test('bad files are refused or cleaned, with a reason', () => {
+  assert.strictEqual(bid.readSaved('not json').ok, false);
+  assert.strictEqual(bid.readSaved('{"a":1}').ok, false);
+  assert.match(bid.readSaved({ app: 'pairboard-bid', version: 99, filters: [] }).error, /newer/);
+  const r = bid.readSaved({ app: 'pairboard-bid', version: 1,
+    filters: [null, { type: 'credit', subtype: 'min', mode: 'award', params: { min: 15 },
+                      and: [{ type: 'prefer-off', params: {} }, { type: 'pairing-length', subtype: 'lt', params: { value: 4 } }] }],
+    options: { groups: 'weird', stoppers: true, color: 'red' } });
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.filters.length, 1);
+  assert.strictEqual(r.filters[0].and.length, 1, 'Prefer Off cannot be an If');
+  assert.strictEqual(r.options.groups, 'pairing');
+  assert.strictEqual(r.options.stoppers, true);
+  assert.strictEqual(r.notes.length, 3);
 });

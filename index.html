@@ -8473,6 +8473,7 @@ function applyFilters() {
   });
 
   appState.filteredPairings = result;
+  saveBidFilters();
   renderTripList();
   if (typeof window.renderOccFilterList === 'function') window.renderOccFilterList();
   if (typeof updateSidebarDatablock === 'function') updateSidebarDatablock();
@@ -9698,6 +9699,20 @@ function renderCalendar() {
 // ============================================================
 var _dataLoaded = false;
 var _dbFailed   = false;  // set on first IndexedDB open failure; prevents infinite retry loop
+
+// The filter list + report options, kept in IndexedDB meta 'bidFilters' (PB.bid.savedForm). Written only when
+// they changed, and only once the saved copy has been read (so a start-up never overwrites it with nothing).
+var _bidFiltersSaved = null;
+function saveBidFilters() {
+  if (!_dataLoaded || !db || !PB.bid) return;
+  var json = JSON.stringify(PB.bid.savedForm(appState.occurrenceFilters, appState.bidOptions));
+  if (json === _bidFiltersSaved) return;
+  _bidFiltersSaved = json;
+  dbPut(STORE_META, { key: 'bidFilters', value: json })
+    .catch(function(e) { PB.log.warn('bidFilters save failed', { error: String(e) }); });
+}
+window.pbSaveBidFilters = saveBidFilters;
+
 function loadAllData() {
   if (_dataLoaded) return Promise.resolve();
   if (_dbFailed)   return Promise.resolve(); // DB unavailable — don't retry
@@ -9720,7 +9735,8 @@ function loadAllData() {
         dbGet(STORE_META, 'pdfName'),
         dbGet(STORE_META, 'preAwards'),
         dbGet(STORE_META, 'excludedOccurrences'),
-        dbGet(STORE_META, 'avoided')
+        dbGet(STORE_META, 'avoided'),
+        dbGet(STORE_META, 'bidFilters')
       ]);
     })
     .then(function(results) {
@@ -9772,7 +9788,20 @@ function loadAllData() {
       });
       appState.survivingMap = sm;
 
+      // the filter list and report options as last left (saved by saveBidFilters)
+      if (results[16] && results[16].value && PB.bid) {
+        var saved = PB.bid.readSaved(results[16].value);
+        if (saved.ok) {
+          appState.occurrenceFilters = saved.filters;
+          appState.bidOptions = saved.options;
+          _bidFiltersSaved = JSON.stringify(PB.bid.savedForm(saved.filters, saved.options));
+        }
+      }
+
       _dataLoaded = true;
+      if (appState.occurrenceFilters.length) {
+        try { applyFilters(); } catch (e) { PB.log.warn('Saved filters could not be applied', { error: String(e) }); }
+      }
       PB.log.info('Pairings loaded', {
         count: appState.pairings.length,
         bidMonth: appState.bidMonth,
@@ -13520,12 +13549,87 @@ function renderDayPairingsPanel(dk) {
     return { bid: { version: VERSION, groups: groups }, notes: notes, options: o };
   }
 
+  // ---- saving and sharing a bid: the filter list + the report options ----------------------------------
+  // File / saved form: { app: 'pairboard-bid', version: 1, filters: [ filter ], options: { … } }.
+  // Files from before Nov 2026 are a plain array of filters; they still read in.
+  var SAVED_APP = 'pairboard-bid';
+  function savedForm(filters, options) {
+    return { app: SAVED_APP, version: VERSION, filters: JSON.parse(JSON.stringify(filters || [])),
+             options: readOptions(options).options };
+  }
+
+  // Options from a file: known keys only, wrong types dropped (the default stays).
+  function readOptions(raw) {
+    var o = defaultOptions(), dropped = [];
+    if (!raw || typeof raw !== 'object') return { options: o, dropped: dropped };
+    var pick = {
+      groups: function(v) { return ['pairing', 'reserve-pairing', 'pairing-reserve', 'reserve'].indexOf(v) >= 0; },
+      creditWindow: function(v) { return ['none', 'min', 'mid', 'max'].indexOf(v) >= 0; },
+      minBaseLayover: function(v) { return v === null || mins(v) != null; },
+      stoppers: function(v) { return typeof v === 'boolean'; },
+      cssn: function(v) { return typeof v === 'boolean'; },
+      consecutiveDaysOff: function(v) { return v === null || (typeof v === 'number' && v > 0); },
+      pattern: function(v) { return v === null || (v && typeof v === 'object'); },
+    };
+    Object.keys(raw).forEach(function(k) {
+      if (k === 'version') return;
+      if (!pick[k]) { dropped.push(k); return; }
+      if (pick[k](raw[k])) o[k] = k === 'minBaseLayover' && raw[k] !== null ? mins(raw[k]) : raw[k];
+      else dropped.push(k);
+    });
+    return { options: o, dropped: dropped };
+  }
+
+  // Read a saved bid or a file (text or parsed). → { ok, filters, options, notes } or { ok: false, error }.
+  // Each filter must at least have a type; Prefer Off is always mode 'avoid' (a 'Prefer' Prefer Off never did
+  // anything); stacked Ifs must be a list of conditions with a type.
+  function readSaved(input) {
+    var data = input;
+    if (typeof input === 'string') {
+      try { data = JSON.parse(input); } catch (e) { return { ok: false, error: 'This is not a PairBoard bid file.' }; }
+    }
+    var filters, options, notes = [];
+    if (Array.isArray(data)) { filters = data; options = null; }
+    else if (data && typeof data === 'object' && data.app === SAVED_APP) {
+      if (!(data.version >= 1)) return { ok: false, error: 'This bid file has no version.' };
+      if (data.version > VERSION) return { ok: false, error: 'This bid file was made by a newer PairBoard. Update the app first.' };
+      filters = Array.isArray(data.filters) ? data.filters : [];
+      options = data.options;
+    } else return { ok: false, error: 'This is not a PairBoard bid file.' };
+
+    var out = [];
+    filters.forEach(function(f, i) {
+      if (!f || typeof f !== 'object' || typeof f.type !== 'string') { notes.push('Filter #' + (i + 1) + ' could not be read and was left out.'); return; }
+      var g = { type: f.type };
+      if (f.subtype != null) g.subtype = f.subtype;
+      g.mode = f.mode === 'award' && f.type !== 'prefer-off' ? 'award' : 'avoid';
+      g.params = (f.params && typeof f.params === 'object') ? f.params : {};
+      if (g.type === 'prefer-off') { /* no Ifs on Prefer Off */ }
+      else if (Array.isArray(f.and)) {
+        var and = f.and.filter(function(c) { return c && typeof c === 'object' && typeof c.type === 'string' && c.type !== 'prefer-off'; })
+          .map(function(c) {
+            var x = { type: c.type };
+            if (c.subtype != null) x.subtype = c.subtype;
+            x.params = (c.params && typeof c.params === 'object') ? c.params : {};
+            return x;
+          });
+        if (and.length < f.and.length) notes.push('Filter #' + (i + 1) + ': an If could not be read and was left out.');
+        if (and.length) g.and = and;
+      }
+      out.push(g);
+    });
+    var ro = readOptions(options);
+    if (ro.dropped.length) notes.push('Report options not understood and left at their default: ' + ro.dropped.join(', ') + '.');
+    return { ok: true, filters: out, options: ro.options, notes: notes, hadOptions: !!options };
+  }
+
   PB.bid = {
     VERSION: VERSION, MAX_LINES: MAX_LINES, PROPS: PROPS, SET_CONDITIONS: SET_CONDITIONS,
     render: render, validate: validate, lineText: lineText, conditionText: conditionText,
     parse: parse, parseLine: parseLine, catalog: catalog,
     isStopper: isStopper, stopper: stopper, linesFromFilter: linesFromFilter, conditionsFromFilter: conditionsFromFilter,
     fromFilters: fromFilters, defaultOptions: defaultOptions, isoFromKey: isoFromKey,
+    savedForm: savedForm, readSaved: readSaved,
     mins: mins, clock: clock, duration: duration, pbsDate: pbsDate, isoDate: isoDate, dayName: dayName,
   };
 })();
@@ -13778,30 +13882,31 @@ function renderDayPairingsPanel(dk) {
     window.pbOpenFiltersPanel();
   };
 
+  // Export: the filter list AND the report options, as one versioned file (PB.bid.savedForm).
   window.pbExportFilters = function() {
     var s = window._appStateRef || {};
-    var json = JSON.stringify(s.occurrenceFilters || [], null, 2);
+    var json = JSON.stringify(PB.bid.savedForm(s.occurrenceFilters, s.bidOptions), null, 2);
     var blob = new Blob([json], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url; a.download = 'pairboard-filters.json'; a.click();
+    a.href = url; a.download = 'pairboard-bid.json'; a.click();
     URL.revokeObjectURL(url);
   };
 
+  // Import: a bid file, or an old plain list of filters (then the report options stay as they are).
   window.pbImportFilters = function(input) {
     var f = input.files[0]; if (!f) return;
     var r = new FileReader();
     r.onload = function() {
-      try {
-        var arr = JSON.parse(r.result);
-        if (Array.isArray(arr)) {
-          var s = window._appStateRef || {};
-          s.occurrenceFilters = arr;
-          if (window.applyFilters) window.applyFilters();
-          window.pbOpenFiltersPanel();
-          toast('Imported ' + arr.length + ' filters', 'success');
-        }
-      } catch(e) { toast('Invalid filter file', 'error'); }
+      var got = PB.bid.readSaved(String(r.result));
+      input.value = '';                                 // the same file can be picked again
+      if (!got.ok) { toast(got.error, 'error'); return; }
+      var s = window._appStateRef || {};
+      s.occurrenceFilters = got.filters;
+      if (got.hadOptions) s.bidOptions = got.options;
+      if (window.applyFilters) window.applyFilters();
+      window.pbOpenFiltersPanel();
+      toast('Imported ' + got.filters.length + ' filter' + (got.filters.length === 1 ? '' : 's') + (got.notes.length ? ' — ' + got.notes.join(' ') : ''), got.notes.length ? 'warning' : 'success');
     };
     r.readAsText(f);
   };
@@ -13838,6 +13943,7 @@ function renderDayPairingsPanel(dk) {
     } else {
       o[key] = value;
     }
+    if (window.pbSaveBidFilters) window.pbSaveBidFilters();
     window.pbGeneratePBSReport();
   };
 
