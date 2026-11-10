@@ -32,7 +32,7 @@ pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in 
 - Times/credit print as HHH:MM (000:01, 020:00), clock times HH:MM, "Days" for length.
 
 ## Plan — hardest first (each step: tests, CHANGELOG line, own commit; `npm run check && npm test`)
-1. [ ] Bid document + PBS line renderer: JSON schema {groups:[{type, lines:[{kind, conditions:[{prop, op,
+1. [x] Bid document + PBS line renderer: JSON schema {groups:[{type, lines:[{kind, conditions:[{prop, op,
        values, anyEvery}], options:{esn, allOrNothing, limit, …}}]}]} → exact PBS text with numbering; property
        catalog (PBS name, operators, value format, browse-matchable or report-only, e.g. Time Off Before = report
        only); validation warnings from the rules above. Test: Jeff's bid rebuilt as data renders his 26 lines
@@ -57,6 +57,29 @@ pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in 
 7. [ ] CACHE_VERSION bump, preview for Jeff, his OK → merge; then Android: sync-web, bridge/forms for "+ If",
        report screen copy.
 Later (not this task): on-board LLM reads filters + intent → writes the bid document (step 1's schema).
+
+## Progress / handoff (read this first when picking the task up)
+- Branch `task/pbs-bid-lines` (local only until Jeff pushes). Never merge/push/deploy; Jeff does, after a preview.
+- Check before every commit: `npm run check && npm test` (29 tests green after step 1).
+- Each step = one code commit, then one commit for CHANGELOG (with the code commit's hash) + TASK.md + DECISIONS.md.
+- **Step 1 done (67bf409)**: `PB.bid` in index.html, the block under the banner `// PBS BID DOCUMENT — bid lines as
+  data`, just above `// FILTER BUILDER`. API: `render(bid)` → {rows, count, text, typed, problems}, `validate`,
+  `lineText`, `conditionText`, `parse(text)`, `parseLine`, `catalog()`, `isStopper`, `stopper()`, and the
+  `PROPS` / `SET_CONDITIONS` tables (each entry: PBS wording, value kind, operators, `browse`, `seen`).
+  The schema is written at the top of that block. Tests: `tests/bid/bid_document.test.js` (loads the block with
+  `vm`, no browser). Jeff's real 26-line bid parses and prints back exactly, with no problems reported.
+- **Next = step 2** (stacked filters). Where things are in index.html (line numbers drift; search the names):
+  `filterDescription`, `pbShowFilterTypes`, `pbBuildFilter`, the commit function after it, `pbGeneratePBSReport`,
+  `pbExportFilters` / `pbImportFilters` (all in the FILTER BUILDER block); `applyFilters`,
+  `pairingMatchesAwardFilter`, `applyOccurrenceFilters` (pairings module). Filters live in
+  `_appStateRef.occurrenceFilters` as {type, subtype, mode: 'avoid'|'award', params}.
+  Plan for step 2: keep that shape as ONE condition; a stacked filter adds `and: [ {type, subtype, params}, … ]`
+  (extra Ifs). Old filters have no `and`, so they load and match exactly as before. Add
+  `PB.bid.fromFilter(filter)` → a bid line (maps type/subtype/params to PROPS conditions) so description and
+  report both come from `PB.bid.lineText`.
+- Wordings marked `seen: 'assumed'` in PROPS are guesses by analogy — ask Jeff to check them in NAVBLUE when he
+  next has it open (Check-Out Station, TAFB, Layover Duration, Layover On, Deadhead Legs, Total Legs In Pairing,
+  Mid Credit Window, Consecutive Days Off, Reverse Range Priority text, "Between A And B").
 
 ## Open questions
 1. Saved bids: one saved set + export/import for now; PBS-style Current/Default can come later. (Assumed.)

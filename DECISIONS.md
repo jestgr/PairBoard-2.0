@@ -21,3 +21,13 @@
 - **`renderStructureBody` still looks up `#res-structure-body` on the page** (unchanged). A caller that wants the Structure rows without the screen uses `calcReserveStructure(s)`, which returns the numbers directly.
 - **Tests run the real module out of index.html** in a Node sandbox with a stand-in `PB` (no browser, no new dependency). Expected X-day / on-call / short-call numbers were read by hand from the proration tables, not copied from the code's output.
 - **CACHE_VERSION v2.0.10 → v2.0.11** (index.html changed, so installed copies need to refresh).
+
+## 2026-11-10 — PBS bid lines (task/pbs-bid-lines)
+- **The bid is data first (`PB.bid`), text second.** One schema (groups → lines → If conditions) is printed by one renderer. The filter list, the report and (later) the on-board model all produce this data; none of them writes PBS text itself. Alt: fix the wording inside `filterDescription` — keeps one condition per line and three places that each print PBS text.
+- **Nothing is sorted or reordered**: group order, line order and the order of Prefer Off dates are the bid (PBS reads top-down, left to right).
+- **Wording is taken from a real submitted bid where there is one, else from handbook examples, else by analogy** — each property says which (`seen: bid | handbook | assumed`). "Pairing Credit" (real bid) wins over the handbook's "Pairing Total Credit"; "N Days" is printed even for 1 ("1 Days"), as PBS does.
+- **Only `<`, `>`, `=`, Between** — PBS has no ≤ / ≥. Times are minutes inside (or 'H:MM' text in), printed HH:MM (clock) or HHH:MM (duration).
+- **A reader (`PB.bid.parse`) as well as a printer.** A line is accepted as data only if it prints back exactly as typed; otherwise it is kept word for word as a `raw` line with a warning. This is what lets a real bid be the test without putting it in git, and lets a bid be pasted in later.
+- **System lines are shown, never numbered**: "Award Pairings" closes a Pairing group unless the group ends with Clear Schedule and Start Next Bid Group.
+- **A stopper ("Avoid Pairings If Pairing Credit > 000:01") is a known shape** (`isStopper`): below an Award line it is the point, so it gets no "Avoid below Award" warning.
+- **Personal bids stay out of git.** Tests use made-up bids; the real-bid test reads `PB_TEST_BID` (or the private path) and skips when the file is absent.
