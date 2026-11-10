@@ -132,10 +132,8 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
   layover date range: marked "PairBoard only"). Badge and Mode toggle say "Award", not "Prefer" (data-v unchanged,
   so Android's form driving still works). Landings In already counts deadhead legs and now says so. No matching
   changed. Old-vs-new wording list: `/home/dev/data/pairboard-android/tools/descriptions.py`.
-- **Bug #8 (needs Jeff's OK, then a small commit):** in `pbCommitDH`, Mode=Avoid + Position=Any saves
-  {has-dh, mode:'avoid', value:false} = "Avoid Pairings If Not Deadhead Legs" (keeps only trips WITH a
-  deadhead). Fix: `value: true` always for Position=Any (Avoid → removes deadhead trips; Award → marks them).
-  Existing saved filters keep what they say (the ladder now shows "If Not Deadhead Legs" honestly).
+- **Bug #8 fixed (221c90e, Jeff OK'd 2026-11-10):** `pbCommitDH` Position=Any always saves value:true. Filters saved
+  before keep what they say. Check: `/home/dev/data/pairboard-android/tools/ui_dh.py`.
 - **Step 7 in progress:** CACHE_VERSION v2.0.12 committed (289f1fb), all browser checks green, preview
   started 2026-11-10 on port 5103 — waiting for Jeff's OK to merge. Then: bump CACHE_VERSION in sw.js (done); run all browser checks in /home/dev/data/pairboard-android/tools
   (diff_filters, ui_stack, ui_report, ui_preferoff, ui_saved); preview for Jeff

@@ -12,3 +12,4 @@
 - 2026-11-10 — Prefer Off: dates/days keep the order tapped (PBS priority), PBS date and day wording, no Avoid/Prefer toggle, Reverse Range Priority option (task/pbs-bid-lines) — roll back: git revert 69bfc14
 - 2026-11-10 — Filters and report options saved on the device (kept after reload); Export/Import is one versioned bid file, old filter files still import (task/pbs-bid-lines) — roll back: git revert 6482fc4
 - 2026-11-10 — Filter list worded exactly like the PBS report (one source); "Award" replaces "Prefer" (task/pbs-bid-lines) — roll back: git revert 005502a
+- 2026-11-10 — Fix: Deadhead filter Avoid + Any kept only trips WITH a deadhead; now removes them (task/pbs-bid-lines) — roll back: git revert 221c90e
