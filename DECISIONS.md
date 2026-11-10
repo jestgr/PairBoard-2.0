@@ -57,3 +57,10 @@
 - New filters store dates as 'YYYY-MM-DD' (the old 'DEC25' key had no year and printed wrong across a year end);
   old filters keep working, the year is taken from the bid period.
 - No Avoid/Prefer toggle: a Prefer Off "Prefer" filter never did anything.
+
+## 2026-11-10 — Saving the bid (task/pbs-bid-lines, step 5)
+- One saved bid (filters + report options) per device, in IndexedDB meta 'bidFilters'. Several named bids /
+  PBS-style Current/Default can come later (open question 1).
+- Loading a new bid package keeps the saved bid (a default bid is meant to be reused); "Clear all" empties it.
+- Export writes {app:'pairboard-bid', version:1, filters, options}. Import refuses files from a newer version
+  and tells what it left out of a damaged file.

@@ -48,7 +48,7 @@ pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in 
        always-CSSN, numbered "Award Pairings"). Fixes the 'preferOff' vs 'prefer-off' mix-up.
 4. [x] Prefer Off: keep tap order (dates and days), day names not numbers, no Avoid/Prefer toggle, PBS date text
        ("Dec 25, 2026"), Date Range with Reverse Range Priority.
-5. [ ] Save + share: filters and report options saved (IndexedDB meta; today they are lost on reload); export /
+5. [x] Save + share: filters and report options saved (IndexedDB meta; today they are lost on reload); export /
        import as a versioned file {version, filters, options}; old plain-array files still import. Round-trip
        tests. (Android: the app keeps its own copy until the web saves it.)
 6. [ ] Smaller PBS fixes: commutable = two Check-In/Check-Out lines (wording was backwards); Duty Legs EVERY with
@@ -117,11 +117,18 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
   `/home/dev/data/pairboard-android/tools/ui_preferoff.py`. 49 tests green.
   Known: an OLD Prefer Off filter saved with mode 'award' still does nothing while browsing (as on main) but
   prints a Prefer Off line; step 5's import can turn such filters into mode 'avoid'.
-- **Next = step 5** (save + versioned export/import). Code: `pbExportFilters`, `pbImportFilters` (FILTER BUILDER),
-  `_appStateRef.occurrenceFilters` and `_appStateRef.bidOptions` (memory only today). Find how the app saves other
-  things in IndexedDB meta (search `saveMeta` / `pbSavePreAwards` / `pbLoadExcludedOccurrences`) and do the same.
-  File format: {app:'pairboard-bid', version:1, filters:[…], options:{…}}; old plain-array files still import.
-  Android: bridge `filters()` keeps its own `saved` copy + `restore` (only into an empty ladder) — keep that working.
+- **Step 5 done (6482fc4).** `PB.bid.savedForm(filters, options)` → {app:'pairboard-bid', version:1, filters,
+  options}; `PB.bid.readSaved(textOrObject)` → {ok, filters, options, notes, hadOptions} or {ok:false, error}
+  (accepts old plain arrays; cleans filters: type required, Prefer Off forced to 'avoid', no Prefer Off as an If;
+  options: known keys only). Saved in IndexedDB meta key 'bidFilters' by `saveBidFilters()` (pairings module,
+  above `loadAllData`), called at the end of every `applyFilters` and from `pbReportOpt`; writes only when changed
+  and only after the saved copy was read. Read back in `loadAllData` (results[16]). Not in PAIRING_META_KEYS on
+  purpose: loading a new month keeps the bid. Export file: pairboard-bid.json. Browser check:
+  `/home/dev/data/pairboard-android/tools/ui_saved.py` (12 checks). 52 tests green.
+- **Next = step 6** (smaller PBS fixes, see the step list). Includes Jeff's bug #8 (Deadhead Avoid + Any keeps
+  only trips WITH a deadhead: `pbCommitDH`) — only with Jeff's OK, since it changes what a filter does. Wording
+  fixes are in `filterDescription`; matching changes go in `pairingFilterMatch` (FILTER MATCHING) and must be
+  re-checked with diff_filters.py.
   - Known web bug to keep as is until step 6 (#8 on Jeff's reminder list): Deadhead builder, Mode=Avoid +
     Position=Any saves {has-dh, avoid, value:false} = keeps only trips WITH a deadhead.
 - Wordings marked `seen: 'assumed'` in PROPS are guesses by analogy — ask Jeff to check them in NAVBLUE when he

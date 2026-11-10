@@ -10,3 +10,4 @@
 - 2026-11-10 — Stacked filters: several Ifs on one filter line ("+ If"), Award filters mark trips first-match top-down, filters can be written as PBS lines (task/pbs-bid-lines) — roll back: git revert 5f73332 e35862d
 - 2026-11-10 — PBS report rebuilt on `PB.bid`: exact PBS lines from the filters in order, options for bid groups, credit window, minimum-credit stoppers, Clear Schedule, reserve conditions; invented lines removed (task/pbs-bid-lines) — roll back: git revert a5cc5fe 2e4de75
 - 2026-11-10 — Prefer Off: dates/days keep the order tapped (PBS priority), PBS date and day wording, no Avoid/Prefer toggle, Reverse Range Priority option (task/pbs-bid-lines) — roll back: git revert 69bfc14
+- 2026-11-10 — Filters and report options saved on the device (kept after reload); Export/Import is one versioned bid file, old filter files still import (task/pbs-bid-lines) — roll back: git revert 6482fc4
