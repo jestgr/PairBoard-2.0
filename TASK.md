@@ -37,7 +37,7 @@ pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in 
        catalog (PBS name, operators, value format, browse-matchable or report-only, e.g. Time Off Before = report
        only); validation warnings from the rules above. Test: Jeff's bid rebuilt as data renders his 26 lines
        character for character.
-2. [ ] Stacked filters: one filter = kind (Avoid / Award / Prefer Off) + list of If conditions (AND). Builder gets
+2. [x] Stacked filters: one filter = kind (Avoid / Award / Prefer Off) + list of If conditions (AND). Builder gets
        "+ If" to add conditions. Matching: Avoid removes trips matching ALL conditions; Award marks trips by the
        first Award filter (in list order) they match (replaces the match-count score). Old single-condition filters
        load unchanged and match exactly as before (tests on the old cases).
