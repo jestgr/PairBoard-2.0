@@ -13655,15 +13655,25 @@ function renderDayPairingsPanel(dk) {
   // One extra If of a stacked filter, in words: PBS wording when PBS has a property for it.
   function ifDescription(c) {
     var conds = PB.bid.conditionsFromFilter(c);
-    if (c.type === 'commutable') return filterDescription({ type: c.type, mode: 'award', params: c.params }).replace(/^Prefer only /, '');
+    if (c.type === 'commutable') return plainDescription({ type: c.type, mode: 'award', params: c.params }).replace(/^Prefer only /, '');
     if (conds) return conds.map(function(x) { return PB.bid.conditionText(x).replace(/^If /, ''); }).join(' If ');
-    return filterDescription({ type: c.type, subtype: c.subtype, mode: 'award', params: c.params }).replace(/^(Award Pairings If|Prefer) /, '');
+    return plainDescription({ type: c.type, subtype: c.subtype, mode: 'award', params: c.params }).replace(/^(Award Pairings If|Prefer) /, '');
   }
   window.pbIfDescription = ifDescription;
 
+  // A filter in words: the PBS line(s) it becomes in the bid (same wording as the report), or, for the few
+  // filters PBS has no line for, the older plain description below.
   function filterDescription(f) {
+    if (window.PB && PB.bid && f && f.type !== 'prefer-off') {
+      var r = PB.bid.linesFromFilter(f, { periodStart: (window._appStateRef || {}).bidPeriodStart });
+      if (r.lines.length && !r.notes.length) return r.lines.map(PB.bid.lineText).join('; ');
+    }
+    return plainDescription(f);
+  }
+
+  function plainDescription(f) {
     if (f.and && f.and.length) {
-      return filterDescription({ type: f.type, subtype: f.subtype, mode: f.mode, params: f.params }) +
+      return plainDescription({ type: f.type, subtype: f.subtype, mode: f.mode, params: f.params }) +
         f.and.map(function(c) { return ' and If ' + ifDescription(c); }).join('');
     }
     var p = f.params || {};
@@ -13690,7 +13700,8 @@ function renderDayPairingsPanel(dk) {
       case 'pairing':
         if (f.subtype === 'has-dh')     return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + (p.value ? 'Contains Deadhead' : 'No Deadhead');
         if (f.subtype === 'has-redeye') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If ' + (p.value ? 'Contains Redeye' : 'No Redeye');
-        if (f.subtype === 'has-dh-position') return (p.op === 'avoid' ? 'Avoid' : 'Award') + ' Pairings If Deadhead Position = ' + (p.pos || 'Any');
+        if (f.subtype === 'has-dh-position') return (p.op === 'avoid' ? 'Avoid' : 'Award') + ' trips with a deadhead ' +
+          (p.pos === 'front' ? 'as the first leg' : p.pos === 'back' ? 'as the last leg' : p.pos === 'front-back' ? (p.logic === 'and' ? 'as the first and last leg' : 'as the first or last leg') : '') + ' (PairBoard only: PBS has no such line)';
         if (f.subtype === 'tafb')       return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If TAFB ' + (p.op === 'min' ? '≥ ' + p.min : p.op === 'max' ? '≤ ' + p.max : p.min + '–' + p.max + ' Hours');
         if (f.subtype === 'checkin-time')  return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Check-In ' + (p.op === 'after' ? 'After ' : 'Before ') + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
         if (f.subtype === 'checkout-time') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Check-Out ' + (p.op === 'after' ? 'After ' : 'Before ') + PB.pairings.fmtFilterMins(p.mins != null ? p.mins : p.from);
@@ -13739,7 +13750,7 @@ function renderDayPairingsPanel(dk) {
         return poLine ? PB.bid.lineText(poLine) : 'Prefer Off';
       case 'pairing-dow':   return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Operating On ' + (p.dows || []).join(', ');
       case 'layover-dow':   return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover On ' + (p.dows || []).join(', ');
-      case 'layover-range': return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover Between ' + p.start + ' and ' + p.end;
+      case 'layover-range': return (f.mode === 'award' ? 'Award' : 'Avoid') + ' trips with a layover from ' + PB.bid.pbsDate(p.start) + ' to ' + PB.bid.pbsDate(p.end) + ' (PairBoard only: PBS has no such line)';
       case 'carry-out':     return 'Avoid Pairings If Carry-Out > 0';
     }
     return (f.mode || 'Avoid') + ' ' + f.type + ' / ' + (f.subtype || '');
@@ -13781,7 +13792,7 @@ function renderDayPairingsPanel(dk) {
       : list.map(function(f, idx) {
           var isFirst = idx === 0;
           var isLast  = idx === list.length - 1;
-          var modeLabel = f.type === 'prefer-off' ? 'Off' : f.mode === 'award' ? 'Prefer' : (f.mode === 'set-condition' ? 'Set Cond' : 'Avoid');
+          var modeLabel = f.type === 'prefer-off' ? 'Off' : f.mode === 'award' ? 'Award' : (f.mode === 'set-condition' ? 'Set Cond' : 'Avoid');
           var modeClass = f.type === 'prefer-off' ? 'setcond' : f.mode === 'award' ? 'prefer' : (f.mode === 'set-condition' ? 'setcond' : 'avoid');
 
           return '<div class="pb-occ-filter-card" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);margin-bottom:6px;">' +
@@ -14166,7 +14177,7 @@ function renderDayPairingsPanel(dk) {
     return '<div class="field"><div class="field__label">Mode</div>' +
       '<div class="segmented" id="' + id + '">' +
         '<button class="segmented__item" data-v="avoid" aria-pressed="true">Avoid</button>' +
-        '<button class="segmented__item" data-v="award" aria-pressed="false">Prefer</button>' +
+        '<button class="segmented__item" data-v="award" aria-pressed="false">Award</button>' +
       '</div></div>';
   }
   function modeVal(id) {
