@@ -13397,14 +13397,35 @@ function renderDayPairingsPanel(dk) {
     return null;
   }
 
+  // A Prefer Off date as a filter keeps it: 'YYYY-MM-DD', or (filters saved before Nov 2026) 'DEC25' with no
+  // year. `periodStart` ('YYYY-MM-DD', the bid period's first day) supplies the year; a month before the
+  // period's month is in the next year (a December period running into January).
+  function isoFromKey(key, periodStart) {
+    var s = String(key == null ? '' : key).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    var m = /^([A-Za-z]{3})\s*(\d{1,2})$/.exec(s);
+    var p = /^(\d{4})-(\d{2})-\d{2}/.exec(String(periodStart || ''));
+    if (!m || !p) return s;
+    var mi = MONTHS.map(function(x) { return x.toUpperCase(); }).indexOf(m[1].toUpperCase());
+    if (mi < 0) return s;
+    var year = +p[1] + (mi + 1 < +p[2] ? 1 : 0);
+    return year + '-' + pad(mi + 1, 2) + '-' + pad(+m[2], 2);
+  }
+
   // A filter → { lines: [bid lines], notes: [why something could not be written] }. Usually one line.
-  function linesFromFilter(f) {
+  // ctx = { periodStart: 'YYYY-MM-DD' } (only needed for Prefer Off dates saved without a year).
+  function linesFromFilter(f, ctx) {
     var p = f.params || {};
     if (f.type === 'prefer-off') {
       var l = { kind: 'prefer-off' };
+      var ps = ctx && ctx.periodStart;
+      // the order the user tapped them in is the priority: never sort
       if (f.subtype === 'dow') l.days = (p.dows || []).map(dayName);
-      else if (f.subtype === 'range') { l.range = { start: p.start, end: p.end }; if (p.reverse) l.range.reverse = true; }
-      else l.dates = (p.dates || []).slice();
+      else if (f.subtype === 'range') {
+        l.range = { start: isoFromKey(p.start, ps), end: isoFromKey(p.end, ps) };
+        if (p.reverse) l.range.reverse = true;
+      }
+      else l.dates = (p.dates || []).map(function(d) { return isoFromKey(d, ps); });
       return { lines: [l], notes: [] };
     }
     if (f.type === 'commutable' && !(f.and && f.and.length)) {
@@ -13443,7 +13464,8 @@ function renderDayPairingsPanel(dk) {
              cssn: false, consecutiveDaysOff: null, pattern: null };
   }
 
-  function fromFilters(filters, options) {
+  // ctx = { periodStart } as for linesFromFilter: facts about the bid package, not options the user saves.
+  function fromFilters(filters, options, ctx) {
     var o = defaultOptions();
     for (var k in (options || {})) if (options[k] !== undefined) o[k] = options[k];
     var notes = [];
@@ -13453,7 +13475,7 @@ function renderDayPairingsPanel(dk) {
     // every filter as bid lines, in list order
     var made = [];
     (filters || []).forEach(function(f, i) {
-      var r = linesFromFilter(f);
+      var r = linesFromFilter(f, ctx);
       r.notes.forEach(function(t) { notes.push('Filter #' + (i + 1) + ': ' + t); });
       r.lines.forEach(function(l) { made.push(l); });
     });
@@ -13503,7 +13525,7 @@ function renderDayPairingsPanel(dk) {
     render: render, validate: validate, lineText: lineText, conditionText: conditionText,
     parse: parse, parseLine: parseLine, catalog: catalog,
     isStopper: isStopper, stopper: stopper, linesFromFilter: linesFromFilter, conditionsFromFilter: conditionsFromFilter,
-    fromFilters: fromFilters, defaultOptions: defaultOptions,
+    fromFilters: fromFilters, defaultOptions: defaultOptions, isoFromKey: isoFromKey,
     mins: mins, clock: clock, duration: duration, pbsDate: pbsDate, isoDate: isoDate, dayName: dayName,
   };
 })();
@@ -13608,10 +13630,9 @@ function renderDayPairingsPanel(dk) {
         if (f.subtype === 'duration') return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover Duration ' + (p.op === 'range' ? p.min + '–' + p.max + ' Hours' : (p.op === 'gt' ? '> ' : '< ') + p.val + ' Hours');
         return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover ' + f.subtype;
       case 'prefer-off':
-        if (f.subtype === 'dates') return 'Prefer Off Dates: ' + (p.dates || []).join(', ');
-        if (f.subtype === 'dow')   return 'Prefer Off Days Of Week: ' + (p.dows || []).join(', ');
-        if (f.subtype === 'range') return 'Prefer Off Date Range: ' + p.start + ' to ' + p.end;
-        return 'Prefer Off';
+        // in PBS words, dates in the order tapped (= PBS priority)
+        var poLine = PB.bid.linesFromFilter(f, { periodStart: (window._appStateRef || {}).bidPeriodStart }).lines[0];
+        return poLine ? PB.bid.lineText(poLine) : 'Prefer Off';
       case 'pairing-dow':   return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Operating On ' + (p.dows || []).join(', ');
       case 'layover-dow':   return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover On ' + (p.dows || []).join(', ');
       case 'layover-range': return (f.mode === 'award' ? 'Award' : 'Avoid') + ' Pairings If Layover Between ' + p.start + ' and ' + p.end;
@@ -13656,8 +13677,8 @@ function renderDayPairingsPanel(dk) {
       : list.map(function(f, idx) {
           var isFirst = idx === 0;
           var isLast  = idx === list.length - 1;
-          var modeLabel = f.mode === 'award' ? 'Prefer' : (f.mode === 'set-condition' ? 'Set Cond' : 'Avoid');
-          var modeClass = f.mode === 'award' ? 'prefer' : (f.mode === 'set-condition' ? 'setcond' : 'avoid');
+          var modeLabel = f.type === 'prefer-off' ? 'Off' : f.mode === 'award' ? 'Prefer' : (f.mode === 'set-condition' ? 'Set Cond' : 'Avoid');
+          var modeClass = f.type === 'prefer-off' ? 'setcond' : f.mode === 'award' ? 'prefer' : (f.mode === 'set-condition' ? 'setcond' : 'avoid');
 
           return '<div class="pb-occ-filter-card" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);margin-bottom:6px;">' +
             '<span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-tertiary);min-width:24px;">#' + (idx + 1) + '</span>' +
@@ -13795,7 +13816,7 @@ function renderDayPairingsPanel(dk) {
   // The bid for the current filters and options: { bid, notes, options, out: PB.bid.render(bid) }.
   window.pbBuildBid = function() {
     var s = window._appStateRef || {};
-    var r = PB.bid.fromFilters(s.occurrenceFilters || [], reportOptions());
+    var r = PB.bid.fromFilters(s.occurrenceFilters || [], reportOptions(), { periodStart: s.bidPeriodStart });
     r.out = PB.bid.render(r.bid);
     return r;
   };
@@ -14425,8 +14446,10 @@ function renderDayPairingsPanel(dk) {
   if (!window._poSelectedDates) window._poSelectedDates = new Set();
   if (!window._poSelectedDows)  window._poSelectedDows  = new Set();
 
+  // Prefer Off has no Avoid/Prefer: it always keeps trips off those days. The order days are tapped in is the
+  // order PBS tries to keep them off (first = most wanted), so selections keep tap order.
   function preferOffBody() {
-    return modeToggle('fb-mode') +
+    return '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Tap the days in order of importance: PBS tries hardest to keep the first one off.</div>' +
       '<div class="field"><div class="field__label">Selection Method</div>' +
         '<div class="segmented" id="fb-po">' +
           '<button class="segmented__item" data-v="dates" aria-pressed="true">Specific Dates</button>' +
@@ -14506,28 +14529,28 @@ function renderDayPairingsPanel(dk) {
         }
 
         days.forEach(function(d) {
-          var isSel = window._poSelectedDates.has(d.pbsKey) || window._poSelectedDates.has(d.dateKey);
+          var isSel = window._poSelectedDates.has(d.dateKey);
+          var rank = isSel ? Array.from(window._poSelectedDates).indexOf(d.dateKey) + 1 : 0;
           var activeStyle = isSel
             ? 'background:var(--accent);color:#ffffff;border-color:var(--accent);font-weight:700;box-shadow:0 2px 6px rgba(37,99,235,0.3);'
             : 'background:var(--bg-app);color:var(--text-primary);border:1px solid var(--border-subtle);';
 
           gridHtml +=
-            '<button type="button" class="pb-chip" style="width:100%;min-height:44px;padding:4px 2px;flex-direction:column;justify-content:center;align-items:center;border-radius:6px;cursor:pointer;' + activeStyle + '" onclick="window.pbTogglePODate(\'' + d.pbsKey + '\')">' +
-              '<div style="font-size:9px;opacity:0.75;line-height:1;">' + d.dowName + '</div>' +
+            '<button type="button" class="pb-chip" style="width:100%;min-height:44px;padding:4px 2px;flex-direction:column;justify-content:center;align-items:center;border-radius:6px;cursor:pointer;' + activeStyle + '" onclick="window.pbTogglePODate(\'' + d.dateKey + '\')">' +
+              '<div style="font-size:9px;opacity:0.75;line-height:1;">' + (rank ? '#' + rank : d.dowName) + '</div>' +
               '<div style="font-size:13px;font-weight:700;line-height:1.2;">' + d.dayNum + '</div>' +
               '<div style="font-size:8px;opacity:0.65;line-height:1;">' + d.monthName + '</div>' +
             '</button>';
         });
 
-        var sortedD = Array.from(window._poSelectedDates).sort();
-        var tagsHtml = sortedD.map(function(d) {
-          return '<span class="pb-datablock-pill" style="font-size:11px;background:rgba(37,99,235,0.1);color:var(--accent);border:1px solid rgba(37,99,235,0.2);">' + d + '</span>';
+        var tagsHtml = Array.from(window._poSelectedDates).map(function(d, i) {
+          return '<span class="pb-datablock-pill" style="font-size:11px;background:rgba(37,99,235,0.1);color:var(--accent);border:1px solid rgba(37,99,235,0.2);">' + (i + 1) + '. ' + PB.escapeHtml(PB.bid.pbsDate(d)) + '</span>';
         }).join(' ');
 
         b.innerHTML =
           '<div class="field"><div class="field__label" style="margin-bottom:6px;">Tap Calendar Days to Select Off</div>' +
             '<div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:4px;margin-bottom:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:8px;border-radius:var(--r-md);">' + gridHtml + '</div>' +
-            '<div class="field__label">Selected Dates</div>' +
+            '<div class="field__label">Selected Dates (in priority order)</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;min-height:24px;">' + (tagsHtml || '<span style="font-size:11px;color:var(--text-tertiary);">No dates selected yet. Tap days above to select.</span>') + '</div>' +
           '</div>' +
           '<button class="btn btn--primary" style="width:100%;margin-top:4px;" onclick="window.pbCommitPO(\'dates\')">Add Prefer Off Filter</button>';
@@ -14538,15 +14561,18 @@ function renderDayPairingsPanel(dk) {
         ];
         var dowsHtml = dows.map(function(d) {
           var isSel = window._poSelectedDows.has(d.val);
+          var rank = isSel ? Array.from(window._poSelectedDows).indexOf(d.val) + 1 : 0;
           var style = isSel
             ? 'background:var(--accent);color:#ffffff;border-color:var(--accent);font-weight:700;'
             : 'background:var(--bg-app);color:var(--text-primary);border:1px solid var(--border-subtle);';
-          return '<button type="button" class="pb-chip" style="flex:1;padding:10px 0;justify-content:center;font-weight:700;font-size:13px;border-radius:6px;cursor:pointer;' + style + '" onclick="window.pbTogglePODow(' + d.val + ')">' + d.label + '</button>';
+          return '<button type="button" class="pb-chip" style="flex:1;padding:10px 0;justify-content:center;font-weight:700;font-size:13px;border-radius:6px;cursor:pointer;' + style + '" onclick="window.pbTogglePODow(' + d.val + ')">' + d.label + (rank ? ' <span style="font-size:10px;opacity:0.8;">#' + rank + '</span>' : '') + '</button>';
         }).join('');
 
         b.innerHTML =
-          '<div class="field"><div class="field__label">Select Days of Week Off</div>' +
-            '<div style="display:flex;gap:6px;margin-bottom:16px;">' + dowsHtml + '</div>' +
+          '<div class="field"><div class="field__label">Select Days of Week Off (in priority order)</div>' +
+            '<div style="display:flex;gap:6px;margin-bottom:8px;">' + dowsHtml + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;min-height:16px;">' +
+              Array.from(window._poSelectedDows).map(function(v, i) { return (i + 1) + '. ' + PB.bid.dayName(v); }).join(', ') + '</div>' +
           '</div>' +
           '<button class="btn btn--primary" style="width:100%;" onclick="window.pbCommitPO(\'dow\')">Add Prefer Off DOW Filter</button>';
       } else if (v === 'range') {
@@ -14555,6 +14581,8 @@ function renderDayPairingsPanel(dk) {
             '<div class="field" style="flex:1;"><div class="field__label">Start Date</div><input type="date" class="input u-mono" id="fb-po-start"></div>' +
             '<div class="field" style="flex:1;"><div class="field__label">End Date</div><input type="date" class="input u-mono" id="fb-po-end"></div>' +
           '</div>' +
+          '<label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="fb-po-reverse" style="margin-top:2px;">' +
+            '<span>Reverse Range Priority: PBS tries hardest to keep the last day off, not the first</span></label>' +
           '<button class="btn btn--primary" style="width:100%;" onclick="window.pbCommitPO(\'range\')">Add Prefer Off Range Filter</button>';
       }
     }
@@ -14578,24 +14606,25 @@ function renderDayPairingsPanel(dk) {
   };
 
   window.pbCommitPO = function(sub) {
-    var mode = modeVal('fb-mode');
     var params = {};
     if (sub === 'dates') {
-      var arr = Array.from(window._poSelectedDates || []).sort();
+      var arr = Array.from(window._poSelectedDates || []);
       if (arr.length === 0) { toast('Select at least one date', 'error'); return; }
       params.dates = arr;
     } else if (sub === 'dow') {
-      var dows = Array.from(window._poSelectedDows || []).sort();
+      var dows = Array.from(window._poSelectedDows || []);
       if (dows.length === 0) { toast('Select at least one day of week', 'error'); return; }
       params.dows = dows;
     } else if (sub === 'range') {
       var st = document.getElementById('fb-po-start').value;
       var en = document.getElementById('fb-po-end').value;
       if (!st || !en) { toast('Select start and end dates', 'error'); return; }
+      if (en < st) { toast('The end date is before the start date', 'error'); return; }
       params.start = st; params.end = en;
+      if (document.getElementById('fb-po-reverse') && document.getElementById('fb-po-reverse').checked) params.reverse = true;
     }
 
-    commit({ type: 'prefer-off', subtype: sub, mode: mode, params: params });
+    commit({ type: 'prefer-off', subtype: sub, mode: 'avoid', params: params });
     window._poSelectedDates = new Set();
     window._poSelectedDows  = new Set();
   };

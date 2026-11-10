@@ -157,3 +157,24 @@ test('no filters: Set Conditions still print, the filter list is not changed', (
   bid.fromFilters(LIST, { stoppers: true, groups: 'reserve-pairing' });
   assert.strictEqual(JSON.stringify(LIST), before);
 });
+
+// ---- Prefer Off ----
+test('Prefer Off keeps the tapped order and prints PBS dates and day names', () => {
+  assert.deepStrictEqual(text(F('avoid', 'prefer-off', 'dates', { dates: ['2027-01-23', '2027-01-08', '2027-01-09'] })),
+    ['Prefer Off Jan 23, 2027, Jan 8, 2027, Jan 9, 2027']);
+  assert.deepStrictEqual(text(F('avoid', 'prefer-off', 'dow', { dows: [6, 0, 5] })), ['Prefer Off Saturday, Sunday, Friday']);
+  assert.deepStrictEqual(text(F('avoid', 'prefer-off', 'range', { start: '2027-01-10', end: '2027-01-14', reverse: true })),
+    ['Prefer Off Jan 10, 2027 - Jan 14, 2027 Reverse Range Priority']);
+});
+
+test('old Prefer Off dates saved without a year get the bid period year', () => {
+  assert.strictEqual(bid.isoFromKey('DEC25', '2026-12-01'), '2026-12-25');
+  assert.strictEqual(bid.isoFromKey('JAN02', '2026-12-01'), '2027-01-02', 'a December period running into January');
+  assert.strictEqual(bid.isoFromKey('2026-12-25', null), '2026-12-25');
+  const old = F('avoid', 'prefer-off', 'dates', { dates: ['DEC25', 'DEC24'] });
+  assert.deepStrictEqual(Array.from(bid.linesFromFilter(old, { periodStart: '2026-12-01' }).lines, (l) => bid.lineText(l)),
+    ['Prefer Off Dec 25, 2026, Dec 24, 2026']);
+  // with no bid period the date cannot be read, and the bid check says so instead of printing a wrong date
+  const r = bid.fromFilters([old], {});
+  assert.ok(Array.from(bid.render(r.bid).problems).some((p) => p.level === 'error'));
+});
