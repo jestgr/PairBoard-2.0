@@ -136,7 +136,8 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
   {has-dh, mode:'avoid', value:false} = "Avoid Pairings If Not Deadhead Legs" (keeps only trips WITH a
   deadhead). Fix: `value: true` always for Position=Any (Avoid → removes deadhead trips; Award → marks them).
   Existing saved filters keep what they say (the ladder now shows "If Not Deadhead Legs" honestly).
-- **Next = step 7**: bump CACHE_VERSION in sw.js; run all browser checks in /home/dev/data/pairboard-android/tools
+- **Step 7 in progress:** CACHE_VERSION v2.0.12 committed (289f1fb), all browser checks green, preview
+  started 2026-11-10 on port 5103 — waiting for Jeff's OK to merge. Then: bump CACHE_VERSION in sw.js (done); run all browser checks in /home/dev/data/pairboard-android/tools
   (diff_filters, ui_stack, ui_report, ui_preferoff, ui_saved); preview for Jeff
   (`python3 -m http.server 5103 --bind 0.0.0.0` from the repo root → http://192.168.68.85:5103, stop it after);
   Jeff's OK → merge to main (Jeff pushes). Then Android: sync web copy, update tools/golden.py report/description
