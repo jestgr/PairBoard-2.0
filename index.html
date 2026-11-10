@@ -16274,7 +16274,10 @@ const CREW_BASE_CODES = new Set([
  * Prefers CREW_BASE_CODES matches to avoid JFK/LGA when NYC is correct.
  */
 function reverseCityLookup(nameStr) {
-  const upper = nameStr.toUpperCase().trim();
+  const upper = String(nameStr || '').toUpperCase().trim();
+  // An empty box matches every name (''.includes) and gave the first crew base, ATL: no guess, so the PDF
+  // header's base is used instead.
+  if (upper.length < 2) return null;
   // First pass: only consider crew base codes
   for (const [code, name] of Object.entries(CITY_CODES)) {
     if (!CREW_BASE_CODES.has(code)) continue;
