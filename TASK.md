@@ -68,15 +68,36 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
   `PROPS` / `SET_CONDITIONS` tables (each entry: PBS wording, value kind, operators, `browse`, `seen`).
   The schema is written at the top of that block. Tests: `tests/bid/bid_document.test.js` (loads the block with
   `vm`, no browser). Jeff's real 26-line bid parses and prints back exactly, with no problems reported.
-- **Next = step 2** (stacked filters). Where things are in index.html (line numbers drift; search the names):
-  `filterDescription`, `pbShowFilterTypes`, `pbBuildFilter`, the commit function after it, `pbGeneratePBSReport`,
-  `pbExportFilters` / `pbImportFilters` (all in the FILTER BUILDER block); `applyFilters`,
-  `pairingMatchesAwardFilter`, `applyOccurrenceFilters` (pairings module). Filters live in
-  `_appStateRef.occurrenceFilters` as {type, subtype, mode: 'avoid'|'award', params}.
-  Plan for step 2: keep that shape as ONE condition; a stacked filter adds `and: [ {type, subtype, params}, … ]`
-  (extra Ifs). Old filters have no `and`, so they load and match exactly as before. Add
-  `PB.bid.fromFilter(filter)` → a bid line (maps type/subtype/params to PROPS conditions) so description and
-  report both come from `PB.bid.lineText`.
+- **Step 2 in progress** (stacked filters). Done so far, in index.html:
+  - Block `// FILTER MATCHING` (pairings module, just above `applyOccurrenceFilters`): `pairingFilterMatch(p, c)`
+    (plain test of one condition: true/false, null = no data, undefined = not a pairing-level type),
+    `filterRemovesMatches(f)` (each type's old "where is avoid written" quirk, kept exactly),
+    `pairingFilterKeeps(p, f)` (what `applyFilters` now calls), `filterConditions(f)`, `isStackedFilter(f)`,
+    `pairingConditionsMatch`, `pairingMatchesAwardFilter(p, f, alive)`, `awardRanks(pairings, filters, survivingMap)`.
+  - A stacked filter = a normal filter + `and: [ {type, subtype, params}, … ]`. ALL Ifs must hold. Stacked Avoid
+    removes trips matching every If; with a day/date If (pairing-dow, layover-dow, layover-range, carry-out) it
+    removes only the departures every If applies to (`occurrencesMatchingAll`, `applyOneOccurrenceFilter`,
+    `occurrenceFilterContext`). Prefer Off cannot be stacked. Award never removes.
+  - Award marking is now first-match, top-down: `p._awardLine` (1-based place in the list, 0 = none) and
+    `p._awardScore` = (number of Award filters − index of the first one matched), 0 = none. Sorting and the
+    Android bridge (`out.score`) keep working. ON PURPOSE different from main: Award filters on check-in/out time,
+    TAFB and deadhead position now mark trips (the old matcher did not know those types).
+  - `PB.bid.linesFromFilter(f)` → {lines, notes} and `PB.bid.conditionsFromFilter(c)`: filter → bid lines.
+    ≥/≤ become >/< one minute (or one unit) further out; commutable alone = two Avoid lines; has-dh-position
+    has no PBS line (note).
+  - Old-vs-new check on the real package (private, outside git):
+    `/home/dev/apps/pairboard-android/tools/.venv/bin/python /home/dev/data/pairboard-android/tools/diff_filters.py`
+    117 cases; the only differences are the 10 Award cases named above (marked 0 → marked N), as intended.
+  - STILL TO DO for step 2 (tick here as done):
+    - [ ] unit tests `tests/filters/filter_matching.test.js` (made-up pairings; load the FILTER MATCHING block with vm)
+          and `tests/bid/from_filter.test.js`
+    - [ ] builder UI in the FILTER BUILDER block: "+ If" button on each ladder row (`pbAddIf(idx)` sets a
+          module-level `stackTarget`, opens the type picker without Prefer Off and without the Mode toggle;
+          `commit(f)` then pushes {type, subtype, params} into `list[idx].and`), "✕" per If (`pbRemoveIf(idx, j)`),
+          `filterDescription` shows every If ("… and …")
+    - [ ] CHANGELOG / DECISIONS, PASSDOWN.md in /home/dev/apps/homelab-audit
+  - Known web bug to keep as is until step 6 (#8 on Jeff's reminder list): Deadhead builder, Mode=Avoid +
+    Position=Any saves {has-dh, avoid, value:false} = keeps only trips WITH a deadhead.
 - Wordings marked `seen: 'assumed'` in PROPS are guesses by analogy — ask Jeff to check them in NAVBLUE when he
   next has it open (Check-Out Station, TAFB, Layover Duration, Layover On, Deadhead Legs, Total Legs In Pairing,
   Mid Credit Window, Consecutive Days Off, Reverse Range Priority text, "Between A And B").

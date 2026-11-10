@@ -8070,199 +8070,320 @@ function fmtFilterMins(m) {
   return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
 }
 
-function pairingMatchesAwardFilter(p, f) {
+// ============================================================
+// FILTER MATCHING — does a pairing match a filter's condition(s)?
+//
+// A filter is { type, subtype, mode: 'avoid' | 'award', params } — one "If" — plus, when stacked,
+// and: [ { type, subtype, params }, … ] — more Ifs on the same line. Like a PBS line, ALL the Ifs must hold.
+//   Avoid  removes the trips (or, with a day/date If, the departures) that match every If.
+//   Award  removes nothing; it marks the trips it matches (see awardRanks).
+// A filter with no `and` behaves exactly as it always has (pairingFilterKeeps).
+// ============================================================
+var OCCURRENCE_FILTER_TYPES = { 'prefer-off': 1, 'pairing-dow': 1, 'layover-dow': 1, 'layover-range': 1, 'carry-out': 1 };
+
+// The plain test of one condition, whatever the filter's mode: true / false, null when the pairing lacks the
+// data to tell, undefined when the type is not a pairing-level test (day/date filters, unknown types).
+function pairingFilterMatch(p, f) {
+  var pr = f.params || {};
   if (f.type === 'pairing-length') {
-    var v = f.params.value;
-    if (f.subtype === 'lt')    return p.days < v;
-    if (f.subtype === 'exact') return p.days === v;
-    if (f.subtype === 'gt')    return p.days > v;
+    if (f.subtype === 'lt')    return p.days < pr.value;
+    if (f.subtype === 'exact') return p.days === pr.value;
+    if (f.subtype === 'gt')    return p.days > pr.value;
+    if (f.subtype === 'min')   return p.days >= pr.min;
+    if (f.subtype === 'max')   return p.days <= pr.max;
+    if (f.subtype === 'range') return p.days >= pr.min && p.days <= pr.max;
+    return false;
   }
   if (f.type === 'credit') {
-    if (f.subtype === 'min')   return p.creditHours >= f.params.min;
-    if (f.subtype === 'max')   return p.creditHours <= f.params.max;
-    if (f.subtype === 'range') return p.creditHours >= f.params.min && p.creditHours <= f.params.max;
+    if (f.subtype === 'min')   return p.creditHours >= pr.min;
+    if (f.subtype === 'max')   return p.creditHours <= pr.max;
+    if (f.subtype === 'range') return p.creditHours >= pr.min && p.creditHours <= pr.max;
+    return false;
   }
-  if (f.type === 'layovers-in') {
-    var cities = new Set(f.params.cities.map(function(c) { return c.toUpperCase(); }));
-    if (f.params && f.params.match === 'every') {
-      return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cities.has(s.toUpperCase()); });
-    }
+  if (f.type === 'layovers-in' || (f.type === 'layover' && f.subtype === 'station')) {
+    var cities = new Set((f.type === 'layovers-in' ? pr.cities : (pr.stations || [])).map(function(c) { return c.toUpperCase(); }));
+    if (pr.match === 'every') return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cities.has(s.toUpperCase()); });
     return p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); });
   }
   if (f.type === 'landings-in') {
-    var stations = new Set(f.params.stations.map(function(c) { return c.toUpperCase(); }));
-    return p.tripDays.some(function(d) {
-      return d.legs.some(function(l) { return l.arrCity && stations.has(l.arrCity.toUpperCase()); });
-    });
+    var stations = new Set(pr.stations.map(function(c) { return c.toUpperCase(); }));
+    return p.tripDays.some(function(d) { return d.legs.some(function(l) { return l.arrCity && stations.has(l.arrCity.toUpperCase()); }); });
   }
   if (f.type === 'commutable') {
     var ci = pairingCheckInMins(p), co = pairingCheckOutMins(p), ok = true;
-    if (f.params.checkInAfter   != null && ci != null) ok = ok && (ci >= f.params.checkInAfter);
-    if (f.params.checkOutBefore != null && co != null) ok = ok && (co <= f.params.checkOutBefore);
+    if (pr.checkInAfter   != null && ci != null) ok = ok && (ci >= pr.checkInAfter);
+    if (pr.checkOutBefore != null && co != null) ok = ok && (co <= pr.checkOutBefore);
     return ok;
   }
-  if (f.type === 'pairing' && f.subtype === 'has-dh')     return f.params.value ? !!p.containsDH     : !p.containsDH;
-  if (f.type === 'pairing' && f.subtype === 'has-redeye') return f.params.value ? !!p.containsRedeye : !p.containsRedeye;
-  if (f.type === 'layover' && f.subtype === 'station') {
-    var cs = new Set((f.params.stations||[]).map(function(c) { return c.toUpperCase(); }));
-    if (f.params && f.params.match === 'every') {
-      return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cs.has(s.toUpperCase()); });
+  if (f.type === 'station') {
+    var stSet = new Set((pr.stations || []).map(function(c) { return c.toUpperCase(); }));
+    var checkFn = f.subtype === 'checkin' ? pairingCheckInStation :
+                  f.subtype === 'checkout' ? pairingCheckOutStation :
+                  f.subtype === 'work-start' ? pairingWorkStartStation : pairingWorkEndStation;
+    var sVal = checkFn(p);
+    return sVal ? stSet.has(sVal) : false;
+  }
+  if (f.type === 'legs') {
+    var vL = pr.value;
+    if (f.subtype === 'duty-legs') {
+      var maxDl = pairingMaxDutyLegs(p);
+      if (pr.op === 'lt')    return maxDl < vL;
+      if (pr.op === 'exact') return maxDl === vL;
+      if (pr.op === 'gt')    return maxDl > vL;
+      if (pr.op === 'max')   return maxDl <= vL;
+      if (pr.op === 'min')   return maxDl >= vL;
+    } else if (f.subtype === 'total-legs') {
+      var totL = pairingTotalLegs(p);
+      if (pr.op === 'lt')    return totL < vL;
+      if (pr.op === 'exact') return totL === vL;
+      if (pr.op === 'gt')    return totL > vL;
+      if (pr.op === 'max')   return totL <= vL;
+      if (pr.op === 'min')   return totL >= vL;
+      if (pr.op === 'range') return totL >= pr.min && totL <= pr.max;
     }
-    return p.layoverStations.some(function(s) { return cs.has(s.toUpperCase()); });
+    return false;
+  }
+  if (f.type === 'block-time' || f.type === 'avg-credit' || (f.type === 'pairing' && f.subtype === 'avg-daily-credit')) {
+    var hrs = f.type === 'block-time'
+      ? (f.subtype === 'avg-daily' ? (p.days > 0 ? (p.blockHours || 0) / p.days : 0) : (p.blockHours || 0))
+      : (f.type === 'avg-credit' ? (p.days > 0 ? (p.creditHours || 0) / p.days : 0) : (p.days > 0 ? p.creditHours / p.days : 0));
+    if (pr.op === 'min')   return hrs >= pr.min;
+    if (pr.op === 'max')   return hrs <= pr.max;
+    if (pr.op === 'range') return hrs >= pr.min && hrs <= pr.max;
+    return false;
+  }
+  if (f.type === 'pairing-number') {
+    var pNums = new Set((pr.numbers || []).map(function(n) { return String(n).trim().toUpperCase(); }));
+    return pNums.has(String(p.number).toUpperCase());
+  }
+  if (f.type === 'pairing' && (f.subtype === 'checkin-time' || f.subtype === 'checkout-time')) {
+    var m = f.subtype === 'checkin-time' ? pairingCheckInMins(p) : pairingCheckOutMins(p);
+    if (m == null) return null;
+    if (pr.op === 'before') return m < pr.mins;
+    if (pr.op === 'after')  return m > pr.mins;
+    if (pr.op === 'range')  return m >= pr.from && m <= pr.to;
+    return false;
+  }
+  if (f.type === 'pairing' && f.subtype === 'tafb') {
+    var tafb = p.tafbHours;
+    if (!tafb) return null;
+    if (pr.op === 'min')   return tafb >= pr.min;
+    if (pr.op === 'max')   return tafb <= pr.max;
+    if (pr.op === 'range') return tafb >= pr.min && tafb <= pr.max;
+    return false;
+  }
+  if (f.type === 'pairing' && f.subtype === 'has-dh')     return pr.value ? !!p.containsDH : !p.containsDH;
+  if (f.type === 'pairing' && f.subtype === 'has-redeye') return pr.value ? !!p.containsRedeye : !p.containsRedeye;
+  if (f.type === 'pairing' && f.subtype === 'has-dh-position') {
+    var d0 = p.tripDays[0], dN = p.tripDays[p.tripDays.length - 1];
+    var front = !!(d0 && d0.legs.length > 0 && d0.legs[0].isDH);
+    var back  = !!(dN && dN.legs.length > 0 && dN.legs[dN.legs.length - 1].isDH);
+    if (pr.pos === 'front') return front;
+    if (pr.pos === 'back')  return back;
+    if (pr.pos === 'front-back') return pr.logic === 'and' ? (front && back) : (front || back);
+    return p.tripDays.some(function(d) { return d.legs.some(function(l) { return l.isDH; }); });
   }
   if (f.type === 'layover' && f.subtype === 'duration') {
     return pairingLayovers(p).some(function(l) {
       if (l.durationMins == null) return false;
-      var hrs = l.durationMins / 60;
-      if (f.params.op === 'lt')    return hrs < f.params.val;
-      if (f.params.op === 'gt')    return hrs > f.params.val;
-      if (f.params.op === 'range') return hrs >= f.params.min && hrs <= f.params.max;
+      var h = l.durationMins / 60;
+      if (pr.op === 'lt')    return h < pr.val;
+      if (pr.op === 'gt')    return h > pr.val;
+      if (pr.op === 'range') return h >= pr.min && h <= pr.max;
       return false;
     });
   }
-  if (f.type === 'station') {
-    var stSet = new Set((f.params.stations || []).map(function(c) { return c.toUpperCase(); }));
-    if (f.subtype === 'checkin') {
-      var cis = pairingCheckInStation(p);
-      return cis ? stSet.has(cis) : false;
-    }
-    if (f.subtype === 'checkout') {
-      var cos = pairingCheckOutStation(p);
-      return cos ? stSet.has(cos) : false;
-    }
-    if (f.subtype === 'work-start') {
-      var wss = pairingWorkStartStation(p);
-      return wss ? stSet.has(wss) : false;
-    }
-    if (f.subtype === 'work-end') {
-      var wes = pairingWorkEndStation(p);
-      return wes ? stSet.has(wes) : false;
-    }
-  }
-  if (f.type === 'legs') {
-    var vLegs = f.params.value;
-    if (f.subtype === 'duty-legs') {
-      var maxDl = pairingMaxDutyLegs(p);
-      if (f.params.op === 'lt')    return maxDl < vLegs;
-      if (f.params.op === 'exact') return maxDl === vLegs;
-      if (f.params.op === 'gt')    return maxDl > vLegs;
-      if (f.params.op === 'max')   return maxDl <= vLegs;
-      if (f.params.op === 'min')   return maxDl >= vLegs;
-    }
-    if (f.subtype === 'total-legs') {
-      var totL = pairingTotalLegs(p);
-      if (f.params.op === 'lt')    return totL < vLegs;
-      if (f.params.op === 'exact') return totL === vLegs;
-      if (f.params.op === 'gt')    return totL > vLegs;
-      if (f.params.op === 'max')   return totL <= vLegs;
-      if (f.params.op === 'min')   return totL >= vLegs;
-      if (f.params.op === 'range') return totL >= f.params.min && totL <= f.params.max;
-    }
-  }
-  if (f.type === 'block-time') {
-    var bVal = f.subtype === 'avg-daily' ? (p.days > 0 ? (p.blockHours || 0) / p.days : 0) : (p.blockHours || 0);
-    if (f.params.op === 'min')   return bVal >= f.params.min;
-    if (f.params.op === 'max')   return bVal <= f.params.max;
-    if (f.params.op === 'range') return bVal >= f.params.min && bVal <= f.params.max;
-  }
-  if (f.type === 'avg-credit') {
-    var acVal = p.days > 0 ? (p.creditHours || 0) / p.days : 0;
-    if (f.params.op === 'min')   return acVal >= f.params.min;
-    if (f.params.op === 'max')   return acVal <= f.params.max;
-    if (f.params.op === 'range') return acVal >= f.params.min && acVal <= f.params.max;
-  }
-  if (f.type === 'pairing-number') {
-    var pNums = new Set((f.params.numbers || []).map(function(n) { return String(n).trim().toUpperCase(); }));
-    return pNums.has(String(p.number).toUpperCase());
-  }
-  return false;
+  return undefined;
 }
 
-function applyOccurrenceFilters(startDays, p) {
-  var surviving = new Set(startDays);
+// Does this (single-If) filter remove trips that match, rather than keep only those? Each filter type has
+// always had its own idea of where "avoid" is written; this keeps every one of them.
+function filterRemovesMatches(f) {
+  var pr = f.params || {};
+  if (f.type === 'commutable') return false;                        // always "keep only commutable"
+  if (f.type === 'layovers-in') return f.subtype === 'avoid' || f.mode === 'avoid';
+  if (f.type === 'layover' && f.subtype === 'station') return pr.op === 'exclude' || f.mode === 'avoid';
+  if (f.type === 'pairing' && f.subtype === 'has-dh-position') return f.mode === 'avoid' || pr.op === 'avoid';
+  if (f.type === 'landings-in' || (f.type === 'layover' && f.subtype === 'duration') ||
+      (f.type === 'pairing' && (f.subtype === 'has-dh' || f.subtype === 'has-redeye'))) return f.mode === 'avoid';
+  return f.mode === 'avoid' || pr.opMode === 'avoid';
+}
+
+function isStackedFilter(f) { return !!(f && f.and && f.and.length); }
+
+// Every If of a filter, the first one included, as bare conditions.
+function filterConditions(f) {
+  return [{ type: f.type, subtype: f.subtype, params: f.params || {} }].concat((f.and || []).map(function(c) {
+    return { type: c.type, subtype: c.subtype, params: c.params || {} };
+  }));
+}
+
+// All the pairing-level Ifs of a filter hold for this pairing (day/date Ifs are judged per departure).
+function pairingConditionsMatch(p, f) {
+  return filterConditions(f).every(function(c) {
+    return OCCURRENCE_FILTER_TYPES[c.type] ? true : pairingFilterMatch(p, c) === true;
+  });
+}
+
+// Does the pairing stay in the list after this filter? (Award filters and day/date filters remove nothing here.)
+function pairingFilterKeeps(p, f) {
+  if (f.mode === 'award') return true;
+  if (isStackedFilter(f)) {
+    // With a day/date If the filter removes departures, not the whole trip: applyOccurrenceFilters does that.
+    if (filterConditions(f).some(function(c) { return OCCURRENCE_FILTER_TYPES[c.type]; })) return true;
+    return !pairingConditionsMatch(p, f);
+  }
+  var m = pairingFilterMatch(p, f);
+  if (m == null) return true;
+  return filterRemovesMatches(f) ? !m : m;
+}
+
+// Is the pairing one this Award filter asks for? `alive` = its departures still standing (a Set of start days).
+function pairingMatchesAwardFilter(p, f, alive) {
+  if (!pairingConditionsMatch(p, f)) return false;
+  var conds = filterConditions(f);
+  if (!conds.some(function(c) { return OCCURRENCE_FILTER_TYPES[c.type]; })) {
+    return isStackedFilter(f) || pairingFilterMatch(p, f) === true;
+  }
+  if (!isStackedFilter(f)) return false;       // a lone day/date Award has never marked trips
+  return occurrencesMatchingAll(conds, alive || new Set(computeOccurrences(p)), p).size > 0;
+}
+
+// Award marking, PBS-style: lines are read top-down, so a trip belongs to the FIRST Award filter it matches.
+// Sets p._awardLine (that filter's place in the whole list, 1-based; 0 = none) and p._awardScore (higher =
+// earlier Award filter; 0 = none) — the list sorts on the score.
+function awardRanks(pairings, filters, survivingMap) {
+  var awards = [];
+  filters.forEach(function(f, i) { if (f.mode === 'award') awards.push({ f: f, line: i + 1 }); });
+  pairings.forEach(function(p) {
+    p._awardScore = 0; p._awardLine = 0;
+    for (var i = 0; i < awards.length; i++) {
+      if (pairingMatchesAwardFilter(p, awards[i].f, survivingMap && survivingMap.get(p.number))) {
+        p._awardScore = awards.length - i; p._awardLine = awards[i].line;
+        break;
+      }
+    }
+  });
+  return awards.length;
+}
+// ============================================================
+// END FILTER MATCHING
+// ============================================================
+
+// What the day/date filters need to know about a pairing; null when there is no bid period.
+function occurrenceFilterContext(p) {
   var MONTHS    = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
-  var tripLen = Math.max(1, p.days || 1);
   var bp = getBidPeriodYearMonth();
-  if (!bp) return surviving;
-  var year = bp.year, effMonth = bp.month;
+  if (!bp) return null;
+  var effMonth = bp.month;
   if (p.effectiveStart) {
     var em = p.effectiveStart.match(/([A-Z]{3})/i);
     if (em && MONTHS[em[1].toUpperCase()] != null) effMonth = MONTHS[em[1].toUpperCase()];
   }
-  var bpStart = parseBPDate(appState.bidPeriodStart);
-  var bpEnd   = parseBPDate(appState.bidPeriodEnd);
+  return { year: bp.year, effMonth: effMonth, tripLen: Math.max(1, p.days || 1), bpEnd: parseBPDate(appState.bidPeriodEnd) };
+}
 
+// One day/date filter (mode 'avoid'): takes the departures it applies to out of `surviving`.
+function applyOneOccurrenceFilter(f, surviving, p, cx) {
+  if (!OCCURRENCE_FILTER_TYPES[f.type]) return;
+  var year = cx.year, effMonth = cx.effMonth, tripLen = cx.tripLen, bpEnd = cx.bpEnd;
+
+
+  if (f.type === 'prefer-off' && f.subtype === 'dates' && f.mode === 'avoid') {
+    var blocked = new Set(f.params.dates || []);
+    var mn = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    surviving.forEach(function(startDay) {
+      for (var offset = 0; offset < tripLen; offset++) {
+        var d = new Date(year, effMonth, startDay + offset);
+        var key = localDKey(d.getFullYear(), d.getMonth(), d.getDate());
+        var pbsKey = mn[d.getMonth()] + String(d.getDate()).padStart(2, '0');
+        if (blocked.has(key) || blocked.has(pbsKey)) { surviving.delete(startDay); break; }
+      }
+    });
+  }
+  if (f.type === 'prefer-off' && f.subtype === 'dow' && f.mode === 'avoid') {
+    var dows = new Set(f.params.dows || []);
+    surviving.forEach(function(startDay) {
+      for (var offset = 0; offset < tripLen; offset++) {
+        var d = new Date(year, effMonth, startDay + offset);
+        if (dows.has(d.getDay())) { surviving.delete(startDay); break; }
+      }
+    });
+  }
+  if (f.type === 'prefer-off' && f.subtype === 'range' && f.mode === 'avoid') {
+    var rs = parseBPDate(f.params.start), re = parseBPDate(f.params.end);
+    if (rs && re) {
+      surviving.forEach(function(startDay) {
+        for (var offset = 0; offset < tripLen; offset++) {
+          var d = new Date(year, effMonth, startDay + offset);
+          if (d >= rs && d <= re) { surviving.delete(startDay); break; }
+        }
+      });
+    }
+  }
+  if (f.type === 'pairing-dow' && f.mode === 'avoid') {
+    var pdows = new Set(f.params.dows || []);
+    surviving.forEach(function(startDay) {
+      var d = new Date(year, effMonth, startDay);
+      if (pdows.has(d.getDay())) surviving.delete(startDay);
+    });
+  }
+  if (f.type === 'layover-dow' && f.mode === 'avoid') {
+    var ldows = new Set(f.params.dows || []);
+    surviving.forEach(function(startDay) {
+      for (var i2 = 0; i2 < p.tripDays.length - 1; i2++) {
+        if (!p.tripDays[i2].layoverCity) continue;
+        var d = new Date(year, effMonth, startDay + i2);
+        if (ldows.has(d.getDay())) { surviving.delete(startDay); break; }
+      }
+    });
+  }
+  if (f.type === 'layover-range' && f.mode === 'avoid') {
+    var lrs = parseBPDate(f.params.start), lre = parseBPDate(f.params.end);
+    if (lrs && lre) {
+      surviving.forEach(function(startDay) {
+        for (var i3 = 0; i3 < p.tripDays.length - 1; i3++) {
+          if (!p.tripDays[i3].layoverCity) continue;
+          var d = new Date(year, effMonth, startDay + i3);
+          if (d >= lrs && d <= lre) { surviving.delete(startDay); break; }
+        }
+      });
+    }
+  }
+  if (f.type === 'carry-out' && f.mode === 'avoid' && bpEnd) {
+    surviving.forEach(function(startDay) {
+      var endD = new Date(year, effMonth, startDay + tripLen - 1);
+      if (endD > bpEnd) surviving.delete(startDay);
+    });
+  }
+}
+
+// The departures (start days) that EVERY day/date condition in `conds` applies to.
+function occurrencesMatchingAll(conds, startDays, p) {
+  var cx = occurrenceFilterContext(p);
+  var hit = null;
+  if (cx) conds.forEach(function(c) {
+    if (!OCCURRENCE_FILTER_TYPES[c.type]) return;
+    var left = new Set(startDays);
+    applyOneOccurrenceFilter({ type: c.type, subtype: c.subtype, params: c.params, mode: 'avoid' }, left, p, cx);
+    var mine = new Set();
+    startDays.forEach(function(d) { if (!left.has(d) && (!hit || hit.has(d))) mine.add(d); });
+    hit = mine;
+  });
+  return hit || new Set();
+}
+
+function applyOccurrenceFilters(startDays, p) {
+  var surviving = new Set(startDays);
+  var cx = occurrenceFilterContext(p);
+  if (!cx) return surviving;
   for (var _i = 0; _i < appState.occurrenceFilters.length; _i++) {
     var f = appState.occurrenceFilters[_i];
-    if (f.type !== 'prefer-off' && f.type !== 'pairing-dow' && f.type !== 'layover-dow' && f.type !== 'layover-range' && f.type !== 'carry-out') continue;
-
-    if (f.type === 'prefer-off' && f.subtype === 'dates' && f.mode === 'avoid') {
-      var blocked = new Set(f.params.dates || []);
-      var mn = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-      surviving.forEach(function(startDay) {
-        for (var offset = 0; offset < tripLen; offset++) {
-          var d = new Date(year, effMonth, startDay + offset);
-          var key = localDKey(d.getFullYear(), d.getMonth(), d.getDate());
-          var pbsKey = mn[d.getMonth()] + String(d.getDate()).padStart(2, '0');
-          if (blocked.has(key) || blocked.has(pbsKey)) { surviving.delete(startDay); break; }
-        }
-      });
-    }
-    if (f.type === 'prefer-off' && f.subtype === 'dow' && f.mode === 'avoid') {
-      var dows = new Set(f.params.dows || []);
-      surviving.forEach(function(startDay) {
-        for (var offset = 0; offset < tripLen; offset++) {
-          var d = new Date(year, effMonth, startDay + offset);
-          if (dows.has(d.getDay())) { surviving.delete(startDay); break; }
-        }
-      });
-    }
-    if (f.type === 'prefer-off' && f.subtype === 'range' && f.mode === 'avoid') {
-      var rs = parseBPDate(f.params.start), re = parseBPDate(f.params.end);
-      if (rs && re) {
-        surviving.forEach(function(startDay) {
-          for (var offset = 0; offset < tripLen; offset++) {
-            var d = new Date(year, effMonth, startDay + offset);
-            if (d >= rs && d <= re) { surviving.delete(startDay); break; }
-          }
-        });
-      }
-    }
-    if (f.type === 'pairing-dow' && f.mode === 'avoid') {
-      var pdows = new Set(f.params.dows || []);
-      surviving.forEach(function(startDay) {
-        var d = new Date(year, effMonth, startDay);
-        if (pdows.has(d.getDay())) surviving.delete(startDay);
-      });
-    }
-    if (f.type === 'layover-dow' && f.mode === 'avoid') {
-      var ldows = new Set(f.params.dows || []);
-      surviving.forEach(function(startDay) {
-        for (var i2 = 0; i2 < p.tripDays.length - 1; i2++) {
-          if (!p.tripDays[i2].layoverCity) continue;
-          var d = new Date(year, effMonth, startDay + i2);
-          if (ldows.has(d.getDay())) { surviving.delete(startDay); break; }
-        }
-      });
-    }
-    if (f.type === 'layover-range' && f.mode === 'avoid') {
-      var lrs = parseBPDate(f.params.start), lre = parseBPDate(f.params.end);
-      if (lrs && lre) {
-        surviving.forEach(function(startDay) {
-          for (var i3 = 0; i3 < p.tripDays.length - 1; i3++) {
-            if (!p.tripDays[i3].layoverCity) continue;
-            var d = new Date(year, effMonth, startDay + i3);
-            if (d >= lrs && d <= lre) { surviving.delete(startDay); break; }
-          }
-        });
-      }
-    }
-    if (f.type === 'carry-out' && f.mode === 'avoid' && bpEnd) {
-      surviving.forEach(function(startDay) {
-        var endD = new Date(year, effMonth, startDay + tripLen - 1);
-        if (endD > bpEnd) surviving.delete(startDay);
-      });
-    }
+    if (!isStackedFilter(f)) { applyOneOccurrenceFilter(f, surviving, p, cx); continue; }
+    // Stacked Avoid with a day/date If: only the departures every If applies to go, and only on trips that
+    // match the other Ifs.
+    if (f.mode === 'award' || !pairingConditionsMatch(p, f)) continue;
+    occurrencesMatchingAll(filterConditions(f), surviving, p).forEach(function(d) { surviving.delete(d); });
   }
   return surviving;
 }
@@ -8290,196 +8411,10 @@ function applyFilters() {
     });
   }
 
-  // Pairing-level filters
+  // Pairing-level filters, top-down (see FILTER MATCHING)
   for (var fi = 0; fi < appState.occurrenceFilters.length; fi++) {
     var f = appState.occurrenceFilters[fi];
-    if (f.mode === 'award') continue;
-
-    if (f.type === 'pairing-length') {
-      var v = f.params.value;
-      result = result.filter(function(p) {
-        var match = false;
-        if (f.subtype === 'lt')    match = p.days < v;
-        else if (f.subtype === 'exact') match = p.days === v;
-        else if (f.subtype === 'gt')    match = p.days > v;
-        else if (f.subtype === 'min')   match = p.days >= f.params.min;
-        else if (f.subtype === 'max')   match = p.days <= f.params.max;
-        else if (f.subtype === 'range') match = p.days >= f.params.min && p.days <= f.params.max;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'credit') {
-      result = result.filter(function(p) {
-        var match = false;
-        if (f.subtype === 'min')   match = p.creditHours >= f.params.min;
-        else if (f.subtype === 'max')   match = p.creditHours <= f.params.max;
-        else if (f.subtype === 'range') match = p.creditHours >= f.params.min && p.creditHours <= f.params.max;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'layovers-in') {
-      var cities = new Set(f.params.cities.map(function(c) { return c.toUpperCase(); }));
-      var isEvery = f.params && f.params.match === 'every';
-      var hasMatch = function(p) {
-        if (isEvery) return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cities.has(s.toUpperCase()); });
-        return p.layoverStations.some(function(s) { return cities.has(s.toUpperCase()); });
-      };
-      if (f.subtype === 'avoid' || f.mode === 'avoid') result = result.filter(function(p) { return !hasMatch(p); });
-      else result = result.filter(function(p) { return hasMatch(p); });
-    }
-    if (f.type === 'landings-in') {
-      var stations = new Set(f.params.stations.map(function(c) { return c.toUpperCase(); }));
-      var hasLanding = function(p) { return p.tripDays.some(function(d) { return d.legs.some(function(l) { return l.arrCity && stations.has(l.arrCity.toUpperCase()); }); }); };
-      if (f.mode === 'avoid') result = result.filter(function(p) { return !hasLanding(p); });
-      else                    result = result.filter(function(p) { return  hasLanding(p); });
-    }
-    if (f.type === 'commutable') {
-      result = result.filter(function(p) {
-        var ci = pairingCheckInMins(p), co = pairingCheckOutMins(p), ok = true;
-        if (f.params.checkInAfter   != null && ci != null) ok = ok && (ci >= f.params.checkInAfter);
-        if (f.params.checkOutBefore != null && co != null) ok = ok && (co <= f.params.checkOutBefore);
-        return ok;
-      });
-    }
-    if (f.type === 'station') {
-      var stSet = new Set((f.params.stations || []).map(function(c) { return c.toUpperCase(); }));
-      var checkFn = f.subtype === 'checkin' ? pairingCheckInStation :
-                    f.subtype === 'checkout' ? pairingCheckOutStation :
-                    f.subtype === 'work-start' ? pairingWorkStartStation : pairingWorkEndStation;
-      result = result.filter(function(p) {
-        var sVal = checkFn(p);
-        var match = sVal ? stSet.has(sVal) : false;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'legs') {
-      var vL = f.params.value;
-      result = result.filter(function(p) {
-        var match = false;
-        if (f.subtype === 'duty-legs') {
-          var maxDl = pairingMaxDutyLegs(p);
-          if (f.params.op === 'lt')    match = maxDl < vL;
-          else if (f.params.op === 'exact') match = maxDl === vL;
-          else if (f.params.op === 'gt')    match = maxDl > vL;
-          else if (f.params.op === 'max')   match = maxDl <= vL;
-          else if (f.params.op === 'min')   match = maxDl >= vL;
-        } else if (f.subtype === 'total-legs') {
-          var totL = pairingTotalLegs(p);
-          if (f.params.op === 'lt')    match = totL < vL;
-          else if (f.params.op === 'exact') match = totL === vL;
-          else if (f.params.op === 'gt')    match = totL > vL;
-          else if (f.params.op === 'max')   match = totL <= vL;
-          else if (f.params.op === 'min')   match = totL >= vL;
-          else if (f.params.op === 'range') match = totL >= f.params.min && totL <= f.params.max;
-        }
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'block-time') {
-      result = result.filter(function(p) {
-        var bVal = f.subtype === 'avg-daily' ? (p.days > 0 ? (p.blockHours || 0) / p.days : 0) : (p.blockHours || 0);
-        var match = false;
-        if (f.params.op === 'min')   match = bVal >= f.params.min;
-        else if (f.params.op === 'max')   match = bVal <= f.params.max;
-        else if (f.params.op === 'range') match = bVal >= f.params.min && bVal <= f.params.max;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'avg-credit') {
-      result = result.filter(function(p) {
-        var acVal = p.days > 0 ? (p.creditHours || 0) / p.days : 0;
-        var match = false;
-        if (f.params.op === 'min')   match = acVal >= f.params.min;
-        else if (f.params.op === 'max')   match = acVal <= f.params.max;
-        else if (f.params.op === 'range') match = acVal >= f.params.min && acVal <= f.params.max;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'pairing-number') {
-      var pNums = new Set((f.params.numbers || []).map(function(n) { return String(n).trim().toUpperCase(); }));
-      result = result.filter(function(p) {
-        var match = pNums.has(String(p.number).toUpperCase());
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'pairing' && f.subtype === 'checkin-time') {
-      result = result.filter(function(p) {
-        var m = pairingCheckInMins(p); if (m == null) return true;
-        var match = false;
-        if (f.params.op === 'before') match = m < f.params.mins;
-        else if (f.params.op === 'after') match = m > f.params.mins;
-        else if (f.params.op === 'range') match = m >= f.params.from && m <= f.params.to;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'pairing' && f.subtype === 'checkout-time') {
-      result = result.filter(function(p) {
-        var m = pairingCheckOutMins(p); if (m == null) return true;
-        var match = false;
-        if (f.params.op === 'before') match = m < f.params.mins;
-        else if (f.params.op === 'after') match = m > f.params.mins;
-        else if (f.params.op === 'range') match = m >= f.params.from && m <= f.params.to;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'pairing' && f.subtype === 'tafb') {
-      result = result.filter(function(p) {
-        var v2 = p.tafbHours; if (!v2) return true;
-        var match = false;
-        if (f.params.op === 'min')   match = v2 >= f.params.min;
-        else if (f.params.op === 'max')   match = v2 <= f.params.max;
-        else if (f.params.op === 'range') match = v2 >= f.params.min && v2 <= f.params.max;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'pairing' && f.subtype === 'avg-daily-credit') {
-      result = result.filter(function(p) {
-        var v3 = p.days > 0 ? p.creditHours / p.days : 0;
-        var match = false;
-        if (f.params.op === 'min')   match = v3 >= f.params.min;
-        else if (f.params.op === 'max')   match = v3 <= f.params.max;
-        else if (f.params.op === 'range') match = v3 >= f.params.min && v3 <= f.params.max;
-        return (f.mode === 'avoid' || f.params.opMode === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'pairing' && f.subtype === 'has-dh')     result = result.filter(function(p) { var hasDH = !!p.containsDH; return f.mode === 'avoid' ? (!f.params.value ? hasDH : !hasDH) : (f.params.value ? hasDH : !hasDH); });
-    if (f.type === 'pairing' && f.subtype === 'has-redeye') result = result.filter(function(p) { var hasRed = !!p.containsRedeye; return f.mode === 'avoid' ? (!f.params.value ? hasRed : !hasRed) : (f.params.value ? hasRed : !hasRed); });
-    if (f.type === 'pairing' && f.subtype === 'has-dh-position') {
-      var dhFront = function(p) { var d0 = p.tripDays[0]; return !!(d0 && d0.legs.length > 0 && d0.legs[0].isDH); };
-      var dhBack  = function(p) { var dN = p.tripDays[p.tripDays.length-1]; return !!(dN && dN.legs.length > 0 && dN.legs[dN.legs.length-1].isDH); };
-      var dhAny   = function(p) { return p.tripDays.some(function(d) { return d.legs.some(function(l) { return l.isDH; }); }); };
-      result = result.filter(function(p) {
-        var match, pos = f.params.pos;
-        if (pos === 'front')      match = dhFront(p);
-        else if (pos === 'back')  match = dhBack(p);
-        else if (pos === 'front-back') match = f.params.logic === 'and' ? (dhFront(p) && dhBack(p)) : (dhFront(p) || dhBack(p));
-        else                      match = dhAny(p);
-        return (f.mode === 'avoid' || f.params.op === 'avoid') ? !match : match;
-      });
-    }
-    if (f.type === 'layover' && f.subtype === 'station') {
-      var cs2 = new Set((f.params.stations||[]).map(function(c) { return c.toUpperCase(); }));
-      var isEvery2 = f.params && f.params.match === 'every';
-      var hasMatch2 = function(p) {
-        if (isEvery2) return p.layoverStations.length > 0 && p.layoverStations.every(function(s) { return cs2.has(s.toUpperCase()); });
-        return p.layoverStations.some(function(s) { return cs2.has(s.toUpperCase()); });
-      };
-      if (f.params.op === 'exclude' || f.mode === 'avoid') result = result.filter(function(p) { return !hasMatch2(p); });
-      else                                                  result = result.filter(function(p) { return  hasMatch2(p); });
-    }
-    if (f.type === 'layover' && f.subtype === 'duration') {
-      result = result.filter(function(p) {
-        var match = pairingLayovers(p).some(function(l) {
-          if (l.durationMins == null) return false;
-          var hrs = l.durationMins / 60;
-          if (f.params.op === 'lt')    return hrs < f.params.val;
-          if (f.params.op === 'gt')    return hrs > f.params.val;
-          if (f.params.op === 'range') return hrs >= f.params.min && hrs <= f.params.max;
-          return false;
-        });
-        return f.mode === 'avoid' ? !match : match;
-      });
-    }
+    result = result.filter(function(p) { return pairingFilterKeeps(p, f); });
   }
 
   // Occurrence-level filters
@@ -8520,14 +8455,7 @@ function applyFilters() {
   }
 
   // Award scoring
-  var awardFilters = appState.occurrenceFilters.filter(function(f) { return f.mode === 'award'; });
-  result.forEach(function(p) { p._awardScore = 0; });
-  if (awardFilters.length > 0) {
-    result.forEach(function(p) {
-      awardFilters.forEach(function(f) { if (pairingMatchesAwardFilter(p, f)) p._awardScore++; });
-    });
-  }
-  appState.awardFilterCount = awardFilters.length;
+  appState.awardFilterCount = awardRanks(result, appState.occurrenceFilters, survivingMap);
 
   var sortEl = document.getElementById('pb-sort-select');
   var sort = sortEl ? sortEl.value : 'number';
@@ -13393,11 +13321,118 @@ function renderDayPairingsPanel(dk) {
     };
   }
 
+  // ---- PairBoard filters → bid lines ----------------------------------------------------------------
+  // A filter is { type, subtype, mode: 'avoid' | 'award', params, and: [ more conditions ] } (see FILTER MATCHING).
+  // The line must MEAN what the filter does when browsing. PBS has no ≥ / ≤, so "≥ 15:00" is written
+  // "> 014:59" and "≤ 2 legs" is written "< 3 Legs".
+  function hoursToMins(h) { return Math.round((+h || 0) * 60); }
+
+  // min / max / range over a number: unit = 1 (minutes or whole things). Returns one condition.
+  function bounds(prop, op, lo, hi, extra) {
+    var c = { prop: prop };
+    if (op === 'min') { c.op = '>'; c.value = lo - 1; }
+    else if (op === 'max') { c.op = '<'; c.value = hi + 1; }
+    else { c.op = 'between'; c.value = lo; c.value2 = hi; }
+    if (extra) for (var k in extra) c[k] = extra[k];
+    return c;
+  }
+
+  // One filter condition → the PBS conditions that say the same (usually one), or null when PBS has no
+  // property for it.
+  function conditionsFromFilter(c) {
+    var p = c.params || {};
+    var t = c.type, st = c.subtype;
+    var stations = function(v) { return (v || []).map(function(s) { return String(s).toUpperCase(); }); };
+    if (t === 'pairing-length') {
+      if (st === 'lt')    return [{ prop: 'length', op: '<', value: p.value }];
+      if (st === 'exact') return [{ prop: 'length', op: '=', value: p.value }];
+      if (st === 'gt')    return [{ prop: 'length', op: '>', value: p.value }];
+      return [bounds('length', st, p.min, p.max)];
+    }
+    if (t === 'credit') return [bounds('credit', st, hoursToMins(p.min), hoursToMins(p.max))];
+    if (t === 'layovers-in' || (t === 'layover' && st === 'station')) {
+      var lc = { prop: 'layover-in', value: stations(t === 'layovers-in' ? p.cities : p.stations) };
+      if (p.match === 'every') lc.anyEvery = 'every';
+      return [lc];
+    }
+    if (t === 'layover' && st === 'duration') {
+      if (p.op === 'gt') return [{ prop: 'layover-duration', op: '>', value: hoursToMins(p.val), anyEvery: 'any' }];
+      if (p.op === 'lt') return [{ prop: 'layover-duration', op: '<', value: hoursToMins(p.val), anyEvery: 'any' }];
+      return [{ prop: 'layover-duration', op: 'between', value: hoursToMins(p.min), value2: hoursToMins(p.max), anyEvery: 'any' }];
+    }
+    if (t === 'landings-in') return [{ prop: 'landings-in', value: stations(p.stations), countingDeadhead: true }];
+    if (t === 'station') {
+      var sp = st === 'checkin' ? 'checkin-station' : st === 'checkout' ? 'checkout-station' : st === 'work-start' ? 'work-start' : 'work-end';
+      return [{ prop: sp, value: stations(p.stations) }];
+    }
+    if (t === 'legs' && st === 'duty-legs') {
+      // the filter tests the busiest duty day
+      if (p.op === 'lt')  return [{ prop: 'duty-legs', op: '<', value: p.value, anyEvery: 'every' }];
+      if (p.op === 'max') return [{ prop: 'duty-legs', op: '<', value: p.value + 1, anyEvery: 'every' }];
+      if (p.op === 'gt')  return [{ prop: 'duty-legs', op: '>', value: p.value, anyEvery: 'any' }];
+      if (p.op === 'min') return [{ prop: 'duty-legs', op: '>', value: p.value - 1, anyEvery: 'any' }];
+      return [{ prop: 'duty-legs', op: '<', value: p.value + 1, anyEvery: 'every' }, { prop: 'duty-legs', op: '=', value: p.value, anyEvery: 'any' }];
+    }
+    if (t === 'legs' && st === 'total-legs') {
+      if (p.op === 'lt')    return [{ prop: 'total-legs', op: '<', value: p.value }];
+      if (p.op === 'exact') return [{ prop: 'total-legs', op: '=', value: p.value }];
+      if (p.op === 'gt')    return [{ prop: 'total-legs', op: '>', value: p.value }];
+      return [bounds('total-legs', p.op, p.op === 'range' ? p.min : p.value, p.op === 'range' ? p.max : p.value)];
+    }
+    if (t === 'block-time') return [bounds(st === 'avg-daily' ? 'avg-daily-block' : 'total-block', p.op, hoursToMins(p.min), hoursToMins(p.max))];
+    if (t === 'avg-credit' || (t === 'pairing' && st === 'avg-daily-credit')) return [bounds('avg-daily-credit', p.op, hoursToMins(p.min), hoursToMins(p.max))];
+    if (t === 'pairing' && st === 'tafb') return [bounds('tafb', p.op, hoursToMins(p.min), hoursToMins(p.max))];
+    if (t === 'pairing' && (st === 'checkin-time' || st === 'checkout-time')) {
+      var tp = st === 'checkin-time' ? 'checkin-time' : 'checkout-time';
+      if (p.op === 'before') return [{ prop: tp, op: '<', value: p.mins }];
+      if (p.op === 'after')  return [{ prop: tp, op: '>', value: p.mins }];
+      return [{ prop: tp, op: 'between', value: p.from, value2: p.to }];
+    }
+    if (t === 'pairing' && st === 'has-dh')     return [p.value ? { prop: 'deadhead' } : { prop: 'deadhead', not: true }];
+    if (t === 'pairing' && st === 'has-redeye') return [p.value ? { prop: 'redeye' } : { prop: 'redeye', not: true }];
+    if (t === 'pairing-number') return [{ prop: 'pairing-number', value: (p.numbers || []).slice() }];
+    if (t === 'pairing-dow')    return [{ prop: 'departing-on', value: (p.dows || []).slice() }];
+    if (t === 'layover-dow')    return [{ prop: 'layover-on', value: (p.dows || []).slice() }];
+    if (t === 'carry-out')      return [{ prop: 'carry-out-credit', op: '>', value: 1 }];
+    return null;
+  }
+
+  // A filter → { lines: [bid lines], notes: [why something could not be written] }. Usually one line.
+  function linesFromFilter(f) {
+    var p = f.params || {};
+    if (f.type === 'prefer-off') {
+      var l = { kind: 'prefer-off' };
+      if (f.subtype === 'dow') l.days = (p.dows || []).map(dayName);
+      else if (f.subtype === 'range') { l.range = { start: p.start, end: p.end }; if (p.reverse) l.range.reverse = true; }
+      else l.dates = (p.dates || []).slice();
+      return { lines: [l], notes: [] };
+    }
+    if (f.type === 'commutable' && !(f.and && f.and.length)) {
+      // "keep only commutable trips" = one Avoid per end of the trip
+      var out = [];
+      if (p.checkInAfter != null)   out.push({ kind: 'avoid', conditions: [{ prop: 'checkin-time', op: '<', value: p.checkInAfter }] });
+      if (p.checkOutBefore != null) out.push({ kind: 'avoid', conditions: [{ prop: 'checkout-time', op: '>', value: p.checkOutBefore }] });
+      return { lines: out, notes: [] };
+    }
+    var conds = [];
+    var notes = [];
+    [f].concat(f.and || []).forEach(function(c) {
+      var got = c.type === 'commutable'
+        ? [].concat(c.params && c.params.checkInAfter != null ? [{ prop: 'checkin-time', op: '>', value: c.params.checkInAfter - 1 }] : [],
+                    c.params && c.params.checkOutBefore != null ? [{ prop: 'checkout-time', op: '<', value: c.params.checkOutBefore + 1 }] : [])
+        : conditionsFromFilter(c);
+      if (!got) notes.push('PBS has no line for "' + c.type + (c.subtype ? ' / ' + c.subtype : '') + '"; it only works while browsing.');
+      else conds = conds.concat(got);
+    });
+    if (notes.length) return { lines: [], notes: notes };
+    return { lines: [{ kind: f.mode === 'award' ? 'award' : 'avoid', conditions: conds }], notes: [] };
+  }
+
   PB.bid = {
     VERSION: VERSION, MAX_LINES: MAX_LINES, PROPS: PROPS, SET_CONDITIONS: SET_CONDITIONS,
     render: render, validate: validate, lineText: lineText, conditionText: conditionText,
     parse: parse, parseLine: parseLine, catalog: catalog,
-    isStopper: isStopper, stopper: stopper,
+    isStopper: isStopper, stopper: stopper, linesFromFilter: linesFromFilter, conditionsFromFilter: conditionsFromFilter,
     mins: mins, clock: clock, duration: duration, pbsDate: pbsDate, isoDate: isoDate, dayName: dayName,
   };
 })();
