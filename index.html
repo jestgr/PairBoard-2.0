@@ -13428,11 +13428,82 @@ function renderDayPairingsPanel(dk) {
     return { lines: [{ kind: f.mode === 'award' ? 'award' : 'avoid', conditions: conds }], notes: [] };
   }
 
+  // ---- a whole bid from the filter list + the report options ------------------------------------------
+  // options = { groups: 'pairing' | 'reserve-pairing' | 'pairing-reserve' | 'reserve',
+  //             creditWindow: 'none' | 'min' | 'mid' | 'max',   Set Condition … Credit Window
+  //             minBaseLayover: minutes | 'HHH:MM' | null,       Set Condition Minimum Base Layover
+  //             stoppers: bool,     a stopper line after every Award line: PBS stops adding trips once the
+  //                                 schedule is legal ("minimum credit off the bid")
+  //             cssn: bool,         Clear Schedule and Start Next Bid Group (Pairing group that is not last)
+  //             consecutiveDaysOff: number | null, pattern: { min, max, off } | null }   Reserve group only
+  // Filter order is kept: PBS reads top-down and so does the filter list. Nothing is added that the user
+  // did not ask for.
+  function defaultOptions() {
+    return { version: VERSION, groups: 'pairing', creditWindow: 'none', minBaseLayover: null, stoppers: false,
+             cssn: false, consecutiveDaysOff: null, pattern: null };
+  }
+
+  function fromFilters(filters, options) {
+    var o = defaultOptions();
+    for (var k in (options || {})) if (options[k] !== undefined) o[k] = options[k];
+    var notes = [];
+    var order = o.groups === 'reserve' ? ['reserve'] : o.groups === 'reserve-pairing' ? ['reserve', 'pairing']
+              : o.groups === 'pairing-reserve' ? ['pairing', 'reserve'] : ['pairing'];
+
+    // every filter as bid lines, in list order
+    var made = [];
+    (filters || []).forEach(function(f, i) {
+      var r = linesFromFilter(f);
+      r.notes.forEach(function(t) { notes.push('Filter #' + (i + 1) + ': ' + t); });
+      r.lines.forEach(function(l) { made.push(l); });
+    });
+    var copy = function(l) { return JSON.parse(JSON.stringify(l)); };
+
+    var groups = order.map(function(type, gi) {
+      var lines = [];
+      if (type === 'reserve') {
+        // a Reserve group takes only Prefer Off and its own Set Conditions
+        made.forEach(function(l) { if (l.kind === 'prefer-off') lines.push(copy(l)); });
+        if (o.consecutiveDaysOff) lines.push({ kind: 'set-condition', cond: 'consecutive-days-off', value: +o.consecutiveDaysOff });
+        if (o.pattern && o.pattern.min && o.pattern.max && o.pattern.off) {
+          lines.push({ kind: 'set-condition', cond: 'pattern', value: { min: +o.pattern.min, max: +o.pattern.max, off: +o.pattern.off } });
+        }
+        return { type: type, lines: lines };
+      }
+      var conds = [];
+      if (o.creditWindow === 'min' || o.creditWindow === 'mid' || o.creditWindow === 'max') conds.push({ kind: 'set-condition', cond: o.creditWindow + '-credit-window' });
+      if (o.minBaseLayover != null && o.minBaseLayover !== '') conds.push({ kind: 'set-condition', cond: 'min-base-layover', value: o.minBaseLayover });
+      // Set Conditions go under the Prefer Off lines the list starts with, above everything else
+      var lead = 0;
+      while (lead < made.length && made[lead].kind === 'prefer-off') lead++;
+      made.forEach(function(l, i) {
+        if (i === lead) lines = lines.concat(conds);
+        lines.push(copy(l));
+        if (o.stoppers && l.kind === 'award') lines.push(stopper());
+      });
+      if (lead === made.length) lines = lines.concat(conds);
+      if (o.cssn && gi < order.length - 1) lines.push({ kind: 'clear-schedule' });
+      return { type: type, lines: lines };
+    });
+
+    var awards = made.filter(function(l) { return l.kind === 'award'; }).length;
+    if (o.stoppers && order.indexOf('pairing') >= 0) {
+      if (!awards) notes.push('Stop at minimum credit does nothing yet: it works on Award lines, and there are none.');
+      if (o.creditWindow !== 'min') notes.push('Stopper lines are meant to go with Set Condition Minimum Credit Window.');
+    }
+    if (o.cssn && order[order.length - 1] === 'pairing') notes.push('Clear Schedule and Start Next Bid Group is left out: it cannot be in the last bid group.');
+    if (order.indexOf('pairing') < 0 && made.some(function(l) { return l.kind !== 'prefer-off'; })) {
+      notes.push('A Reserve bid group takes only Prefer Off lines: the other filters are left out.');
+    }
+    return { bid: { version: VERSION, groups: groups }, notes: notes, options: o };
+  }
+
   PB.bid = {
     VERSION: VERSION, MAX_LINES: MAX_LINES, PROPS: PROPS, SET_CONDITIONS: SET_CONDITIONS,
     render: render, validate: validate, lineText: lineText, conditionText: conditionText,
     parse: parse, parseLine: parseLine, catalog: catalog,
     isStopper: isStopper, stopper: stopper, linesFromFilter: linesFromFilter, conditionsFromFilter: conditionsFromFilter,
+    fromFilters: fromFilters, defaultOptions: defaultOptions,
     mins: mins, clock: clock, duration: duration, pbsDate: pbsDate, isoDate: isoDate, dayName: dayName,
   };
 })();
