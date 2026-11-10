@@ -12791,6 +12791,31 @@ function renderDayPairingsPanel(dk) {
     ].map(function(l) { return '<div>' + l + '</div>'; }).join('');
   }
 
+  // ────────────────────────────────────────────────────────────
+  // Doorway for other code (like PB.pairings and PB.resCoverage):
+  // this module's own state and functions, by name, so a caller
+  // gets exactly the numbers the Reserve screen shows.
+  // Nothing on the Reserve screen itself uses or needs this.
+  // ────────────────────────────────────────────────────────────
+  PB.reserve = {
+    state: simState,              // days placed, absence-day inputs, last calc, sim mode
+    dayTypes: DAY_TYPES,
+    bidPeriodDays: bidPeriodDays,
+    buildDayList: buildDayList,
+    parseResRule: parseResRule,
+    validateReserveRules: validateReserveRules,
+    deriveGuaranteeFromALV: deriveGuaranteeFromALV,
+    calcReserveStructure: calcReserveStructure,
+    renderCategoryCard: renderCategoryCard,
+    renderStructure: renderStructure,
+    renderStructureBody: renderStructureBody,
+    renderSim: renderSim,
+    renderPayTab: renderPayTab,
+    calcPayTab: calcPayTab,
+    renderRawTab: renderRawTab,
+    calcRawTab: calcRawTab
+  };
+
 })();
 // ============================================================
 // PDF / BID PACKAGE VIEWER MODULE
