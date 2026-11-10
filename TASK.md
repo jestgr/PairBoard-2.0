@@ -51,7 +51,7 @@ pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in 
 5. [x] Save + share: filters and report options saved (IndexedDB meta; today they are lost on reload); export /
        import as a versioned file {version, filters, options}; old plain-array files still import. Round-trip
        tests. (Android: the app keeps its own copy until the web saves it.)
-6. [ ] Smaller PBS fixes: commutable = two Check-In/Check-Out lines (wording was backwards); Duty Legs EVERY with
+6. [x] Smaller PBS fixes: commutable = two Check-In/Check-Out lines (wording was backwards); Duty Legs EVERY with
        = / > checks every duty day; decimal hours print HHH:MM; Landings In ignores DH legs unless "Counting
        Deadhead Legs"; "Prefer …" wording → "Award Pairings If …".
 7. [ ] CACHE_VERSION bump, preview for Jeff, his OK → merge; then Android: sync-web, bridge/forms for "+ If",
@@ -125,10 +125,22 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
   and only after the saved copy was read. Read back in `loadAllData` (results[16]). Not in PAIRING_META_KEYS on
   purpose: loading a new month keeps the bid. Export file: pairboard-bid.json. Browser check:
   `/home/dev/data/pairboard-android/tools/ui_saved.py` (12 checks). 52 tests green.
-- **Next = step 6** (smaller PBS fixes, see the step list). Includes Jeff's bug #8 (Deadhead Avoid + Any keeps
-  only trips WITH a deadhead: `pbCommitDH`) — only with Jeff's OK, since it changes what a filter does. Wording
-  fixes are in `filterDescription`; matching changes go in `pairingFilterMatch` (FILTER MATCHING) and must be
-  re-checked with diff_filters.py.
+- **Step 6 done (005502a), except bug #8 (waits for Jeff's OK).** `filterDescription` now returns the PBS line(s)
+  from `PB.bid.linesFromFilter` (same text as the report; commutable shows its two Avoid lines; ≥/≤ shown as PBS
+  writes them; HHH:MM; Duty Legs Any/Every as the filter really tests; Departing On / Layover On with day
+  names). The old text lives on as `plainDescription` for filters PBS has no line for (deadhead position,
+  layover date range: marked "PairBoard only"). Badge and Mode toggle say "Award", not "Prefer" (data-v unchanged,
+  so Android's form driving still works). Landings In already counts deadhead legs and now says so. No matching
+  changed. Old-vs-new wording list: `/home/dev/data/pairboard-android/tools/descriptions.py`.
+- **Bug #8 (needs Jeff's OK, then a small commit):** in `pbCommitDH`, Mode=Avoid + Position=Any saves
+  {has-dh, mode:'avoid', value:false} = "Avoid Pairings If Not Deadhead Legs" (keeps only trips WITH a
+  deadhead). Fix: `value: true` always for Position=Any (Avoid → removes deadhead trips; Award → marks them).
+  Existing saved filters keep what they say (the ladder now shows "If Not Deadhead Legs" honestly).
+- **Next = step 7**: bump CACHE_VERSION in sw.js; run all browser checks in /home/dev/data/pairboard-android/tools
+  (diff_filters, ui_stack, ui_report, ui_preferoff, ui_saved); preview for Jeff
+  (`python3 -m http.server 5103 --bind 0.0.0.0` from the repo root → http://192.168.68.85:5103, stop it after);
+  Jeff's OK → merge to main (Jeff pushes). Then Android: sync web copy, update tools/golden.py report/description
+  expectations, "+ If" + report options in the native Filters screen.
   - Known web bug to keep as is until step 6 (#8 on Jeff's reminder list): Deadhead builder, Mode=Avoid +
     Position=Any saves {has-dh, avoid, value:false} = keeps only trips WITH a deadhead.
 - Wordings marked `seen: 'assumed'` in PROPS are guesses by analogy — ask Jeff to check them in NAVBLUE when he

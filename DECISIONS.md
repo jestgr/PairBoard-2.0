@@ -64,3 +64,9 @@
 - Loading a new bid package keeps the saved bid (a default bid is meant to be reused); "Clear all" empties it.
 - Export writes {app:'pairboard-bid', version:1, filters, options}. Import refuses files from a newer version
   and tells what it left out of a damaged file.
+
+## 2026-11-10 — One wording (task/pbs-bid-lines, step 6)
+- The filter list shows each filter as the PBS line it becomes, so what you see is what you type in PBS.
+- Filters PBS cannot express (deadhead position, layover date range) keep a plain description marked
+  "PairBoard only".
+- Bug #8 (Deadhead Avoid + Any) is not changed without Jeff's OK because it changes which trips are listed.
