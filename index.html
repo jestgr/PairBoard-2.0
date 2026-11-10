@@ -13455,7 +13455,20 @@ function renderDayPairingsPanel(dk) {
 
   function closeBuilder() { if (modal) modal.removeAttribute('data-open'); }
 
+  // One extra If of a stacked filter, in words: PBS wording when PBS has a property for it.
+  function ifDescription(c) {
+    var conds = PB.bid.conditionsFromFilter(c);
+    if (c.type === 'commutable') return filterDescription({ type: c.type, mode: 'award', params: c.params }).replace(/^Prefer only /, '');
+    if (conds) return conds.map(function(x) { return PB.bid.conditionText(x).replace(/^If /, ''); }).join(' If ');
+    return filterDescription({ type: c.type, subtype: c.subtype, mode: 'award', params: c.params }).replace(/^(Award Pairings If|Prefer) /, '');
+  }
+  window.pbIfDescription = ifDescription;
+
   function filterDescription(f) {
+    if (f.and && f.and.length) {
+      return filterDescription({ type: f.type, subtype: f.subtype, mode: f.mode, params: f.params }) +
+        f.and.map(function(c) { return ' and If ' + ifDescription(c); }).join('');
+    }
     var p = f.params || {};
     var mode = f.mode === 'award' ? 'Prefer' : 'Avoid';
     switch (f.type) {
@@ -13545,7 +13558,25 @@ function renderDayPairingsPanel(dk) {
     if (btn) btn.textContent = list.length === 0 ? 'No Filters' : list.length + ' Filter' + (list.length !== 1 ? 's' : '');
   };
 
+  // "+ If": the next filter built is added to this line (index in the list) as one more condition.
+  var stackTarget = null;
+  window.pbAddIf = function(idx) {
+    var list = (window._appStateRef || {}).occurrenceFilters || [];
+    if (!list[idx] || list[idx].type === 'prefer-off') return;
+    stackTarget = idx;
+    window.pbShowFilterTypes();
+  };
+  window.pbRemoveIf = function(idx, j) {
+    var f = ((window._appStateRef || {}).occurrenceFilters || [])[idx];
+    if (!f || !f.and) return;
+    f.and.splice(j, 1);
+    if (!f.and.length) delete f.and;
+    if (window.applyFilters) window.applyFilters();
+    window.pbOpenFiltersPanel();
+  };
+
   window.pbOpenFiltersPanel = function() {
+    stackTarget = null;
     var s = window._appStateRef || {};
     var list = s.occurrenceFilters || [];
     var mo = ensureModal();
@@ -13560,8 +13591,15 @@ function renderDayPairingsPanel(dk) {
           return '<div class="pb-occ-filter-card" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);margin-bottom:6px;">' +
             '<span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-tertiary);min-width:24px;">#' + (idx + 1) + '</span>' +
             '<span class="pb-occ-filter-card__mode pb-occ-filter-card__mode--' + modeClass + '" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;background:' + (modeClass === 'prefer' ? 'rgba(16,185,129,0.15)' : modeClass === 'setcond' ? 'rgba(139,92,246,0.15)' : 'rgba(239,68,68,0.15)') + ';color:' + (modeClass === 'prefer' ? '#047857' : modeClass === 'setcond' ? '#6d28d9' : '#b91c1c') + ';">' + modeLabel + '</span>' +
-            '<span class="pb-occ-filter-card__text" style="flex:1;font-size:12px;font-weight:500;color:var(--text-primary);">' + PB.escapeHtml(filterDescription(f)) + '</span>' +
+            '<span class="pb-occ-filter-card__text" style="flex:1;font-size:12px;font-weight:500;color:var(--text-primary);">' +
+              PB.escapeHtml(filterDescription({ type: f.type, subtype: f.subtype, mode: f.mode, params: f.params })) +
+              (f.and || []).map(function(c, j) {
+                return '<div style="margin-top:3px;color:var(--text-secondary);">and If ' + PB.escapeHtml(ifDescription(c)) +
+                  ' <button class="btn btn--ghost btn--icon" style="padding:0 4px;font-size:10px;" onclick="window.pbRemoveIf(' + idx + ', ' + j + ')" title="Remove this If">✕</button></div>';
+              }).join('') +
+            '</span>' +
             '<div class="pb-occ-filter-card__actions" style="display:flex;gap:4px;align-items:center;">' +
+              (f.type === 'prefer-off' ? '' : '<button class="btn btn--ghost btn--sm" style="font-size:11px;white-space:nowrap;" onclick="window.pbAddIf(' + idx + ')" title="Add another If to this line: the line then applies only when every If is true">+ If</button>') +
               '<button class="btn btn--ghost btn--icon" onclick="window.pbMoveFilter(' + idx + ', -1)" title="Move Up in Priority Ladder" ' + (isFirst ? 'disabled style="opacity:0.3;"' : '') + '>▲</button>' +
               '<button class="btn btn--ghost btn--icon" onclick="window.pbMoveFilter(' + idx + ', 1)" title="Move Down in Priority Ladder" ' + (isLast ? 'disabled style="opacity:0.3;"' : '') + '>▼</button>' +
               '<button class="btn btn--ghost btn--icon" onclick="window.pbRemoveFilter(' + idx + ')" title="Remove Filter">✕</button>' +
@@ -13871,13 +13909,15 @@ function renderDayPairingsPanel(dk) {
       { k: 'carryOut',    l: 'Carry-Out Past Bid End' },
       { k: 'pairingNum',  l: 'Specific Pairing Numbers' }
     ];
-    var html = cats.map(function(c) {
+    var stacking = stackTarget != null;
+    if (stacking) cats = cats.filter(function(c) { return c.k !== 'preferOff'; });
+    var html = (stacking ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Line #' + (stackTarget + 1) + ' will apply only to trips where every If is true.</div>' : '') + cats.map(function(c) {
       return '<button class="pb-chip" style="width:100%;justify-content:space-between;margin-bottom:6px;text-align:left;padding:10px 14px;" onclick="window.pbBuildFilter(\'' + c.k + '\')">' + c.l + ' <span style="color:var(--text-muted);">›</span></button>';
     }).join('');
     mo.innerHTML =
       '<div class="pb-port-modal__inner" style="max-width:440px;">' +
         '<div class="pb-port-modal__header">' +
-          '<div class="pb-port-modal__title">Add Filter</div>' +
+          '<div class="pb-port-modal__title">' + (stacking ? 'Add an If to line #' + (stackTarget + 1) : 'Add Filter') + '</div>' +
           '<button class="pb-port-modal__close" onclick="window.pbOpenFiltersPanel();">‹ Back</button>' +
         '</div>' +
         '<div class="pb-port-modal__body">' + html + '</div>' +
@@ -13938,6 +13978,7 @@ function renderDayPairingsPanel(dk) {
   }
 
   function modeToggle(id) {
+    if (stackTarget != null) return '';      // an extra If has no mode of its own: the line's mode rules
     return '<div class="field"><div class="field__label">Mode</div>' +
       '<div class="segmented" id="' + id + '">' +
         '<button class="segmented__item" data-v="avoid" aria-pressed="true">Avoid</button>' +
@@ -13945,6 +13986,7 @@ function renderDayPairingsPanel(dk) {
       '</div></div>';
   }
   function modeVal(id) {
+    if (id === 'fb-mode' && stackTarget != null) return 'award';   // "trips that HAVE this", e.g. deadhead: value true
     var el = document.getElementById(id);
     if (!el) return 'avoid';
     var a = el.querySelector('.segmented__item[aria-pressed="true"]');
@@ -13962,7 +14004,14 @@ function renderDayPairingsPanel(dk) {
   function commit(f) {
     var s = window._appStateRef || {};
     s.occurrenceFilters = s.occurrenceFilters || [];
-    s.occurrenceFilters.push(f);
+    var target = stackTarget != null ? s.occurrenceFilters[stackTarget] : null;
+    if (target) {
+      var c = { type: f.type, params: f.params || {} };
+      if (f.subtype) c.subtype = f.subtype;
+      (target.and = target.and || []).push(c);
+    } else {
+      s.occurrenceFilters.push(f);
+    }
     if (window.applyFilters) window.applyFilters();
     window.pbOpenFiltersPanel();
   }
