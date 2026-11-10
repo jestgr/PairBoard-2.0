@@ -12952,6 +12952,456 @@ function renderDayPairingsPanel(dk) {
 })();
 })();
 // ============================================================
+// PBS BID DOCUMENT — bid lines as data, printed in PBS syntax (PB.bid)
+// No screen and no app state: plain functions over plain objects.
+//
+//   bid   = { version: 1, groups: [ { type: 'reserve' | 'pairing', lines: [ line, … ] } ] }
+//   line  = { kind: 'prefer-off', dates: ['2026-12-25', …] | days: ['Saturday', …] | range: { start, end, reverse },
+//             allOrNothing, minimum, esn }
+//         | { kind: 'set-condition', cond: 'min-credit-window' | … , value, esn }      (see SET_CONDITIONS)
+//         | { kind: 'avoid' | 'award', conditions: [ cond, … ], esn (avoid), limit (award) }
+//         | { kind: 'clear-schedule' }                 Clear Schedule and Start Next Bid Group
+//         | { kind: 'raw', text }                      a line this code doesn't model, kept word for word
+//   cond  = { prop, op: '<' | '>' | '=' | 'between', value, value2, anyEvery: 'any' | 'every', not, countingDeadhead }
+//           (see PROPS; times are minutes or 'H:MM' text, dates 'YYYY-MM-DD', lists are arrays)
+//
+// The order of groups, lines and listed dates IS the bid: nothing here sorts or reorders.
+// ============================================================
+(function() {
+  var VERSION = 1;
+  var MAX_LINES = 200;
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var GROUPS = { reserve: 'Reserve Bid Group', pairing: 'Pairing Bid Group' };
+  var CSSN = 'Clear Schedule and Start Next Bid Group';
+  var ESN = 'Else Start Next Bid Group';
+
+  // Pairing properties. value = how the value prints; ops = operators PBS offers (none = no operator);
+  // browse = PairBoard can test it against a trip (false = only PBS can, e.g. it depends on the line being built);
+  // seen = where the wording comes from: 'bid' (a real submitted bid), 'handbook' (a printed example), or
+  // 'assumed' (built by analogy — check against NAVBLUE before trusting the exact words).
+  var PROPS = {
+    'checkin-station':  { pbs: 'Pairing Check-In Station',  value: 'stations', browse: true,  seen: 'bid' },
+    'checkout-station': { pbs: 'Pairing Check-Out Station', value: 'stations', browse: true,  seen: 'assumed' },
+    'checkin-time':     { pbs: 'Pairing Check-In Time',     value: 'clock',    ops: ['<', '>', 'between'], browse: true, seen: 'bid' },
+    'checkout-time':    { pbs: 'Pairing Check-Out Time',    value: 'clock',    ops: ['<', '>', 'between'], browse: true, seen: 'handbook' },
+    'length':           { pbs: 'Pairing Length',            value: 'days',     ops: ['<', '>', '=', 'between'], browse: true, seen: 'bid' },
+    'credit':           { pbs: 'Pairing Credit',            value: 'duration', ops: ['<', '>', 'between'], browse: true, seen: 'bid' },
+    'carry-out-credit': { pbs: 'Pairing Carry-Out Credit',  value: 'duration', ops: ['<', '>', 'between'], browse: true, seen: 'bid' },
+    'in-period-credit': { pbs: 'Pairing In-Period Credit',  value: 'duration', ops: ['<', '>', 'between'], browse: true, seen: 'handbook' },
+    'total-block':      { pbs: 'Pairing Total Block Time',  value: 'duration', ops: ['<', '>', 'between'], browse: true, seen: 'handbook' },
+    'avg-daily-credit': { pbs: 'Average Daily Credit',      value: 'duration', ops: ['<', '>', 'between'], browse: true, seen: 'handbook' },
+    'avg-daily-block':  { pbs: 'Average Daily Block Time',  value: 'duration', ops: ['<', '>', 'between'], browse: true, seen: 'handbook' },
+    'tafb':             { pbs: 'TAFB',                      value: 'duration', ops: ['<', '>', 'between'], browse: true, seen: 'assumed' },
+    'time-off-before':  { pbs: 'Time Off Before',           value: 'duration', browse: false, seen: 'bid' },
+    'time-off-after':   { pbs: 'Time Off After',            value: 'duration', browse: false, seen: 'handbook' },
+    'layover-in':       { pbs: 'Layover In',                value: 'stations', anyEvery: true, browse: true, seen: 'handbook' },
+    'layover-duration': { pbs: 'Layover Duration',          value: 'duration', ops: ['<', '>', 'between'], anyEvery: true, browse: true, seen: 'assumed' },
+    'landings-in':      { pbs: 'Landings In',               value: 'stations', countingDeadhead: true, browse: true, seen: 'handbook' },
+    'work-start':       { pbs: 'Work Start Station',        value: 'stations', browse: true,  seen: 'handbook' },
+    'work-end':         { pbs: 'Work End Station',          value: 'stations', browse: true,  seen: 'handbook' },
+    'departing-on':     { pbs: 'Departing On',              value: 'when',     browse: true,  seen: 'handbook' },
+    'duty-on':          { pbs: 'Duty On',                   value: 'when',     browse: true,  seen: 'handbook' },
+    'layover-on':       { pbs: 'Layover On',                value: 'when',     browse: true,  seen: 'assumed' },
+    'pairing-number':   { pbs: 'Pairing Number',            value: 'numbers',  browse: true,  seen: 'handbook' },
+    'redeye':           { pbs: 'Redeye',                    value: 'flag',     browse: true,  seen: 'handbook' },
+    'deadhead':         { pbs: 'Deadhead Legs',             value: 'flag',     browse: true,  seen: 'assumed' },
+    'duty-legs':        { pbs: 'Duty Legs',                 value: 'legs',     ops: ['<', '>', '='], anyEvery: true, browse: true, seen: 'handbook' },
+    'total-legs':       { pbs: 'Total Legs In Pairing',     value: 'legs',     ops: ['<', '>', '=', 'between'], browse: true, seen: 'assumed' },
+    'sit-length':       { pbs: 'Sit Length',                value: 'duration', ops: ['<', '>'], anyEvery: true, browse: true, seen: 'handbook' },
+  };
+
+  // Set Conditions. value: none | duration | number | pattern ({min, max, off}). reserve = allowed in a Reserve group.
+  var SET_CONDITIONS = {
+    'min-credit-window':    { pbs: 'Minimum Credit Window', value: 'none',     seen: 'bid' },
+    'max-credit-window':    { pbs: 'Maximum Credit Window', value: 'none',     seen: 'handbook' },
+    'mid-credit-window':    { pbs: 'Mid Credit Window',     value: 'none',     seen: 'assumed' },
+    'min-base-layover':     { pbs: 'Minimum Base Layover',  value: 'duration', seen: 'bid' },
+    'consecutive-days-off': { pbs: 'Consecutive Days Off',  value: 'number',   reserve: true, seen: 'assumed' },
+    'pattern':              { pbs: 'Pattern',               value: 'pattern',  reserve: true, seen: 'handbook' },
+  };
+
+  // ---- values ---------------------------------------------------------------------------------------
+  function pad(n, w) { n = String(n); while (n.length < w) n = '0' + n; return n; }
+
+  // Minutes from a number (already minutes) or 'H:MM' / 'HHH:MM' text. null if it is neither.
+  function mins(v) {
+    if (typeof v === 'number' && isFinite(v)) return Math.round(v);
+    var m = /^\s*(\d{1,3}):(\d{2})\s*$/.exec(String(v == null ? '' : v));
+    return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+  }
+  function clock(v)    { var m = mins(v); return m == null ? '?' : pad(Math.floor(m / 60), 2) + ':' + pad(m % 60, 2); }
+  function duration(v) { var m = mins(v); return m == null ? '?' : pad(Math.floor(m / 60), 3) + ':' + pad(m % 60, 2); }
+
+  // 'YYYY-MM-DD' → 'Dec 25, 2026' (plain text arithmetic: no Date object, so no time-zone slips).
+  function pbsDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+    if (!m || +m[2] < 1 || +m[2] > 12) return '?';
+    return MONTHS[+m[2] - 1] + ' ' + (+m[3]) + ', ' + m[1];
+  }
+  var DATE_RE = /([A-Z][a-z]{2}) (\d{1,2}), (\d{4})/;
+  function isoDate(text) {
+    var m = DATE_RE.exec(text);
+    var mo = m ? MONTHS.indexOf(m[1]) : -1;
+    return mo < 0 ? null : m[3] + '-' + pad(mo + 1, 2) + '-' + pad(m[2], 2);
+  }
+  // 'Dec 25, 2026, Dec 24, 2026' → the date texts, in the order written.
+  function splitDates(text) { return text.match(new RegExp(DATE_RE.source, 'g')) || []; }
+
+  function dayName(d) {
+    if (typeof d === 'number') return DAYS[d] || '?';
+    var s = String(d).toLowerCase();
+    for (var i = 0; i < 7; i++) if (s.length >= 3 && DAYS[i].toLowerCase().indexOf(s) === 0) return DAYS[i];
+    return '?';
+  }
+  function list(v) { return Array.isArray(v) ? v : v == null || v === '' ? [] : [v]; }
+
+  // Dates or weekday names, whichever the list holds.
+  function when(v) {
+    return list(v).map(function(x) { return /^\d{4}-\d{2}-\d{2}$/.test(String(x)) ? pbsDate(x) : dayName(x); }).join(', ');
+  }
+
+  function valueText(kind, v) {
+    switch (kind) {
+      case 'stations': return list(v).map(function(s) { return String(s).toUpperCase(); }).join(', ');
+      case 'numbers':  return list(v).join(', ');
+      case 'clock':    return clock(v);
+      case 'duration': return duration(v);
+      case 'days':     return v + ' Days';     // PBS prints "1 Days"
+      case 'legs':     return v + ' Legs';
+      case 'when':     return when(v);
+    }
+    return '';
+  }
+
+  // ---- printing -------------------------------------------------------------------------------------
+  function conditionText(c) {
+    var def = PROPS[c.prop];
+    if (!def) return 'If ' + (c.prop || '?');
+    var out = 'If ';
+    if (c.not) out += 'Not ';
+    if (c.anyEvery) out += (c.anyEvery === 'every' ? 'Every ' : 'Any ');
+    out += def.pbs;
+    if (def.value === 'flag') return out;
+    if (c.op === 'between') {
+      // one unit, after the second value: "Between 2 And 4 Days"
+      var a = def.value === 'days' || def.value === 'legs' ? String(c.value) : valueText(def.value, c.value);
+      out += ' Between ' + a + ' And ' + valueText(def.value, c.value2);
+    } else {
+      if (c.op) out += ' ' + c.op;
+      out += ' ' + valueText(def.value, c.value);
+    }
+    if (c.countingDeadhead) out += ' Counting Deadhead Legs';
+    return out;
+  }
+
+  function preferOffText(l) {
+    var what;
+    if (l.range) what = pbsDate(l.range.start) + ' - ' + pbsDate(l.range.end) + (l.range.reverse ? ' Reverse Range Priority' : '');
+    else if (l.days && l.days.length) what = l.days.map(dayName).join(', ');
+    else what = (l.dates || []).map(pbsDate).join(', ');
+    var out = 'Prefer Off ' + what;
+    if (l.allOrNothing) out += ' All or Nothing';
+    if (l.minimum != null) out += ' Minimum ' + l.minimum;
+    return out;
+  }
+
+  function setConditionText(l) {
+    var def = SET_CONDITIONS[l.cond];
+    if (!def) return 'Set Condition ' + (l.cond || '?');
+    var out = 'Set Condition ' + def.pbs;
+    if (def.value === 'duration') out += ' ' + duration(l.value);
+    if (def.value === 'number') out += ' ' + l.value;
+    if (def.value === 'pattern') {
+      var p = l.value || {};
+      out += ' Between ' + p.min + ' and ' + p.max + ' Days On, with ' + p.off + ' Days Off';
+    }
+    return out;
+  }
+
+  // One line as PBS prints it (no number).
+  function lineText(l) {
+    var out;
+    switch (l.kind) {
+      case 'prefer-off':     out = preferOffText(l); break;
+      case 'set-condition':  out = setConditionText(l); break;
+      case 'avoid':          out = ['Avoid Pairings'].concat((l.conditions || []).map(conditionText)).join(' '); break;
+      case 'award':          out = ['Award Pairings'].concat((l.conditions || []).map(conditionText)).join(' ');
+                             if (l.limit != null) out += ' Limit ' + l.limit;
+                             break;
+      case 'clear-schedule': return CSSN;
+      case 'raw':            return String(l.text || '');
+      default:               return String(l.kind || '?');
+    }
+    if (l.esn && l.kind !== 'award') out += ' ' + ESN;
+    return out;
+  }
+
+  // The whole bid as PBS shows it. rows: { n (null = system line, not typed in), text, group (index),
+  // line (index in the group, -1 = the group's header, null = system), kind }.
+  function render(bid) {
+    var rows = [];
+    var n = 0;
+    var groups = (bid && bid.groups) || [];
+    groups.forEach(function(g, gi) {
+      rows.push({ n: ++n, text: GROUPS[g.type] || String(g.type), group: gi, line: -1, kind: 'group' });
+      var lines = g.lines || [];
+      lines.forEach(function(l, li) {
+        rows.push({ n: ++n, text: lineText(l), group: gi, line: li, kind: l.kind });
+      });
+      // PBS itself ends a Pairing group with a plain "Award Pairings" unless the schedule is cleared.
+      var cleared = lines.some(function(l) { return l.kind === 'clear-schedule'; });
+      if (g.type === 'pairing' && !cleared) rows.push({ n: null, text: 'Award Pairings', group: gi, line: null, kind: 'system' });
+    });
+    return {
+      rows: rows,
+      count: n,
+      text: rows.map(function(r) { return (r.n == null ? '    ' : r.n + '. ') + r.text; }).join('\n'),
+      typed: rows.filter(function(r) { return r.n != null; }).map(function(r) { return r.n + '. ' + r.text; }).join('\n'),
+      problems: validate(bid),
+    };
+  }
+
+  // ---- checking against the PBS rules ---------------------------------------------------------------
+  // Returns [{ level: 'error' | 'warn', n (line number as printed, or null), text }]. Errors = PBS won't take
+  // the line or it does nothing; warnings = allowed, but probably not what was meant.
+  function validate(bid) {
+    var out = [];
+    var groups = (bid && bid.groups) || [];
+    var n = 0;
+    function say(level, num, text) { out.push({ level: level, n: num, text: text }); }
+    if (!groups.length) say('error', null, 'The bid has no bid group.');
+    groups.forEach(function(g, gi) {
+      var head = ++n;
+      var lines = g.lines || [];
+      var last = gi === groups.length - 1;
+      if (!GROUPS[g.type]) say('error', head, 'Unknown bid group type "' + g.type + '".');
+      var seenAward = false, seenPlainRestriction = false;
+      lines.forEach(function(l, li) {
+        var num = ++n;
+        var restriction = l.kind === 'prefer-off' || l.kind === 'avoid' || l.kind === 'set-condition';
+        if (g.type === 'reserve') {
+          var ok = l.kind === 'prefer-off' || l.kind === 'raw' ||
+                   (l.kind === 'set-condition' && SET_CONDITIONS[l.cond] && SET_CONDITIONS[l.cond].reserve);
+          if (!ok) say('error', num, 'A Reserve Bid Group only takes Prefer Off, Pattern, Consecutive Days Off, Slide Vacation and Max Above.');
+        }
+        if (l.kind === 'clear-schedule') {
+          if (g.type !== 'pairing') say('error', num, 'Clear Schedule and Start Next Bid Group only works in a Pairing Bid Group.');
+          if (li !== lines.length - 1) say('error', num, 'Clear Schedule and Start Next Bid Group must be the last line of its group.');
+          if (last) say('error', num, 'Clear Schedule and Start Next Bid Group in the last bid group leaves nothing to start: the schedule would be cleared with no group after it.');
+        }
+        if (l.esn) {
+          if (!restriction) say('error', num, 'Else Start Next Bid Group only goes on Prefer Off, Avoid and Set Condition lines.');
+          else if (seenPlainRestriction) say('warn', num, 'Else Start Next lines belong above the restrictions that have no Else Start Next.');
+          if (last) say('warn', num, 'Else Start Next Bid Group in the last bid group has no group to start.');
+        } else if (restriction) seenPlainRestriction = true;
+        if (l.limit != null && l.kind !== 'award') say('error', num, 'Limit only goes on Award lines.');
+        if (l.kind === 'set-condition') {
+          var sc = SET_CONDITIONS[l.cond];
+          if (!sc) say('error', num, 'Unknown Set Condition "' + l.cond + '".');
+          else if (sc.value === 'duration' && mins(l.value) == null) say('error', num, 'Set Condition ' + sc.pbs + ' needs a time (HHH:MM).');
+          else if (sc.value === 'number' && !(l.value > 0)) say('error', num, 'Set Condition ' + sc.pbs + ' needs a number.');
+          else if (sc.value === 'pattern' && !(l.value && l.value.min > 0 && l.value.max >= l.value.min && l.value.off > 0)) say('error', num, 'Set Condition Pattern needs days on (from, to) and days off.');
+          if (seenAward) say('warn', num, 'Set Conditions belong above the Award lines.');
+        }
+        if (l.kind === 'prefer-off') {
+          var has = (l.dates && l.dates.length) || (l.days && l.days.length) || l.range;
+          if (!has) say('error', num, 'Prefer Off needs dates, days of the week or a date range.');
+          if (preferOffText(l).indexOf('?') >= 0) say('error', num, 'Prefer Off has a date or day that cannot be read.');
+          if (seenAward) say('warn', num, 'Prefer Off below an Award line does not protect the days from the Award lines above it.');
+        }
+        if (l.kind === 'avoid' || l.kind === 'award') {
+          var conds = l.conditions || [];
+          if (l.kind === 'avoid' && !conds.length) say('error', num, 'Avoid Pairings needs at least one If.');
+          if (l.kind === 'avoid' && seenAward && !isStopper(l)) say('warn', num, 'An Avoid below an Award line does not take back trips the Award lines above it already added.');
+          conds.forEach(function(c) { conditionProblems(c).forEach(function(t) { say('error', num, t); }); });
+          if (l.kind === 'award') seenAward = true;
+        }
+        if (['prefer-off', 'set-condition', 'avoid', 'award', 'clear-schedule', 'raw'].indexOf(l.kind) < 0) say('error', num, 'Unknown line kind "' + l.kind + '".');
+        if (l.kind === 'raw') say('warn', num, 'This line is kept as written; PairBoard does not check it.');
+      });
+    });
+    if (n > MAX_LINES) say('error', null, 'The bid has ' + n + ' lines; PBS takes at most ' + MAX_LINES + '.');
+    return out;
+  }
+
+  function conditionProblems(c) {
+    var def = PROPS[c.prop];
+    if (!def) return ['Unknown pairing property "' + c.prop + '".'];
+    var out = [];
+    var ops = def.ops || [];
+    if (ops.length && ops.indexOf(c.op) < 0) out.push(def.pbs + ' takes ' + ops.join(', ') + (c.op ? ', not "' + c.op + '".' : '.'));
+    if (!ops.length && c.op) out.push(def.pbs + ' takes no operator.');
+    if (c.anyEvery && !def.anyEvery) out.push(def.pbs + ' has no Any / Every choice.');
+    if (c.countingDeadhead && !def.countingDeadhead) out.push('Counting Deadhead Legs only goes with Landings In.');
+    var vals = c.op === 'between' ? [c.value, c.value2] : [c.value];
+    vals.forEach(function(v) {
+      var bad = false;
+      if (def.value === 'clock' || def.value === 'duration') bad = mins(v) == null;
+      else if (def.value === 'days' || def.value === 'legs') bad = !(typeof v === 'number' && v >= 0);
+      else if (def.value === 'stations' || def.value === 'numbers' || def.value === 'when') bad = !list(v).length || valueText(def.value, v).indexOf('?') >= 0;
+      if (bad) out.push(def.pbs + ' needs a value.');
+    });
+    if (def.value === 'clock' && vals.some(function(v) { var m = mins(v); return m != null && m >= 24 * 60; })) out.push(def.pbs + ' is a clock time (00:00–23:59).');
+    return out;
+  }
+
+  // "Avoid Pairings If Pairing Credit > 000:01": matches every trip, so everything after it is off the table.
+  // Placed after an Award line it stops PBS adding trips once the line is inside the credit window (if the
+  // line is still short, PBS denies the Avoid and carries on). Kept by PBS; useless as a browsing filter.
+  function isStopper(l) {
+    var c = l && l.kind === 'avoid' && l.conditions && l.conditions.length === 1 ? l.conditions[0] : null;
+    return !!c && c.prop === 'credit' && c.op === '>' && !c.not && mins(c.value) != null && mins(c.value) <= 1;
+  }
+  function stopper() { return { kind: 'avoid', conditions: [{ prop: 'credit', op: '>', value: 1 }] }; }
+
+  // ---- reading a typed bid back into data -----------------------------------------------------------
+  // Property names, longest first, so "Pairing Check-In Station" wins over anything shorter.
+  var PROP_IDS = Object.keys(PROPS).sort(function(a, b) { return PROPS[b].pbs.length - PROPS[a].pbs.length; });
+
+  function parseValue(kind, text) {
+    text = text.trim();
+    switch (kind) {
+      case 'stations': return text.split(/\s*,\s*/).filter(Boolean);
+      case 'numbers':  return text.split(/\s*,\s*/).filter(Boolean);
+      case 'clock':
+      case 'duration': return mins(text);
+      case 'days':
+      case 'legs':     var m = /^(\d+)/.exec(text); return m ? parseInt(m[1], 10) : null;
+      case 'when':     var ds = splitDates(text); return ds.length ? ds.map(isoDate) : text.split(/\s*,\s*/).filter(Boolean).map(dayName);
+    }
+    return null;
+  }
+
+  function parseCondition(text) {
+    var c = {};
+    var rest = text.trim();
+    if (/^Not /i.test(rest)) { c.not = true; rest = rest.slice(4); }
+    var ae = /^(Any|Every) /i.exec(rest);
+    if (ae) { c.anyEvery = ae[1].toLowerCase(); rest = rest.slice(ae[0].length); }
+    var id = null;
+    for (var i = 0; i < PROP_IDS.length && !id; i++) {
+      var name = PROPS[PROP_IDS[i]].pbs;
+      if (rest.toLowerCase().indexOf(name.toLowerCase()) === 0 && (rest.length === name.length || rest.charAt(name.length) === ' ')) id = PROP_IDS[i];
+    }
+    if (!id) return null;
+    var def = PROPS[id];
+    c.prop = id;
+    rest = rest.slice(def.pbs.length).trim();
+    if (def.value === 'flag') return rest ? null : c;
+    if (/ Counting Deadhead Legs$/i.test(rest)) { c.countingDeadhead = true; rest = rest.replace(/ Counting Deadhead Legs$/i, ''); }
+    var bt = /^Between (.+?) And (.+)$/i.exec(rest);
+    if (bt) {
+      c.op = 'between'; c.value = parseValue(def.value, bt[1]); c.value2 = parseValue(def.value, bt[2]);
+    } else {
+      var op = /^([<>=])\s*/.exec(rest);
+      if (op) { c.op = op[1]; rest = rest.slice(op[0].length); }
+      c.value = parseValue(def.value, rest);
+    }
+    return conditionProblems(c).length ? null : c;
+  }
+
+  // One typed line (no number) → line data; anything not understood is kept word for word as a raw line.
+  function parseLine(text) {
+    text = text.trim();
+    var raw = { kind: 'raw', text: text };
+    if (text === CSSN) return { kind: 'clear-schedule' };
+    var esn = false;
+    if (text.slice(-ESN.length) === ESN && text.length > ESN.length) { esn = true; text = text.slice(0, -ESN.length).trim(); }
+    var line = null;
+    var m;
+    if ((m = /^Prefer Off (.+)$/.exec(text))) {
+      var body = m[1];
+      line = { kind: 'prefer-off' };
+      var mn = / Minimum (\d+)$/.exec(body);
+      if (mn) { line.minimum = parseInt(mn[1], 10); body = body.slice(0, -mn[0].length); }
+      if (/ All or Nothing$/i.test(body)) { line.allOrNothing = true; body = body.replace(/ All or Nothing$/i, ''); }
+      var rev = / Reverse Range Priority$/.test(body);
+      if (rev) body = body.replace(/ Reverse Range Priority$/, '');
+      var rg = new RegExp('^(' + DATE_RE.source + ') - (' + DATE_RE.source + ')$').exec(body);
+      var ds = splitDates(body);
+      if (rg) { line.range = { start: isoDate(rg[1]), end: isoDate(rg[5]) }; if (rev) line.range.reverse = true; }
+      else if (ds.length && ds.join(', ') === body) line.dates = ds.map(isoDate);
+      else {
+        var names = body.split(/\s*,\s*/).map(dayName);
+        if (names.indexOf('?') >= 0 || rev) return raw;
+        line.days = names;
+      }
+    } else if ((m = /^Set Condition (.+)$/.exec(text))) {
+      var ids = Object.keys(SET_CONDITIONS).sort(function(a, b) { return SET_CONDITIONS[b].pbs.length - SET_CONDITIONS[a].pbs.length; });
+      for (var i = 0; i < ids.length && !line; i++) {
+        var sc = SET_CONDITIONS[ids[i]];
+        if (m[1].indexOf(sc.pbs) !== 0) continue;
+        var val = m[1].slice(sc.pbs.length).trim();
+        line = { kind: 'set-condition', cond: ids[i] };
+        if (sc.value === 'none') { if (val) line = null; }
+        else if (sc.value === 'duration') line.value = mins(val);
+        else if (sc.value === 'number') line.value = parseInt(val, 10);
+        else {
+          var p = /^Between (\d+) and (\d+) Days On, with (\d+) Days Off/i.exec(val);
+          if (p) line.value = { min: +p[1], max: +p[2], off: +p[3] }; else line = null;
+        }
+      }
+      if (!line) return raw;
+    } else if ((m = /^(Avoid|Award) Pairings(.*)$/.exec(text))) {
+      line = { kind: m[1].toLowerCase(), conditions: [] };
+      var tail = m[2];
+      var lim = / Limit (\d+)$/.exec(tail);
+      if (lim) { line.limit = parseInt(lim[1], 10); tail = tail.slice(0, -lim[0].length); }
+      var parts = tail.split(/(?:^| )If /).slice(1);
+      if (tail.trim() && !parts.length) return raw;
+      for (var j = 0; j < parts.length; j++) {
+        var c = parseCondition(parts[j]);
+        if (!c) return raw;
+        line.conditions.push(c);
+      }
+    } else return raw;
+    if (esn) line.esn = true;
+    // Only trust the reading if it prints back exactly as it was typed.
+    return lineText(line) === raw.text ? line : raw;
+  }
+
+  // A bid as typed or copied ("1. Reserve Bid Group", "2. Prefer Off …"). Unnumbered lines are PBS's own
+  // system lines and are skipped; '#' starts a note.
+  function parse(text) {
+    var bid = { version: VERSION, groups: [] };
+    String(text || '').split(/\r?\n/).forEach(function(row) {
+      var m = /^\s*(\d+)\.\s+(.*\S)\s*$/.exec(row);
+      if (!m) return;
+      var body = m[2];
+      var type = body === GROUPS.reserve ? 'reserve' : body === GROUPS.pairing ? 'pairing' : null;
+      if (type) { bid.groups.push({ type: type, lines: [] }); return; }
+      if (!bid.groups.length) bid.groups.push({ type: 'pairing', lines: [] });
+      bid.groups[bid.groups.length - 1].lines.push(parseLine(body));
+    });
+    return bid;
+  }
+
+  // The catalog as plain data (for forms, and later for the on-board model's prompt).
+  function catalog() {
+    return {
+      version: VERSION, maxLines: MAX_LINES,
+      properties: Object.keys(PROPS).map(function(id) {
+        var d = PROPS[id];
+        return { id: id, pbs: d.pbs, value: d.value, ops: d.ops || [], anyEvery: !!d.anyEvery,
+                 countingDeadhead: !!d.countingDeadhead, browse: d.browse, seen: d.seen };
+      }),
+      setConditions: Object.keys(SET_CONDITIONS).map(function(id) {
+        var d = SET_CONDITIONS[id];
+        return { id: id, pbs: d.pbs, value: d.value, reserve: !!d.reserve, seen: d.seen };
+      }),
+    };
+  }
+
+  PB.bid = {
+    VERSION: VERSION, MAX_LINES: MAX_LINES, PROPS: PROPS, SET_CONDITIONS: SET_CONDITIONS,
+    render: render, validate: validate, lineText: lineText, conditionText: conditionText,
+    parse: parse, parseLine: parseLine, catalog: catalog,
+    isStopper: isStopper, stopper: stopper,
+    mins: mins, clock: clock, duration: duration, pbsDate: pbsDate, isoDate: isoDate, dayName: dayName,
+  };
+})();
+// ============================================================
 // FILTER BUILDER — Avoid/Award mode filters for pairings
 // ============================================================
 (function() {
