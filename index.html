@@ -13690,7 +13690,7 @@ function renderDayPairingsPanel(dk) {
         '<div class="pb-port-modal__body" style="padding:14px 18px;max-height:60vh;overflow-y:auto;">' +
           '<div style="margin-bottom:12px;">' +
             '<button class="btn btn--primary btn--sm" style="width:100%;justify-content:center;background:var(--accent);color:#fff;font-weight:700;padding:8px 12px;" onclick="window.pbGeneratePBSReport()">' +
-              '📋 Generate Step-by-Step PBS Bidding Report' +
+              '📋 PBS Bid: The Lines To Enter' +
             '</button>' +
           '</div>' +
           rows +
@@ -13785,166 +13785,150 @@ function renderDayPairingsPanel(dk) {
     r.readAsText(f);
   };
 
-  // Step-by-Step PBS Bidding Report Generator
-  function fmtHHMM(val) {
-    if (typeof decToHHMM === 'function') return decToHHMM(val);
-    var h = Math.floor(val || 0);
-    var m = Math.round(((val || 0) - h) * 60);
-    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  // PBS bid report: the filter list + the options below, written as the lines to enter in PBS.
+  // All the wording and the rules come from PB.bid (fromFilters → render); this only draws it.
+  function reportOptions() {
+    var s = window._appStateRef || {};
+    if (!s.bidOptions) s.bidOptions = PB.bid.defaultOptions();
+    return s.bidOptions;
   }
+  // The bid for the current filters and options: { bid, notes, options, out: PB.bid.render(bid) }.
+  window.pbBuildBid = function() {
+    var s = window._appStateRef || {};
+    var r = PB.bid.fromFilters(s.occurrenceFilters || [], reportOptions());
+    r.out = PB.bid.render(r.bid);
+    return r;
+  };
+  window.pbReportOpt = function(key, value) {
+    var o = reportOptions();
+    if (key === 'minBaseLayover') {
+      var m = String(value || '').trim() === '' ? null : PB.bid.mins(String(value).trim());
+      if (m == null && String(value || '').trim() !== '') { toast('Write the layover as hours:minutes, like 20:00', 'error'); return; }
+      o.minBaseLayover = m;
+    } else if (key === 'consecutiveDaysOff') {
+      o.consecutiveDaysOff = parseInt(value, 10) > 0 ? parseInt(value, 10) : null;
+    } else if (key.indexOf('pattern.') === 0) {
+      var p = o.pattern || { min: null, max: null, off: null };
+      p[key.slice(8)] = parseInt(value, 10) > 0 ? parseInt(value, 10) : null;
+      o.pattern = (p.min || p.max || p.off) ? p : null;
+    } else if (key === 'stoppers' || key === 'cssn') {
+      o[key] = !!value;
+      if (key === 'stoppers' && o.stoppers && o.creditWindow === 'none') o.creditWindow = 'min';
+    } else {
+      o[key] = value;
+    }
+    window.pbGeneratePBSReport();
+  };
 
   window.pbGeneratePBSReport = function() {
     var s = window._appStateRef || {};
-    var list = (s.occurrenceFilters || []).slice();
-    var preAwards = s.preAwards || new Map();
     var pairings = s.filteredPairings || s.pairings || [];
+    var built = window.pbBuildBid();
+    var o = built.options, out = built.out;
+    var hasPairing = o.groups !== 'reserve', hasReserve = o.groups !== 'pairing';
 
-    // 1. Compute Vacation Drop & Prorated Set Condition Minimum Credit
-    var vacCount = 0;
-    preAwards.forEach(function(type) {
-      if (type === 'VACATION' || type === 'V') vacCount++;
-    });
-    var baseMinPay = 75.0; // standard monthly min credit
-    var dropCreditHours = parseFloat((vacCount * 2.45).toFixed(2));
-    var proratedMinPay = Math.max(40.0, parseFloat((baseMinPay - dropCreditHours).toFixed(2)));
-
-    // 2. Sort Filters into Strategic NAVBLUE Order (Exclusions before Awards)
-    var exclusions = [];
-    var awards = [];
-
-    list.forEach(function(f) {
-      var mode = (f.mode || 'avoid').toLowerCase();
-      if (mode === 'avoid' || f.type === 'preferOff' || (f.params && f.params.op === 'avoid')) {
-        exclusions.push(f);
-      } else {
-        awards.push(f);
-      }
-    });
-
-    // 3. Build Raw Script
-    var rawLines = [];
-    rawLines.push('1. Pairing Bid Group');
-    rawLines.push('Set Condition Minimum Credit ' + fmtHHMM(proratedMinPay));
-    rawLines.push('Set Condition Max Consecutive Duty Days 4');
-    
-    var lineNum = 1;
-    
-    var exclusionsScript = exclusions.map(function(f) {
-      return 'Line ' + (lineNum++) + ': ' + filterDescription(f);
-    });
-    rawLines = rawLines.concat(exclusionsScript);
-    
-    var awardsScript = awards.map(function(f) {
-      return 'Line ' + (lineNum++) + ': ' + filterDescription(f);
-    });
-    rawLines = rawLines.concat(awardsScript);
-    
-    rawLines.push('Line ' + (lineNum++) + ': Clear Schedule and Start Next Bid Group');
-    rawLines.push('Line ' + (lineNum++) + ': Award Pairings');
-    
-    var rawScriptText = rawLines.join('\n');
-
-    // 4. Build Tabs HTML
-    // Interactive Tab
-    var step1Html =
-      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
-        '<div style="font-weight:700;font-size:13px;color:var(--purple,#7e22ce);margin-bottom:4px;">1. SET CONDITIONS & WAIVES</div>' +
-        '<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">' +
-          '<div style="background:rgba(126,34,206,0.08);border:1px solid rgba(126,34,206,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;font-family:var(--font-mono);color:#6b21a8;">1. Pairing Bid Group</div>' +
-          '<div style="background:rgba(126,34,206,0.08);border:1px solid rgba(126,34,206,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;font-family:var(--font-mono);color:#6b21a8;">Set Condition Minimum Credit ' + fmtHHMM(proratedMinPay) + '</div>' +
-          '<div style="background:rgba(126,34,206,0.08);border:1px solid rgba(126,34,206,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;font-family:var(--font-mono);color:#6b21a8;">Set Condition Max Consecutive Duty Days 4</div>' +
-          '<div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;">* Minimum Credit prorated for ' + vacCount + ' Vacation days (Standard 75:00)</div>' +
-        '</div>' +
+    // ---- options ----
+    var seg = function(key, cur, items) {
+      return '<div class="segmented" style="flex-wrap:wrap;">' + items.map(function(it) {
+        return '<button class="segmented__item" aria-pressed="' + (cur === it[0]) + '" onclick="window.pbReportOpt(\'' + key + '\', \'' + it[0] + '\')">' + it[1] + '</button>';
+      }).join('') + '</div>';
+    };
+    var row = function(label, inner) {
+      return '<div style="margin-bottom:8px;"><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">' + label + '</div>' + inner + '</div>';
+    };
+    var check = function(key, on, label) {
+      return '<label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-primary);margin-bottom:6px;cursor:pointer;">' +
+        '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="window.pbReportOpt(\'' + key + '\', this.checked)" style="margin-top:2px;"><span>' + label + '</span></label>';
+    };
+    var num = function(key, val, w) {
+      return '<input class="input u-mono" type="number" min="0" value="' + (val || '') + '" style="width:' + (w || 60) + 'px;" onchange="window.pbReportOpt(\'' + key + '\', this.value)">';
+    };
+    var pat = o.pattern || {};
+    var optionsHtml =
+      '<div id="pb-report-options" style="padding:12px 18px;border-bottom:1px solid var(--border-subtle);">' +
+        row('Bid groups', seg('groups', o.groups, [['pairing', 'Pairings'], ['reserve-pairing', 'Reserve, then Pairings'], ['pairing-reserve', 'Pairings, then Reserve'], ['reserve', 'Reserve']])) +
+        (hasPairing ?
+          row('Credit', seg('creditWindow', o.creditWindow, [['none', 'No line'], ['min', 'Minimum'], ['mid', 'Mid'], ['max', 'Maximum']])) +
+          check('stoppers', o.stoppers, 'Stop at minimum credit: after each Award line add <span class="u-mono">' + PB.escapeHtml(PB.bid.lineText(PB.bid.stopper())) + '</span>') +
+          (o.groups === 'pairing-reserve' ? check('cssn', o.cssn, 'End the Pairing group with <span class="u-mono">Clear Schedule and Start Next Bid Group</span>') : '') +
+          row('Minimum Base Layover (hours:minutes, empty = no line)',
+            '<input class="input u-mono" type="text" placeholder="20:00" value="' + (o.minBaseLayover != null ? PB.bid.duration(o.minBaseLayover) : '') + '" style="width:90px;" onchange="window.pbReportOpt(\'minBaseLayover\', this.value)">')
+          : '') +
+        (hasReserve ?
+          row('Reserve: Consecutive Days Off (empty = no line)', num('consecutiveDaysOff', o.consecutiveDaysOff)) +
+          row('Reserve: Pattern (empty = no line)', '<div style="display:flex;gap:6px;align-items:center;font-size:12px;">Between ' + num('pattern.min', pat.min, 50) + ' and ' + num('pattern.max', pat.max, 50) + ' Days On, with ' + num('pattern.off', pat.off, 50) + ' Days Off</div>')
+          : '') +
       '</div>';
 
-    var displayLineNum = 1;
-    var step2Rows = exclusions.length === 0
-      ? '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">No exclusion/avoid filters active.</div>'
-      : exclusions.map(function(f) {
-          var lineDesc = filterDescription(f);
-          return '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#b91c1c;">' +
-            'Line ' + (displayLineNum++) + ': ' + PB.escapeHtml(lineDesc) +
-          '</div>';
-        }).join('');
+    // ---- the lines, one box per bid group ----
+    var paint = { 'prefer-off': ['#6b21a8', 'rgba(126,34,206,0.08)', 'rgba(126,34,206,0.2)'],
+                  'set-condition': ['#6b21a8', 'rgba(126,34,206,0.08)', 'rgba(126,34,206,0.2)'],
+                  'avoid': ['#b91c1c', 'rgba(220,38,38,0.08)', 'rgba(220,38,38,0.2)'],
+                  'award': ['#047857', 'rgba(16,185,129,0.08)', 'rgba(16,185,129,0.2)'] };
+    var lineDiv = function(r) {
+      var c = paint[r.kind] || ['var(--text-secondary)', 'var(--bg-surface)', 'var(--border-subtle)'];
+      return '<div style="font-size:12px;font-family:var(--font-mono);background:' + c[1] + ';border:1px solid ' + c[2] + ';padding:6px 10px;border-radius:4px;margin-bottom:4px;color:' + c[0] + ';">' +
+        (r.n == null ? '' : r.n + '. ') + PB.escapeHtml(r.text) + (r.n == null ? ' <span style="font-family:var(--font-sans,inherit);opacity:0.75;">(PBS adds this itself: do not type it)</span>' : '') + '</div>';
+    };
+    var box = function(title, color, inner) {
+      return '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
+        '<div style="font-weight:700;font-size:13px;color:' + color + ';margin-bottom:6px;">' + title + '</div>' + inner + '</div>';
+    };
+    var sectionsHtml = built.bid.groups.map(function(g, gi) {
+      var rows = out.rows.filter(function(r) { return r.group === gi; });
+      var head = rows[0];
+      var rest = rows.slice(1);
+      return box(head.n + '. ' + PB.escapeHtml(head.text), 'var(--text-primary)',
+        rest.length ? rest.map(lineDiv).join('') : '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">No lines in this group yet.</div>');
+    }).join('');
+    var warnings = out.problems.map(function(p) { return (p.n ? 'Line ' + p.n + ': ' : '') + p.text; }).concat(built.notes);
+    if (warnings.length) {
+      sectionsHtml += box('CHECK BEFORE YOU BID', 'var(--amber,#b45309)', warnings.map(function(w) {
+        return '<div style="font-size:12px;color:var(--text-secondary);padding:3px 0;">' + PB.escapeHtml(w) + '</div>';
+      }).join(''));
+    }
 
-    var step2Html =
-      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
-        '<div style="font-weight:700;font-size:13px;color:var(--red,#dc2626);margin-bottom:4px;">2. EXCLUSION LINES</div>' +
-        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">* Placed FIRST in NAVBLUE to prevent unwanted awards.</div>' +
-        step2Rows +
-      '</div>';
-
-    var step3Rows = awards.length === 0
-      ? '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">No positive award filters active.</div>'
-      : awards.map(function(f) {
-          var lineDesc = filterDescription(f);
-          return '<div style="font-size:12px;font-family:var(--font-mono);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:#047857;">' +
-            'Line ' + (displayLineNum++) + ': ' + PB.escapeHtml(lineDesc) +
-          '</div>';
-        }).join('');
-
-    var step3Html =
-      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
-        '<div style="font-weight:700;font-size:13px;color:var(--green,#10b981);margin-bottom:4px;">3. POSITIVE AWARD LINES</div>' +
-        '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">* Placed BELOW exclusions.</div>' +
-        step3Rows +
-      '</div>';
-
-    var step4Html =
-      '<div style="background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">' +
-        '<div style="font-weight:700;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">4. SYSTEM FALLBACK</div>' +
-        '<div style="font-size:12px;font-family:var(--font-mono);background:var(--bg-surface);border:1px solid var(--border-subtle);padding:6px 10px;border-radius:4px;margin-bottom:4px;color:var(--text-secondary);">' +
-          'Line ' + (displayLineNum++) + ': Clear Schedule and Start Next Bid Group<br>' +
-          'Line ' + (displayLineNum++) + ': Award Pairings' +
-        '</div>' +
-      '</div>';
-
-    var interactiveTabHtml = step1Html + step2Html + step3Html + step4Html;
-
-    // Raw Tab
-    var rawTabHtml = 
-      '<div style="position:relative;">' +
-        '<textarea id="pb-raw-script-area" readonly style="width:100%;height:350px;background:var(--bg-app);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;padding:12px;border:1px solid var(--border-subtle);border-radius:var(--r-md);resize:none;">' + PB.escapeHtml(rawScriptText) + '</textarea>' +
-        '<button onclick="navigator.clipboard.writeText(document.getElementById(\'pb-raw-script-area\').value);this.innerText=\'Copied!\';setTimeout(()=>this.innerText=\'📋 Copy Full Bid\',2000)" style="position:absolute;top:8px;right:18px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer;color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,0.1);">📋 Copy Full Bid</button>' +
-      '</div>';
-
-    // Total stats
     var totalCredit = 0;
     pairings.forEach(function(p) { totalCredit += (p.creditHours || 0); });
     var avgCredit = pairings.length > 0 ? (totalCredit / pairings.length).toFixed(2) : '0.00';
-
+    var stat = function(l, v) { return '<div><div style="font-size:11px;color:var(--text-tertiary);">' + l + '</div><div style="font-weight:700;font-size:16px;color:var(--text-primary);">' + v + '</div></div>'; };
     var summaryHtml =
       '<div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">' +
-        '<div><div style="font-size:11px;color:var(--text-tertiary);">Matching Pairings</div><div style="font-weight:700;font-size:16px;color:var(--text-primary);">' + pairings.length + '</div></div>' +
-        '<div><div style="font-size:11px;color:var(--text-tertiary);">Avg Trip Credit</div><div style="font-weight:700;font-size:16px;color:var(--text-primary);">' + avgCredit + 'h</div></div>' +
-        '<div><div style="font-size:11px;color:var(--text-tertiary);">Target Min Pay</div><div style="font-weight:700;font-size:16px;color:var(--accent);">' + fmtHHMM(proratedMinPay) + '</div></div>' +
+        stat('Lines To Enter', out.count + ' of ' + PB.bid.MAX_LINES) + stat('Matching Pairings', pairings.length) + stat('Avg Trip Credit', avgCredit + 'h') +
       '</div>';
 
+    var rawTabHtml =
+      '<div style="position:relative;">' +
+        '<textarea id="pb-raw-script-area" readonly style="width:100%;height:350px;background:var(--bg-app);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;padding:12px;border:1px solid var(--border-subtle);border-radius:var(--r-md);resize:none;">' + PB.escapeHtml(out.text) + '</textarea>' +
+        '<button onclick="navigator.clipboard.writeText(document.getElementById(\'pb-raw-script-area\').value);this.innerText=\'Copied!\';setTimeout(()=>this.innerText=\'📋 Copy Full Bid\',2000)" style="position:absolute;top:8px;right:18px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer;color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,0.1);">📋 Copy Full Bid</button>' +
+      '</div>';
+
+    var showRaw = !!(document.getElementById('pb-panel-raw') && document.getElementById('pb-panel-raw').style.display !== 'none');
+    var tab = function(id, mine, other, label, on) {
+      return '<div id="pb-tab-' + mine + '" onclick="document.getElementById(\'pb-panel-' + mine + '\').style.display=\'block\';document.getElementById(\'pb-panel-' + other + '\').style.display=\'none\';this.style.borderBottom=\'2px solid var(--accent)\';this.style.color=\'var(--accent)\';document.getElementById(\'pb-tab-' + other + '\').style.borderBottom=\'none\';document.getElementById(\'pb-tab-' + other + '\').style.color=\'var(--text-secondary)\';" style="flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;' +
+        (on ? 'color:var(--accent);border-bottom:2px solid var(--accent);' : 'color:var(--text-secondary);') + '">' + label + '</div>';
+    };
+
     var mo = ensureModal();
+    var oldBody = mo.querySelector('#pb-report-body');
+    var scroll = oldBody ? oldBody.scrollTop : 0;
     mo.innerHTML =
       '<div class="pb-port-modal__inner" style="max-width:620px;">' +
         '<div class="pb-port-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-subtle);">' +
           '<div>' +
-            '<div class="pb-port-modal__title" style="font-weight:700;font-size:16px;">NAVBLUE PBS Step-by-Step Bidding Guide</div>' +
-            '<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Follow these steps in NAVBLUE web app to build this schedule</div>' +
+            '<div class="pb-port-modal__title" style="font-weight:700;font-size:16px;">PBS Bid</div>' +
+            '<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Your filters, top to bottom, as the lines to enter in PBS</div>' +
           '</div>' +
           '<button class="pb-port-modal__close" onclick="window.pbOpenFiltersPanel();">❮ Back</button>' +
         '</div>' +
-        
-        // Tabs Header
-        '<div style="display:flex;border-bottom:1px solid var(--border-subtle);">' +
-          '<div id="pb-tab-interactive" onclick="document.getElementById(\'pb-panel-interactive\').style.display=\'block\';document.getElementById(\'pb-panel-raw\').style.display=\'none\';this.style.borderBottom=\'2px solid var(--accent)\';this.style.color=\'var(--accent)\';document.getElementById(\'pb-tab-raw\').style.borderBottom=\'none\';document.getElementById(\'pb-tab-raw\').style.color=\'var(--text-secondary)\';" style="flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;color:var(--accent);border-bottom:2px solid var(--accent);">Interactive Walkthrough</div>' +
-          '<div id="pb-tab-raw" onclick="document.getElementById(\'pb-panel-raw\').style.display=\'block\';document.getElementById(\'pb-panel-interactive\').style.display=\'none\';this.style.borderBottom=\'2px solid var(--accent)\';this.style.color=\'var(--accent)\';document.getElementById(\'pb-tab-interactive\').style.borderBottom=\'none\';document.getElementById(\'pb-tab-interactive\').style.color=\'var(--text-secondary)\';" style="flex:1;text-align:center;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-secondary);">Raw NAVBLUE Script</div>' +
-        '</div>' +
-
-        '<div class="pb-port-modal__body" style="padding:16px 18px;max-height:60vh;overflow-y:auto;">' +
-          '<div id="pb-panel-interactive">' +
-            interactiveTabHtml +
-            summaryHtml +
+        '<div id="pb-report-body" style="max-height:70vh;overflow-y:auto;">' +
+          optionsHtml +
+          '<div style="display:flex;border-bottom:1px solid var(--border-subtle);">' +
+            tab('i', 'interactive', 'raw', 'Bid Lines', !showRaw) + tab('r', 'raw', 'interactive', 'Text To Copy', showRaw) +
           '</div>' +
-          '<div id="pb-panel-raw" style="display:none;">' +
-            rawTabHtml +
-            '<div style="margin-top:12px;">' + summaryHtml + '</div>' +
+          '<div class="pb-port-modal__body" style="padding:16px 18px;">' +
+            '<div id="pb-panel-interactive"' + (showRaw ? ' style="display:none;"' : '') + '>' + sectionsHtml + summaryHtml + '</div>' +
+            '<div id="pb-panel-raw"' + (showRaw ? '' : ' style="display:none;"') + '>' + rawTabHtml + '<div style="margin-top:12px;">' + summaryHtml + '</div></div>' +
           '</div>' +
         '</div>' +
         '<div style="padding:12px 18px;border-top:1px solid var(--border-subtle);display:flex;justify-content:flex-end;">' +
@@ -13952,6 +13936,8 @@ function renderDayPairingsPanel(dk) {
         '</div>' +
       '</div>';
     mo.setAttribute('data-open', 'true');
+    var body = mo.querySelector('#pb-report-body');
+    if (body) body.scrollTop = scroll;
   };
 
   // Filter type picker

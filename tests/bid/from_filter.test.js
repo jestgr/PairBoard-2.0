@@ -72,3 +72,88 @@ test('every line made from a filter passes the bid checks', () => {
   assert.deepStrictEqual(Array.from(out.problems).filter((p) => p.level === 'error'), []);
   out.rows.filter((r) => r.n && r.kind !== 'group').forEach((r) => assert.deepStrictEqual(JSON.parse(JSON.stringify(bid.parseLine(r.text))).kind, r.kind, r.text));
 });
+
+// ---- fromFilters: the whole bid from the filter list + the report options ----
+const LIST = [
+  F('avoid', 'prefer-off', 'dates', { dates: ['2027-01-09', '2027-01-08'] }),
+  F('avoid', 'station', 'checkin', { stations: ['AAA'] }, [{ type: 'pairing', subtype: 'checkin-time', params: { op: 'before', mins: 480 } }]),
+  F('avoid', 'carry-out', undefined, {}),
+  F('award', 'station', 'checkin', { stations: ['BBB'] }, [{ type: 'pairing-length', subtype: 'lt', params: { value: 4 } }]),
+  F('award', 'pairing-length', 'exact', { value: 1 }),
+];
+const bidText = (filters, options) => {
+  const r = bid.fromFilters(filters, options);
+  const out = bid.render(r.bid);
+  return { lines: out.text.split('\n'), notes: Array.from(r.notes), problems: Array.from(out.problems) };
+};
+
+test('with no options the bid is the filters, in order, and nothing else', () => {
+  const r = bidText(LIST);
+  assert.deepStrictEqual(r.lines, [
+    '1. Pairing Bid Group',
+    '2. Prefer Off Jan 9, 2027, Jan 8, 2027',
+    '3. Avoid Pairings If Pairing Check-In Station AAA If Pairing Check-In Time < 08:00',
+    '4. Avoid Pairings If Pairing Carry-Out Credit > 000:01',
+    '5. Award Pairings If Pairing Check-In Station BBB If Pairing Length < 4 Days',
+    '6. Award Pairings If Pairing Length = 1 Days',
+    '    Award Pairings',
+  ]);
+  assert.deepStrictEqual(r.notes, []);
+  assert.deepStrictEqual(r.problems, []);
+});
+
+test('Reserve then Pairings, minimum credit with stoppers, Set Conditions under Prefer Off', () => {
+  const r = bidText(LIST, { groups: 'reserve-pairing', creditWindow: 'min', minBaseLayover: '20:00', stoppers: true,
+                            consecutiveDaysOff: 3, pattern: { min: 3, max: 4, off: 3 } });
+  assert.deepStrictEqual(r.lines, [
+    '1. Reserve Bid Group',
+    '2. Prefer Off Jan 9, 2027, Jan 8, 2027',
+    '3. Set Condition Consecutive Days Off 3',
+    '4. Set Condition Pattern Between 3 and 4 Days On, with 3 Days Off',
+    '5. Pairing Bid Group',
+    '6. Prefer Off Jan 9, 2027, Jan 8, 2027',
+    '7. Set Condition Minimum Credit Window',
+    '8. Set Condition Minimum Base Layover 020:00',
+    '9. Avoid Pairings If Pairing Check-In Station AAA If Pairing Check-In Time < 08:00',
+    '10. Avoid Pairings If Pairing Carry-Out Credit > 000:01',
+    '11. Award Pairings If Pairing Check-In Station BBB If Pairing Length < 4 Days',
+    '12. Avoid Pairings If Pairing Credit > 000:01',
+    '13. Award Pairings If Pairing Length = 1 Days',
+    '14. Avoid Pairings If Pairing Credit > 000:01',
+    '    Award Pairings',
+  ]);
+  assert.deepStrictEqual(r.notes, []);
+  assert.deepStrictEqual(r.problems, []);
+});
+
+test('Clear Schedule only ends a Pairing group that is not the last group', () => {
+  const first = bidText(LIST, { groups: 'pairing-reserve', cssn: true });
+  assert.strictEqual(first.lines[6], '7. Clear Schedule and Start Next Bid Group');
+  assert.strictEqual(first.lines[7], '8. Reserve Bid Group');
+  assert.ok(!first.lines.includes('    Award Pairings'), 'no system Award Pairings after a cleared schedule');
+  assert.deepStrictEqual(first.problems, []);
+  const last = bidText(LIST, { groups: 'pairing', cssn: true });
+  assert.ok(!last.lines.some((l) => /Clear Schedule/.test(l)));
+  assert.strictEqual(last.notes.length, 1);
+});
+
+test('a Reserve-only bid keeps just Prefer Off and says so', () => {
+  const r = bidText(LIST, { groups: 'reserve' });
+  assert.deepStrictEqual(r.lines, ['1. Reserve Bid Group', '2. Prefer Off Jan 9, 2027, Jan 8, 2027']);
+  assert.strictEqual(r.notes.length, 1);
+});
+
+test('notes tell what could not be done', () => {
+  assert.ok(bidText([LIST[1]], { stoppers: true, creditWindow: 'min' }).notes[0].includes('no'), 'stoppers without Award lines');
+  assert.strictEqual(bidText(LIST, { stoppers: true }).notes.length, 1, 'stoppers without Minimum Credit Window');
+  const n = bidText(LIST.concat([F('avoid', 'pairing', 'has-dh-position', { pos: 'front', op: 'avoid' })])).notes;
+  assert.ok(n[0].startsWith('Filter #6:'));
+});
+
+test('no filters: Set Conditions still print, the filter list is not changed', () => {
+  const r = bidText([], { creditWindow: 'max' });
+  assert.deepStrictEqual(r.lines, ['1. Pairing Bid Group', '2. Set Condition Maximum Credit Window', '    Award Pairings']);
+  const before = JSON.stringify(LIST);
+  bid.fromFilters(LIST, { stoppers: true, groups: 'reserve-pairing' });
+  assert.strictEqual(JSON.stringify(LIST), before);
+});
