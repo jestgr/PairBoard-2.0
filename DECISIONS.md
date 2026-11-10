@@ -51,3 +51,9 @@
 - Prefer Off is copied into every bid group; a Reserve group gets nothing else from the filters.
 - A filter PBS has no line for is left out of the bid and listed under "Check before you bid".
 - The modal kept its element ids so the Android bridge keeps reading it.
+
+## 2026-11-10 — Prefer Off (task/pbs-bid-lines, step 4)
+- Tap order is the priority (PBS reads Prefer Off dates left to right), so dates and days are never sorted.
+- New filters store dates as 'YYYY-MM-DD' (the old 'DEC25' key had no year and printed wrong across a year end);
+  old filters keep working, the year is taken from the bid period.
+- No Avoid/Prefer toggle: a Prefer Off "Prefer" filter never did anything.

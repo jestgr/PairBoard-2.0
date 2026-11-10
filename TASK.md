@@ -46,7 +46,7 @@ pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in 
        Set Conditions chosen by the user (Min/Max/Mid Credit Window, Min Base Layover HHH:MM, CDO, Pattern), and
        keeps filter order. Removes the invented lines (Min Credit 75:00 − 2:45/vac day, Max Consecutive Duty Days 4,
        always-CSSN, numbered "Award Pairings"). Fixes the 'preferOff' vs 'prefer-off' mix-up.
-4. [ ] Prefer Off: keep tap order (dates and days), day names not numbers, no Avoid/Prefer toggle, PBS date text
+4. [x] Prefer Off: keep tap order (dates and days), day names not numbers, no Avoid/Prefer toggle, PBS date text
        ("Dec 25, 2026"), Date Range with Reverse Range Priority.
 5. [ ] Save + share: filters and report options saved (IndexedDB meta; today they are lost on reload); export /
        import as a versioned file {version, filters, options}; old plain-array files still import. Round-trip
@@ -109,9 +109,19 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
   reads (`#pb-panel-interactive` = one box per bid group + summary last, `#pb-raw-script-area`); checked with
   `/home/dev/data/pairboard-android/tools/ui_report.py`. Android's golden check still expects the old script text
   ("Line 1: Prefer layovers in XXA") → update tools/golden.py at step 7. 47 tests green.
-- **Next = step 4** (Prefer Off: tap order, day names, no mode toggle, PBS dates, reverse range). Builder code:
-  `preferOffBody`, `preferOffWire`, `pbTogglePODate`, `pbTogglePODow`, `pbCommitPO`; matching in
-  `applyOneOccurrenceFilter`; wording in `filterDescription` (case 'prefer-off') and `PB.bid.linesFromFilter`.
+- **Step 4 done (69bfc14).** Prefer Off form has no Mode toggle (always mode 'avoid'); dates are stored ISO
+  ('YYYY-MM-DD') in tap order, days as numbers 0-6 in tap order (never sorted: order = PBS priority); range has
+  `params.reverse`. Old filters with 'DEC25' dates still match while browsing and print via
+  `PB.bid.isoFromKey(key, periodStart)`; `linesFromFilter(f, ctx)` / `fromFilters(filters, options, ctx)` take
+  `ctx = {periodStart}`. Ladder shows an "OFF" badge and the PBS line. Walk-through:
+  `/home/dev/data/pairboard-android/tools/ui_preferoff.py`. 49 tests green.
+  Known: an OLD Prefer Off filter saved with mode 'award' still does nothing while browsing (as on main) but
+  prints a Prefer Off line; step 5's import can turn such filters into mode 'avoid'.
+- **Next = step 5** (save + versioned export/import). Code: `pbExportFilters`, `pbImportFilters` (FILTER BUILDER),
+  `_appStateRef.occurrenceFilters` and `_appStateRef.bidOptions` (memory only today). Find how the app saves other
+  things in IndexedDB meta (search `saveMeta` / `pbSavePreAwards` / `pbLoadExcludedOccurrences`) and do the same.
+  File format: {app:'pairboard-bid', version:1, filters:[…], options:{…}}; old plain-array files still import.
+  Android: bridge `filters()` keeps its own `saved` copy + `restore` (only into an empty ladder) — keep that working.
   - Known web bug to keep as is until step 6 (#8 on Jeff's reminder list): Deadhead builder, Mode=Avoid +
     Position=Any saves {has-dh, avoid, value:false} = keeps only trips WITH a deadhead.
 - Wordings marked `seen: 'assumed'` in PROPS are guesses by analogy — ask Jeff to check them in NAVBLUE when he

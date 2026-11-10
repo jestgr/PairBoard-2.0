@@ -9,3 +9,4 @@
 - 2026-11-10 — `PB.bid`: a PBS bid as data (groups, lines, stacked Ifs), printed in exact PBS syntax with numbering, rule checks, and a reader for typed bids; no screen uses it yet; tests in `tests/bid/` (task/pbs-bid-lines) — roll back: git revert 67bf409
 - 2026-11-10 — Stacked filters: several Ifs on one filter line ("+ If"), Award filters mark trips first-match top-down, filters can be written as PBS lines (task/pbs-bid-lines) — roll back: git revert 5f73332 e35862d
 - 2026-11-10 — PBS report rebuilt on `PB.bid`: exact PBS lines from the filters in order, options for bid groups, credit window, minimum-credit stoppers, Clear Schedule, reserve conditions; invented lines removed (task/pbs-bid-lines) — roll back: git revert a5cc5fe 2e4de75
+- 2026-11-10 — Prefer Off: dates/days keep the order tapped (PBS priority), PBS date and day wording, no Avoid/Prefer toggle, Reverse Range Priority option (task/pbs-bid-lines) — roll back: git revert 69bfc14
