@@ -1,4 +1,23 @@
-# TASK: web bug fixes 1, 2, 4, 5, 6, 7 (task/web-bugs) — CURRENT
+# TASK: sidebar base / equipment (task/sidebar-base) — CURRENT
+
+## Goal
+Jeff (10 Nov, phone): NYC package loaded and NYC in Settings, sidebar still said "Base: ATL".
+Cause: `updateSidebarDatablock` read `appState.base` (never set) with fallback 'ATL', and equipment the same way
+with '73N'. Fix (328094a): package `baseCityCode` / `aircraftCode` first, then Settings, else '—'; `aircraftCode` now
+loaded in `loadAllData`; sidebar redrawn after load and when Settings base/equipment change. CACHE v2.0.14.
+Check: `/home/dev/data/pairboard-android/tools/ui_sidebar.py` (new: Base NYC after import and after reload).
+
+## Done when
+Jeff OKs the preview → merge to main → Jeff pushes. A package imported before the bug-4 fix may have ATL
+saved as its base: re-import it once.
+
+## Progress
+- [x] fix + browser check
+- [ ] Jeff's OK, merge
+
+---
+
+# PREVIOUS TASK (merged 1e8a368): web bug fixes 1, 2, 4, 5, 6, 7 (task/web-bugs)
 
 ## Goal
 Fix the small web bugs on Jeff's list (10 Nov 2026), one commit each, then preview → Jeff's OK → merge.
@@ -24,7 +43,7 @@ bumped; Jeff OKs the preview; merged to main (Jeff pushes).
   `/home/dev/apps/pairboard-android/tools/.venv/bin/python /home/dev/data/pairboard-android/tools/ui_webbugs.py`
   Results: base ATL→NYC; Avg Credit 0.0h→19.5h; heat shades all-darkest→3 shades; pay grid 6→18 cells with
   Total inside; tap kept after reload False→True. No page errors.
-- [ ] Preview for Jeff, his OK, merge.
+- [x] Preview OK'd by Jeff, merged to main 1e8a368.
 - Then (Jeff's plan for this run): Android — sync web copy, update tools/golden.py, "+ If" / report options /
   Prefer Off order on the native Filters screen, debug build. See /home/dev/apps/homelab-audit/PASSDOWN.md.
 

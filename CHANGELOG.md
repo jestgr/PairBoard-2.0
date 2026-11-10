@@ -19,3 +19,4 @@
 - 2026-11-10 — Hours never print as x.60 / x:60 (task/web-bugs) — roll back: git revert 4c65d0e
 - 2026-11-10 — Calendar Avg Credit shows the real average (was 0.0h) (task/web-bugs) — roll back: git revert 37fc2ab
 - 2026-11-10 — Calendar heat map uses all shades (was all darkest) (task/web-bugs) — roll back: git revert fc9d680
+- 2026-11-10 — Sidebar shows the loaded package's base and equipment (was always ATL / 73N) (task/sidebar-base) — roll back: git revert 328094a
