@@ -14270,7 +14270,8 @@ function renderDayPairingsPanel(dk) {
   }
   window.pbCommitDH = function() {
     var pos = modeVal('fb-pos'), mode = modeVal('fb-mode');
-    if (pos === 'any') commit({ type: 'pairing', subtype: 'has-dh', mode: mode, params: { value: mode !== 'avoid' } });
+    // Any position: the trip has a deadhead. Avoid removes those trips, Award marks them.
+    if (pos === 'any') commit({ type: 'pairing', subtype: 'has-dh', mode: mode, params: { value: true } });
     else commit({ type: 'pairing', subtype: 'has-dh-position', mode: mode, params: { pos: pos, op: mode === 'avoid' ? 'avoid' : 'prefer' } });
   };
 
