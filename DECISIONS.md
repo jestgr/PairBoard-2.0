@@ -41,3 +41,13 @@
   reads lines top-down. Side effect accepted: Award filters on check-in/out time, TAFB and deadhead position now
   mark trips; before they silently did nothing.
 - PBS has no ≥ / ≤: a filter "credit ≥ 20" is written "Pairing Credit > 019:59".
+
+## 2026-11-10 — PBS report from filters (task/pbs-bid-lines, step 3)
+- The report prints only what the user asked for: the filters in their order plus the options they switched on.
+  Removed: "Set Condition Minimum Credit 75:00 minus vacation", "Max Consecutive Duty Days 4", the always-on
+  Clear Schedule, the numbered "Award Pairings", and the re-sorting of Avoid lines above Award lines.
+- Stoppers are a report option ("Stop at minimum credit"), not a filter: one after every Award line. Switching it
+  on also selects Minimum Credit Window if no credit line was chosen.
+- Prefer Off is copied into every bid group; a Reserve group gets nothing else from the filters.
+- A filter PBS has no line for is left out of the bid and listed under "Check before you bid".
+- The modal kept its element ids so the Android bridge keeps reading it.

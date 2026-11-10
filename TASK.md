@@ -41,7 +41,7 @@ pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in 
        "+ If" to add conditions. Matching: Avoid removes trips matching ALL conditions; Award marks trips by the
        first Award filter (in list order) they match (replaces the match-count score). Old single-condition filters
        load unchanged and match exactly as before (tests on the old cases).
-3. [ ] Filters → report: build the bid document from the filters + strategy options: bid type (Reserve group
+3. [x] Filters → report: build the bid document from the filters + strategy options: bid type (Reserve group
        first / Pairing group first / both, Prefer Off copied into each), minimum-credit stoppers, CSSN on/off,
        Set Conditions chosen by the user (Min/Max/Mid Credit Window, Min Base Layover HHH:MM, CDO, Pattern), and
        keeps filter order. Removes the invented lines (Min Credit 75:00 − 2:45/vac day, Max Consecutive Duty Days 4,
@@ -99,7 +99,19 @@ Later (not this task): on-board LLM reads filters + intent → writes the bid do
     know about `and` yet, so today's report prints a stacked filter as its first If only. Step 3 replaces the
     report with `PB.bid.linesFromFilter` + `PB.bid.render`. Android: the native filter list shows the stacked
     description (it reads `filterDescription`), but has no "+ If" button until step 7.
-- **Next = step 3** (filters → PBS report). Start in `pbGeneratePBSReport` (FILTER BUILDER block).
+- **Step 3 done (a5cc5fe, engine 2e4de75).** `PB.bid.fromFilters(filters, options)` → {bid, notes, options} and
+  `PB.bid.defaultOptions()` (options are described in the comment above `defaultOptions`: groups, creditWindow,
+  minBaseLayover, stoppers, cssn, consecutiveDaysOff, pattern). Filter order is kept; Set Conditions go under
+  the Prefer Off lines the list starts with; a stopper follows every Award line when `stoppers` is on; a Reserve
+  group gets only the Prefer Off lines. The report (`pbGeneratePBSReport`, FILTER BUILDER block) draws
+  `window.pbBuildBid()`; options live in `_appStateRef.bidOptions` (memory only until step 5) and change through
+  `window.pbReportOpt(key, value)`. The old invented lines are gone. The modal keeps the ids the Android bridge
+  reads (`#pb-panel-interactive` = one box per bid group + summary last, `#pb-raw-script-area`); checked with
+  `/home/dev/data/pairboard-android/tools/ui_report.py`. Android's golden check still expects the old script text
+  ("Line 1: Prefer layovers in XXA") → update tools/golden.py at step 7. 47 tests green.
+- **Next = step 4** (Prefer Off: tap order, day names, no mode toggle, PBS dates, reverse range). Builder code:
+  `preferOffBody`, `preferOffWire`, `pbTogglePODate`, `pbTogglePODow`, `pbCommitPO`; matching in
+  `applyOneOccurrenceFilter`; wording in `filterDescription` (case 'prefer-off') and `PB.bid.linesFromFilter`.
   - Known web bug to keep as is until step 6 (#8 on Jeff's reminder list): Deadhead builder, Mode=Avoid +
     Position=Any saves {has-dh, avoid, value:false} = keeps only trips WITH a deadhead.
 - Wordings marked `seen: 'assumed'` in PROPS are guesses by analogy — ask Jeff to check them in NAVBLUE when he
