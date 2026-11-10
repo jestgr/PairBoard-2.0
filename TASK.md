@@ -1,4 +1,39 @@
-# TASK: PBS-correct filters and bid report (task/pbs-bid-lines)
+# TASK: web bug fixes 1, 2, 4, 5, 6, 7 (task/web-bugs) — CURRENT
+
+## Goal
+Fix the small web bugs on Jeff's list (10 Nov 2026), one commit each, then preview → Jeff's OK → merge.
+(Bug 3 was fixed by task/pbs-bid-lines, bug 8 too.) Branch from main 59b72ec.
+
+## Done when
+Each bug fixed and checked old-vs-new on the real package; `npm run check && npm test` green; CACHE_VERSION
+bumped; Jeff OKs the preview; merged to main (Jeff pushes).
+
+## Progress
+- [x] 1 Trip calendar day tap saved (c558b97): `pbToggleOccurrence` now calls `pbExcludeOccurrence` /
+      `pbRestoreOccurrence` (they save meta 'excludedOccurrences'; cleared with a new package as before).
+- [x] 2 Reserve pay table (a2b6fa3): `renderPayTab` built the 3-column grid with several `innerHTML +=`; the browser
+      closed the grid after the first write. Now one string, one write.
+- [x] 4 Empty base box (e2ddd57): `reverseCityLookup('')` matched every name → ATL. Returns null for < 2 letters, so
+      the PDF header's base fills it (processPDF, "PDF header metadata").
+- [x] 5 x.60 (4c65d0e): `decToHHMM` (global, 'H.MM'), `dHHMM`, Reserve `decToHHMM` and `decimalToDisplay` ('H:MM')
+      round to whole minutes first.
+- [x] 6 Calendar Avg Credit (37fc2ab): sums `p.creditHours` (totalPayMins never existed).
+- [x] 7 Calendar heat map (fc9d680): `Array.from(dayCountMap.values())` (was `[].slice.call` on an iterator = []).
+- [x] Tests `tests/format/time_and_base.test.js` (54 green); CACHE_VERSION v2.0.13.
+- Browser check old (main) vs new, real package, private: 
+  `/home/dev/apps/pairboard-android/tools/.venv/bin/python /home/dev/data/pairboard-android/tools/ui_webbugs.py`
+  Results: base ATL→NYC; Avg Credit 0.0h→19.5h; heat shades all-darkest→3 shades; pay grid 6→18 cells with
+  Total inside; tap kept after reload False→True. No page errors.
+- [ ] Preview for Jeff, his OK, merge.
+- Then (Jeff's plan for this run): Android — sync web copy, update tools/golden.py, "+ If" / report options /
+  Prefer Off order on the native Filters screen, debug build. See /home/dev/apps/homelab-audit/PASSDOWN.md.
+
+## Open questions
+None.
+
+---
+
+# PREVIOUS TASK (merged to main 59b72ec): PBS-correct filters and bid report (task/pbs-bid-lines)
 
 ## Goal
 Filters build the pool of trips Jeff wants (several "If" conditions on one filter, like PBS). The PBS report turns

@@ -13,3 +13,9 @@
 - 2026-11-10 — Filters and report options saved on the device (kept after reload); Export/Import is one versioned bid file, old filter files still import (task/pbs-bid-lines) — roll back: git revert 6482fc4
 - 2026-11-10 — Filter list worded exactly like the PBS report (one source); "Award" replaces "Prefer" (task/pbs-bid-lines) — roll back: git revert 005502a
 - 2026-11-10 — Fix: Deadhead filter Avoid + Any kept only trips WITH a deadhead; now removes them (task/pbs-bid-lines) — roll back: git revert 221c90e
+- 2026-11-10 — Trip calendar: a crossed-out departure is saved (was lost on reload) (task/web-bugs) — roll back: git revert c558b97
+- 2026-11-10 — Reserve pay table rows stay in their columns (task/web-bugs) — roll back: git revert a2b6fa3
+- 2026-11-10 — Empty base box no longer becomes ATL; the PDF header's base is used (task/web-bugs) — roll back: git revert e2ddd57
+- 2026-11-10 — Hours never print as x.60 / x:60 (task/web-bugs) — roll back: git revert 4c65d0e
+- 2026-11-10 — Calendar Avg Credit shows the real average (was 0.0h) (task/web-bugs) — roll back: git revert 37fc2ab
+- 2026-11-10 — Calendar heat map uses all shades (was all darkest) (task/web-bugs) — roll back: git revert fc9d680

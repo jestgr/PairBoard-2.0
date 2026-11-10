@@ -70,3 +70,9 @@
 - Filters PBS cannot express (deadhead position, layover date range) keep a plain description marked
   "PairBoard only".
 - Bug #8 (Deadhead Avoid + Any) is not changed without Jeff's OK because it changes which trips are listed.
+
+## 2026-11-10 — Web bug fixes (task/web-bugs)
+- Calendar Avg Credit uses each trip's credit hours (`creditHours`), the same number the trip cards show.
+- An empty base box means "not given": the base then comes from the PDF header, never from a guess.
+- Crossed-out departures stay tied to the bid package: loading a new package clears them (as before).
+
