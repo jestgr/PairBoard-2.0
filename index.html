@@ -9425,15 +9425,15 @@ function renderCalendar() {
     var pool = (_calMode === 'filtered') ? appState.filteredPairings : appState.pairings;
     var totalTrips = pool.length;
     var t1Count = 0, t2Count = 0, avCount = 0;
-    var totalPayMins = 0;
+    var totalCreditHours = 0;
     pool.forEach(function(p) {
       var t = getFavoriteTier(p.number);
       if (t === 1) t1Count++;
       if (t === 2) t2Count++;
       if (isAvoided(p.number)) avCount++;
-      totalPayMins += (p.totalPayMins || p.totalCreditMins || 0);
+      totalCreditHours += (p.creditHours || 0);   // the parser sets creditHours (totalPayMins never existed)
     });
-    var avgPay = totalTrips > 0 ? (totalPayMins / totalTrips / 60).toFixed(1) + 'h' : '—';
+    var avgPay = totalTrips > 0 ? (totalCreditHours / totalTrips).toFixed(1) + 'h' : '—';
     var dowCounts = [0,0,0,0,0,0,0];
     var dowNames  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     var anc = bpStartLocal || new Date(y, m, 1);
