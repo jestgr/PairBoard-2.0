@@ -1,25 +1,62 @@
-# TASK: PB.reserve — let other code read the Reserve numbers (task/reserve-api)
+# TASK: PBS-correct filters and bid report (task/pbs-bid-lines)
 
 ## Goal
-Jeff's Android app (PairBoardDev) can show the same Reserve numbers as this app, by calling this app's own
-Reserve code. For people using the web app nothing changes.
+Filters build the pool of trips Jeff wants (several "If" conditions on one filter, like PBS). The PBS report turns
+those filters plus his strategy choices into bid lines in exact PBS syntax and order, ready to type into NAVBLUE.
+Bid lines are kept as structured data so a later on-board LLM can read filters + intent and write the lines.
+Nothing is merged or pushed without Jeff testing the preview and saying OK.
 
-## Done when
-- [x] `PB.reserve` names the Reserve module's own state and functions (Structure, X-Day Sim, Pay, RAW, category card)
-- [x] No existing line changed: the only edit in index.html is the added block at the end of the Reserve module
-- [x] Reserve screen is identical with and without the change (all 4 tabs compared in headless Chromium, with a
-      vacation count entered and two X-days placed: same HTML, no page errors)
-- [x] Tests: `tests/reserve/reserve_api.test.js` runs the module out of index.html and checks the doorway and
-      Structure numbers against the proration tables (7 tests)
-- [x] `CACHE_VERSION` bumped (v2.0.10 → v2.0.11), `npm run check && npm test` pass (Node 20: 38 checks, 18 tests)
-- [ ] Jeff: Reserve screen in the preview looks and works as before → OK to merge
+## Sources (read, not in git)
+/home/dev/data/pairboard-rag/lab/clean/: PBS-Reference-Handbook (v4 Feb 2025), navblue-pbs-bidder-guide (21-3),
+pbs-basics, pbs-quick-start, pbs-notepad-19-04/05. Test bid (personal, never in git):
+/home/dev/data/pairboard-android/test-bids/jeff-dec-2026.txt.
 
-## Progress
-- [x] Read the Reserve module; chose "name what is there" over splitting calculation from drawing
-- [x] Added `PB.reserve`, tests, cache bump
-- [x] Checked off-screen use (what the Android app will do): Structure numbers, Pay results, RAW score and the
-      X-Day Sim (place days, rule check) all work through `PB.reserve` without opening the Reserve screen
+## PBS rules this must follow (from the sources)
+- A bid = bid groups (Pairing, Reserve, …) of numbered lines; numbering runs across groups (group header is a
+  line). Max 200 lines. System lines ("Award Pairings" at the end of a Pairing group, fallback groups) are not
+  numbered and are not typed in.
+- Lines are processed top-down. Prefer Off / Avoid remove trips; Award adds; Set Condition shapes the line.
+  Recommended order: Prefer Offs, Avoids, Awards — but the user's order is the bid: never reorder lines.
+- One line can have several "If" conditions: ALL must match (AND). A comma list inside one condition is OR.
+  Award/Avoid properties may take Any/Every.
+- Prefer Off dates/days are taken left to right = priority order (keep tap order; never sort).
+- Reserve Bid Group allows only: Prefer Off, Set Condition Pattern, Consecutive Days Off, Slide Vacation, Max Above.
+- Clear Schedule and Start Next Bid Group (CSSN): optional, only at the end of a Pairing group, disables denial and
+  the system Award Pairings; never in the last bid group. Else Start Next (ESN): only on Prefer Off/Avoid/Set
+  Condition; ESN lines belong above non-ESN restrictions.
+- Set Condition Minimum/Maximum/Mid Credit Window take no value; Minimum Base Layover takes HHH:MM; Set
+  Conditions sit above Award lines.
+- "Minimum credit off the bid" strategy (Jeff): after each Award line put "Avoid Pairings If Pairing Credit >
+  000:01" (a stopper: once in the LCW PBS stops adding trips; if not, denial drops the stopper). Report option, not
+  a browsing filter (as a filter it removes everything — allowed, just useless).
+- Times/credit print as HHH:MM (000:01, 020:00), clock times HH:MM, "Days" for length.
+
+## Plan — hardest first (each step: tests, CHANGELOG line, own commit; `npm run check && npm test`)
+1. [ ] Bid document + PBS line renderer: JSON schema {groups:[{type, lines:[{kind, conditions:[{prop, op,
+       values, anyEvery}], options:{esn, allOrNothing, limit, …}}]}]} → exact PBS text with numbering; property
+       catalog (PBS name, operators, value format, browse-matchable or report-only, e.g. Time Off Before = report
+       only); validation warnings from the rules above. Test: Jeff's bid rebuilt as data renders his 26 lines
+       character for character.
+2. [ ] Stacked filters: one filter = kind (Avoid / Award / Prefer Off) + list of If conditions (AND). Builder gets
+       "+ If" to add conditions. Matching: Avoid removes trips matching ALL conditions; Award marks trips by the
+       first Award filter (in list order) they match (replaces the match-count score). Old single-condition filters
+       load unchanged and match exactly as before (tests on the old cases).
+3. [ ] Filters → report: build the bid document from the filters + strategy options: bid type (Reserve group
+       first / Pairing group first / both, Prefer Off copied into each), minimum-credit stoppers, CSSN on/off,
+       Set Conditions chosen by the user (Min/Max/Mid Credit Window, Min Base Layover HHH:MM, CDO, Pattern), and
+       keeps filter order. Removes the invented lines (Min Credit 75:00 − 2:45/vac day, Max Consecutive Duty Days 4,
+       always-CSSN, numbered "Award Pairings"). Fixes the 'preferOff' vs 'prefer-off' mix-up.
+4. [ ] Prefer Off: keep tap order (dates and days), day names not numbers, no Avoid/Prefer toggle, PBS date text
+       ("Dec 25, 2026"), Date Range with Reverse Range Priority.
+5. [ ] Save + share: filters and report options saved (IndexedDB meta; today they are lost on reload); export /
+       import as a versioned file {version, filters, options}; old plain-array files still import. Round-trip
+       tests. (Android: the app keeps its own copy until the web saves it.)
+6. [ ] Smaller PBS fixes: commutable = two Check-In/Check-Out lines (wording was backwards); Duty Legs EVERY with
+       = / > checks every duty day; decimal hours print HHH:MM; Landings In ignores DH legs unless "Counting
+       Deadhead Legs"; "Prefer …" wording → "Award Pairings If …".
+7. [ ] CACHE_VERSION bump, preview for Jeff, his OK → merge; then Android: sync-web, bridge/forms for "+ If",
+       report screen copy.
+Later (not this task): on-board LLM reads filters + intent → writes the bid document (step 1's schema).
 
 ## Open questions
-1. Res Coverage already has `PB.resCoverage` (calculateDayMargin, parseCoverageText, evaluateTripTrade, getState),
-   so it needed nothing here. Say if the Android app should get more of it later.
+1. Saved bids: one saved set + export/import for now; PBS-style Current/Default can come later. (Assumed.)
