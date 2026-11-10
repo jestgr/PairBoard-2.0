@@ -7856,13 +7856,9 @@ function updateSidebarDatablock() {
   }
 
   // 2. Base & Equipment
-  var base = appState.base || 'ATL';
-  var equip = appState.equipment || '73N';
-  if (appState.pairings && appState.pairings.length > 0) {
-    var p0 = appState.pairings[0];
-    if (p0.base) base = p0.base;
-    if (p0.equipment) equip = p0.equipment;
-  }
+  // the loaded bid package's base and equipment; Settings only when no package says (never a made-up default)
+  var base  = String(appState.baseCityCode || PB.settings.get('baseCity', '') || '—').toUpperCase();
+  var equip = String(appState.aircraftCode || PB.settings.get('equipment', '') || '—').toUpperCase();
 
   // 3. Bidding Window Status (4th 18:00 to 11th 18:00 Atlanta Time)
   var atlNow = getAtlantaTime();
@@ -7893,6 +7889,10 @@ function updateSidebarDatablock() {
     '</div>';
 }
 window.updateSidebarDatablock = updateSidebarDatablock;
+// Settings base / equipment show in the sidebar when no bid package is loaded
+PB.bus.on('setting:change', function(e) {
+  if (e && (e.key === 'baseCity' || e.key === 'equipment')) updateSidebarDatablock();
+});
 
 function checkPairingPreAwardConflict(p) {
   if (!p || !appState.preAwards || appState.preAwards.size === 0) {
@@ -9736,7 +9736,8 @@ function loadAllData() {
         dbGet(STORE_META, 'preAwards'),
         dbGet(STORE_META, 'excludedOccurrences'),
         dbGet(STORE_META, 'avoided'),
-        dbGet(STORE_META, 'bidFilters')
+        dbGet(STORE_META, 'bidFilters'),
+        dbGet(STORE_META, 'aircraftCode')
       ]);
     })
     .then(function(results) {
@@ -9798,7 +9799,10 @@ function loadAllData() {
         }
       }
 
+      if (results[17] && results[17].value) appState.aircraftCode = results[17].value;
+
       _dataLoaded = true;
+      updateSidebarDatablock();
       if (appState.occurrenceFilters.length) {
         try { applyFilters(); } catch (e) { PB.log.warn('Saved filters could not be applied', { error: String(e) }); }
       }
