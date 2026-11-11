@@ -2347,6 +2347,11 @@ body { font-family: var(--font-ui); color: var(--text-primary); background: #F5F
   padding: 2px 6px;
   line-height: 1;
 }
+.pb-why-box { background:rgba(245,158,11,0.08); border:1px solid #f59e0b; color:#b45309; padding:8px 12px;
+  border-radius:6px; font-size:11px; margin-bottom:10px; min-width:0; }
+.pb-why-line { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; padding:1px 0; }
+.pb-why-line.open { white-space:normal; overflow-wrap:anywhere; }
+#pb-pairing-cal-reason { margin-top:6px; font-size:11px; color:#b45309; }
 .pb-pairing-modal-body-wrap {
   overflow: auto;
   padding: 16px 18px;
@@ -8438,19 +8443,59 @@ function occurrencesMatchingAll(conds, startDays, p) {
   return hit || new Set();
 }
 
+// One filter's turn in applyOccurrenceFilters: takes the departures it removes out of `surviving`.
+function occurrenceFilterStep(f, surviving, p, cx) {
+  if (!isStackedFilter(f)) { applyOneOccurrenceFilter(f, surviving, p, cx); return; }
+  // Stacked Avoid with a day/date If: only the departures every If applies to go, and only on trips that
+  // match the other Ifs.
+  if (f.mode === 'award' || !pairingConditionsMatch(p, f)) return;
+  occurrencesMatchingAll(filterConditions(f), surviving, p).forEach(function(d) { surviving.delete(d); });
+}
+
 function applyOccurrenceFilters(startDays, p) {
   var surviving = new Set(startDays);
   var cx = occurrenceFilterContext(p);
   if (!cx) return surviving;
   for (var _i = 0; _i < appState.occurrenceFilters.length; _i++) {
-    var f = appState.occurrenceFilters[_i];
-    if (!isStackedFilter(f)) { applyOneOccurrenceFilter(f, surviving, p, cx); continue; }
-    // Stacked Avoid with a day/date If: only the departures every If applies to go, and only on trips that
-    // match the other Ifs.
-    if (f.mode === 'award' || !pairingConditionsMatch(p, f)) continue;
-    occurrencesMatchingAll(filterConditions(f), surviving, p).forEach(function(d) { surviving.delete(d); });
+    occurrenceFilterStep(appState.occurrenceFilters[_i], surviving, p, cx);
   }
   return surviving;
+}
+
+// Why are this trip's departures greyed out? The same steps as applyFilters, one filter at a time, top-down:
+// each removed departure is put on the FIRST filter that removes it.
+// Returns { all: [start days], surviving: Set, byFilter: [{ index, filter, days: [start days] }],
+//           dayFilter: Map(start day → filter index), wholeTrip: true if a trip-level filter removed it all }.
+function occurrenceRemovalReasons(p) {
+  var all = computeOccurrences(p);
+  var filters = appState.occurrenceFilters || [];
+  var out = { all: all, surviving: new Set(all), byFilter: [], dayFilter: new Map(), wholeTrip: false };
+  var add = function(i, days) {
+    if (!days.length) return;
+    out.byFilter.push({ index: i, filter: filters[i], days: days });
+    days.forEach(function(d) { out.dayFilter.set(d, i); out.surviving.delete(d); });
+  };
+  for (var i = 0; i < filters.length; i++) {
+    if (!pairingFilterKeeps(p, filters[i])) { out.wholeTrip = true; add(i, all.slice()); return out; }
+  }
+  var cx = occurrenceFilterContext(p);
+  if (!cx) return out;
+  var surviving = new Set(all);
+  for (var j = 0; j < filters.length; j++) {
+    var before = Array.from(surviving);
+    occurrenceFilterStep(filters[j], surviving, p, cx);
+    add(j, before.filter(function(d) { return !surviving.has(d); }));
+  }
+  out.cx = cx;
+  return out;
+}
+window.occurrenceRemovalReasons = occurrenceRemovalReasons;
+
+// 'Dec 6' for a start day (day of the trip's month, as the filters use it).
+function occurrenceDayLabel(sd, cx) {
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var d = cx ? new Date(cx.year, cx.effMonth, sd) : null;
+  return d ? MON[d.getMonth()] + ' ' + d.getDate() : String(sd);
 }
 
 // ============================================================
@@ -8849,24 +8894,41 @@ function showPairingDetail(p, survivingDays) {
     '<span><b>Credit / Block Density:</b> <span style="color:var(--pb-purple);font-weight:700;">' + effMetrics.creditBlockRatio + 'x</span></span>' +
     '</div>';
 
-  var activeOccFilters = (appState.occurrenceFilters || []).filter(function(f) {
-    return f.type === 'prefer-off' || f.type === 'pairing-dow' || f.type === 'layover-dow' || f.type === 'layover-range' || f.type === 'carry-out';
+  // Only the filters that grey out THIS trip's departures, one line each: dates — filter. A long line is cut
+  // with '…'; tapping it shows the whole text.
+  var why = occurrenceRemovalReasons(p);
+  var esc = function(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var whyLines = why.byFilter.map(function(r) {
+    var dates = why.wholeTrip ? 'All departures' : r.days.slice().sort(function(a, b) { return a - b; })
+      .map(function(d) { return occurrenceDayLabel(d, why.cx); }).join(', ');
+    var desc = window.filterDescription ? window.filterDescription(r.filter) : r.filter.type;
+    return '<div class="pb-why-line" onclick="this.classList.toggle(\'open\')" title="Tap to see all of it">' +
+      '<b>' + esc(dates) + '</b> — ' + esc(desc) + '</div>';
   });
-  if (activeOccFilters.length > 0) {
-    var fStrs = activeOccFilters.map(function(f) { return '• ' + (window.filterDescription ? window.filterDescription(f) : f.type); }).join('<br>');
-    headerBannerHtml += '<div style="background:rgba(245,158,11,0.08);border:1px solid #f59e0b;color:#b45309;padding:8px 12px;border-radius:6px;font-size:11px;margin-bottom:10px;">' +
-      '<div style="font-weight:700;margin-bottom:4px;">⚠️ Active Day/Date Filters (Graying out calendar dates)</div>' +
-      fStrs +
-      '</div>';
+  var exKeys = appState.excludedOccurrences ? appState.excludedOccurrences.get(p.number) : null;
+  if (exKeys && exKeys.size) {
+    var MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var exDates = Array.from(exKeys).sort().map(function(k) {
+      var a = k.split('-'); return MON3[parseInt(a[1], 10) - 1] + ' ' + parseInt(a[2], 10);
+    }).join(', ');
+    whyLines.push('<div class="pb-why-line"><b>' + esc(exDates) + '</b> — crossed out by you (tap the day to undo)</div>');
+  }
+  if (whyLines.length) {
+    headerBannerHtml += '<div class="pb-why-box">' +
+      '<div style="font-weight:700;margin-bottom:4px;">⚠️ Greyed out on the calendar</div>' +
+      whyLines.join('') + '</div>';
   }
 
-  document.getElementById('pb-pairing-modal-body').innerHTML = headerBannerHtml + highlighted;
+  var bannersEl = document.getElementById('pb-pairing-modal-banners');
+  if (bannersEl) bannersEl.innerHTML = headerBannerHtml;
+  document.getElementById('pb-pairing-modal-body').innerHTML = (bannersEl ? '' : headerBannerHtml) + highlighted;
 
   var modal = document.getElementById('pb-pairing-detail-modal');
   modal.setAttribute('data-open', 'true');
   var priorSurv = appState.priorSurvivingMap
     ? (appState.priorSurvivingMap.get(p.number) || appState.survivingMap.get(p.number))
     : (survivingDays || appState.survivingMap.get(p.number));
+  if (!priorSurv) priorSurv = why.surviving;
   var excludedDks = appState.excludedOccurrences ? appState.excludedOccurrences.get(p.number) : null;
   renderPairingCalendar(p, priorSurv, excludedDks);
 }
@@ -9057,7 +9119,11 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
     var dayStartKey = dateKey(cur);
     var isStartDay = occDates.some(function(od) { return dateKey(od) === dayStartKey; });
     var cellCursor = isStartDay ? 'cursor:pointer;' : 'cursor:default;';
-    var clickAttr = isStartDay ? ' onclick="if(window.pbToggleOccurrence) window.pbToggleOccurrence(event, \'' + p.number + '\', \'' + dayStartKey + '\')"' : '';
+    var isFilteredStart = isStartDay && !survivingSet.has(cur.getDate()) &&
+      !(excludedDateKeys && excludedDateKeys.has(dayStartKey));
+    var clickAttr = isFilteredStart
+      ? ' onclick="if(window.pbShowGreyReason) window.pbShowGreyReason(event, \'' + p.number + '\', ' + cur.getDate() + ')"'
+      : isStartDay ? ' onclick="if(window.pbToggleOccurrence) window.pbToggleOccurrence(event, \'' + p.number + '\', \'' + dayStartKey + '\')"' : '';
 
     html += '<div style="position:relative;background:' + bgColor + ';border:1px solid ' + borderColor + ';' +
       'border-radius:3px;height:' + cellH + 'px;overflow:hidden;min-width:0;opacity:' + opacity + ';' + cellCursor + '"' + clickAttr + '>' +
@@ -9082,9 +9148,25 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
       '<span>' + occurrences.length + ' occurrence' + (occurrences.length !== 1 ? 's' : '') + '</span>' +
       '</div>';
   }
+  html += '<div id="pb-pairing-cal-reason"></div>';
   html += '</div>';
   el.innerHTML = html;
 }
+
+// Tap on a departure a filter greyed out: say which filter (the trip window's calendar).
+window.pbShowGreyReason = function(event, pNum, startDay) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  var line = document.getElementById('pb-pairing-cal-reason');
+  var p = (appState.pairings || []).find(function(x) { return x.number === pNum; });
+  if (!line || !p) return;
+  var why = occurrenceRemovalReasons(p);
+  var i = why.dayFilter.get(startDay);
+  var label = occurrenceDayLabel(startDay, why.cx);
+  var text = i == null ? label + ': not removed by a filter'
+    : label + ': removed by ' + (window.filterDescription ? window.filterDescription(why.byFilter.filter(function(r) {
+        return r.index === i; })[0].filter) : 'a filter');
+  line.textContent = text;
+};
 
 // ============================================================
 // Calendar (main) — v2
@@ -9218,26 +9300,74 @@ function openDayInspectorDrawer(dateKey, catFilter) {
   var ancY = anchor.getFullYear(), ancM = anchor.getMonth(), ancD = anchor.getDate();
   var survMap = appState.survivingMap || new Map();
 
+  // The day view shows the same trips as the calendar buttons (Favs / All Trips / Filtered).
   // dayOfTrip[p.number] = which day of the trip this date is (1 = it starts here). A trip that both starts
-  // here and is still flying from an earlier start counts as starting here.
-  var dayOfTrip = {};
-  var operatingTrips = appState.pairings.filter(function(p) {
-    var startDays = survMap.has(p.number)
-      ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMap.get(p.number))
-      : computeOccurrences(p);
+  // here and is still flying from an earlier start counts as starting here. In All Trips and Favs, a trip
+  // whose departures covering this day were all removed by filters (or crossed out) is shown faded:
+  // fadedWhy[p.number] = 'Filtered' | 'Crossed out'.
+  var dayOfTrip = {}, fadedWhy = {};
+  var priorMap = appState.priorSurvivingMap || survMap;
+  var calMode = (typeof _calMode === 'string') ? _calMode : 'all';
+  var pool = calMode === 'filtered' ? (appState.filteredPairings || [])
+    : calMode === 'favs' ? appState.pairings.filter(function(p) { return isFavorite(p.number); })
+    : appState.pairings;
+  var dayOf = function(sd, tripLen) {          // 1-based day of the trip on dateKey, or 0
+    for (var o = 0; o < tripLen; o++) {
+      var d = new Date(ancY, ancM, ancD + (sd - 1) + o);
+      if (localDKey(d.getFullYear(), d.getMonth(), d.getDate()) === dateKey) return o + 1;
+    }
+    return 0;
+  };
+  var touchesDay = function(p, allDeps) {
     var tripLen = Math.max(1, p.days || 1);
-    var best = 0;
-    startDays.forEach(function(sd) {
-      for (var o = 0; o < tripLen; o++) {
-        var d = new Date(ancY, ancM, ancD + (sd - 1) + o);
-        if (localDKey(d.getFullYear(), d.getMonth(), d.getDate()) === dateKey) {
-          if (!best || o + 1 < best) best = o + 1;
-        }
-      }
+    var bestAll = 0, bestAlive = 0, crossed = false;
+    // No filter run yet (empty map) = nothing removed.
+    var alive = survMap.size ? survMap.get(p.number) : new Set(allDeps), prior = priorMap.get(p.number);
+    allDeps.forEach(function(sd) {
+      var k = dayOf(sd, tripLen);
+      if (!k) return;
+      if (!bestAll || k < bestAll) bestAll = k;
+      if (alive && alive.has(sd)) { if (!bestAlive || k < bestAlive) bestAlive = k; }
+      else if (prior && prior.has(sd)) crossed = true;
     });
-    if (best) dayOfTrip[p.number] = best;
-    return best > 0;
+    return { all: bestAll, alive: bestAlive, crossed: crossed };
+  };
+  var totalTouching = 0;
+  var operatingTrips = pool.filter(function(p) {
+    if (calMode === 'filtered') {
+      var deps = survMap.has(p.number) ? Array.from(survMap.get(p.number)) : computeOccurrences(p);
+      var k = touchesDay(p, deps).all;
+      if (k) dayOfTrip[p.number] = k;
+      return k > 0;
+    }
+    var t = touchesDay(p, computeOccurrences(p));
+    if (!t.all) return false;
+    dayOfTrip[p.number] = t.alive || t.all;
+    if (!t.alive) fadedWhy[p.number] = t.crossed ? 'Crossed out' : 'Filtered';
+    return true;
   });
+  if (calMode === 'filtered') {
+    appState.pairings.forEach(function(p) { if (touchesDay(p, computeOccurrences(p)).all) totalTouching++; });
+  }
+  // Faded trips go after the others (package order kept inside each).
+  operatingTrips = operatingTrips.filter(function(p) { return !fadedWhy[p.number]; })
+    .concat(operatingTrips.filter(function(p) { return fadedWhy[p.number]; }));
+  var fadedCount = operatingTrips.filter(function(p) { return fadedWhy[p.number]; }).length;
+
+  var modeEl = drawer.querySelector('.pb-day-drawer__mode');
+  var bodyEl = drawer.querySelector('.pb-day-drawer__body');
+  if (!modeEl && bodyEl) {
+    modeEl = document.createElement('div');
+    modeEl.className = 'pb-day-drawer__mode';
+    modeEl.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-secondary);flex-shrink:0;';
+    bodyEl.insertBefore(modeEl, bodyEl.firstChild);
+  }
+  if (modeEl) {
+    modeEl.textContent = calMode === 'filtered'
+      ? 'Filtered trips · ' + operatingTrips.length + ' of ' + totalTouching
+      : (calMode === 'favs' ? 'Favorites · ' : 'All trips · ') + operatingTrips.length +
+        (fadedCount ? ' (' + fadedCount + ' filtered, faded)' : '');
+  }
   var startingTrips = operatingTrips.filter(function(p) { return dayOfTrip[p.number] === 1; });
 
   // Switch: 'starts' (trips starting this day) | 'touches' (every trip flying this day). Remembered.
@@ -9338,6 +9468,10 @@ function openDayInspectorDrawer(dateKey, catFilter) {
         try {
           var card = buildPairingCard(p);
           if (!card) return;
+          if (fadedWhy[p.number]) {
+            card.style.opacity = '0.5';
+            tag = (tag ? tag + ' · ' : '') + fadedWhy[p.number];
+          }
           if (tag) {
             var t = document.createElement('div');
             t.className = 'pb-day-drawer__daytag';
@@ -16094,6 +16228,7 @@ function renderDayPairingsPanel(dk) {
     </div>
     <div class="pb-pairing-modal-body-wrap">
       <div id="pb-pairing-modal-calendar" style="margin-bottom:16px;"></div>
+      <div id="pb-pairing-modal-banners"></div>
       <pre id="pb-pairing-modal-body" class="pb-pairing-modal-pre"></pre>
     </div>
   </div>

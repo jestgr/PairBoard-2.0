@@ -12,10 +12,14 @@ const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', '..', 'index.html'), 'utf8');
 
-function load(filters) {
+function load(filters, withReasons) {
   const start = html.indexOf('// FILTER MATCHING — does a pairing match');
   const endFn = html.indexOf('function applyOccurrenceFilters(startDays, p) {');
-  const end = html.indexOf('  return surviving;\n}\n', endFn) + '  return surviving;\n}\n'.length;
+  let end = html.indexOf('  return surviving;\n}\n', endFn) + '  return surviving;\n}\n'.length;
+  if (withReasons) {      // also occurrenceRemovalReasons + occurrenceDayLabel (the "why is this day grey" helpers)
+    const lbl = html.indexOf('function occurrenceDayLabel(sd, cx) {');
+    end = html.indexOf('\n}\n', lbl) + 3;
+  }
   assert.ok(start > 0 && endFn > start && end > endFn, 'FILTER MATCHING block found in index.html');
   const pad = (n) => String(n).padStart(2, '0');
   const sandbox = {
@@ -31,6 +35,7 @@ function load(filters) {
     getBidPeriodYearMonth: () => ({ year: 2027, month: 0 }),
     parseBPDate: (s) => { const m = s.split('-'); return new Date(+m[0], +m[1] - 1, +m[2]); },
     localDKey: (y, mo, d) => y + '-' + pad(mo + 1) + '-' + pad(d),
+    window: {},
   };
   vm.runInNewContext('// ' + html.slice(start, end), sandbox, { filename: 'index.html#filters' });
   return sandbox;
@@ -150,4 +155,25 @@ test('a stacked Award with a day If marks only trips that still have such a depa
   const alive = new Map(trips.map((p) => [p.number, new Set(p.number === '1003' ? [6, 7] : p.starts)]));
   sb.awardRanks(trips, [f], alive);
   assert.deepStrictEqual(trips.filter((p) => p._awardLine).map((p) => p.number), ['1004']);
+});
+
+test('occurrenceRemovalReasons puts each greyed departure on the first filter that removes it', () => {
+  // Avoid Mondays, then Avoid Mondays + Tuesdays (Jan 4 2027 is a Monday, Jan 5 a Tuesday)
+  const f1 = AVOID('pairing-dow', undefined, { dows: [1] });
+  const f2 = AVOID('pairing-dow', undefined, { dows: [1, 2] });
+  const sb = load([f1, f2], true);
+  const [a] = TRIPS();
+  const r = sb.occurrenceRemovalReasons(a);
+  assert.strictEqual(r.wholeTrip, false);
+  assert.deepStrictEqual(Array.from(r.byFilter, (x) => [x.index, Array.from(x.days)]), [[0, [4]], [1, [5]]]);
+  assert.deepStrictEqual(Array.from(r.surviving).sort(), [6, 7, 8]);
+  assert.deepStrictEqual(Array.from(r.surviving).sort(), Array.from(sb.applyOccurrenceFilters(a.starts, a)).sort(),
+    'same result as the real filter run');
+  assert.strictEqual(sb.occurrenceDayLabel(4, r.cx), 'Jan 4');
+  // a trip-level filter removes every departure, on that filter
+  const fw = AVOID('station', 'checkin', { stations: ['AAA'] });
+  const r2 = load([fw, f1], true).occurrenceRemovalReasons(a);
+  assert.strictEqual(r2.wholeTrip, true);
+  assert.deepStrictEqual(Array.from(r2.byFilter, (x) => [x.index, Array.from(x.days)]), [[0, [4, 5, 6, 7, 8]]]);
+  assert.strictEqual(r2.surviving.size, 0);
 });
