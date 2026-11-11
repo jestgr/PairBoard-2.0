@@ -5172,10 +5172,37 @@ PB.legacy.far117 = (function() {
     _countdownTimer: null
   };
 
+  // FAR 117 has two pages: FDP / LATT (this module) and the 30 / 168 rest check (window.pb168Module, below; it
+  // was built for this but never shown). The page last used is kept in 'far117.tab'.
+  var rest168Ready = false;
+  function tabBar(tab) {
+    return '<div style="margin-bottom:12px;">' + segmented('f117-tab', [
+      { v: 'fdp',  l: 'FDP / LATT' },
+      { v: 'rest', l: '30 / 168 Rest' }
+    ], tab) + '</div>';
+  }
+  function wireTabBar(root) {
+    wireSegmented(root.querySelector('#f117-tab'), function(v) {
+      PB.storage.set('far117.tab', v);
+      render(root);
+      PB.renderIcons(root);
+    });
+  }
+
   function render(root) {
+    var tab = PB.storage.get('far117.tab', 'fdp') === 'rest' && window.pb168Module ? 'rest' : 'fdp';
+    if (tab === 'rest') {
+      root.innerHTML = tabBar(tab) + '<div id="f117-rest-host"></div>';
+      if (!rest168Ready) { window.pb168Module.init(); rest168Ready = true; }
+      window.pb168Module.render(root.querySelector('#f117-rest-host'));
+      wireTabBar(root);
+      return;
+    }
+    if (window.pb168Module && rest168Ready) window.pb168Module.destroy();   // its clock stops when it isn't shown
     var tzInfo = resolveTz();
 
     root.innerHTML = [
+      tabBar(tab),
       '<div class="card">',
         '<div class="card__header" style="flex-wrap:wrap;gap:8px;padding:12px 16px;">',
           '<h3 class="card__title" style="font-size:15px;font-weight:700;">Duty Day Parameters</h3>',
@@ -5267,6 +5294,7 @@ PB.legacy.far117 = (function() {
     ].join('');
 
     wireInputs(root);
+    wireTabBar(root);
     PB.renderIcons(root);
 
     if (F.reportRaw) {
@@ -5444,19 +5472,37 @@ PB.legacy.far117 = (function() {
     }
   }
 
+  // The Paste Text window. FAR 117's own (it called the filter builder's ensureModal, which is not in this
+  // scope, so the button did nothing). Emptied when closed: no old paste box is left on the page.
+  function pasteModal() {
+    var mo = document.getElementById('pb-f117-modal');
+    if (!mo) {
+      mo = document.createElement('div');
+      mo.id = 'pb-f117-modal';
+      mo.className = 'pb-port-modal';
+      document.body.appendChild(mo);
+      mo.onclick = function(e) { if (e.target === mo) window.pbCloseFar117PasteModal(); };
+    }
+    return mo;
+  }
+  window.pbCloseFar117PasteModal = function() {
+    var mo = document.getElementById('pb-f117-modal');
+    if (mo) { mo.removeAttribute('data-open'); mo.innerHTML = ''; }
+  };
+
   window.pbOpenFar117PasteModal = function(rootNode) {
-    var mo = ensureModal();
+    var mo = pasteModal();
     mo.innerHTML =
       '<div class="pb-port-modal__inner" style="max-width:520px;">' +
         '<div class="pb-port-modal__header" style="padding:12px 16px;">' +
           '<div class="pb-port-modal__title" style="font-weight:700;">📝 Paste Rotation / Schedule Text</div>' +
-          '<button class="pb-port-modal__close" onclick="this.closest(\'.pb-port-modal\').removeAttribute(\'data-open\');">✕</button>' +
+          '<button class="pb-port-modal__close" onclick="window.pbCloseFar117PasteModal();">✕</button>' +
         '</div>' +
         '<div class="pb-port-modal__body" style="padding:14px 16px;">' +
           '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Paste text copied from your airline mobile app (FlyDelta, Ezio, iCrew, etc.) below:</div>' +
           '<textarea id="f117-paste-input" class="input u-mono" style="width:100%;height:160px;font-size:12px;padding:8px;box-sizing:border-box;" placeholder="e.g.\n06Sep NYC 3573\nRpt- 1439 06SEP\nDL2404 : LGA-TPA\nDep- 1555 06SEP  Arr- 1852 06SEP  Blk- 2:57\nDL2095 : TPA-JFK\nDep- 1952 06SEP  Arr- 2252 06SEP  Blk- 3:00"></textarea>' +
           '<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">' +
-            '<button class="btn btn--ghost btn--sm" onclick="this.closest(\'.pb-port-modal\').removeAttribute(\'data-open\');">Cancel</button>' +
+            '<button class="btn btn--ghost btn--sm" onclick="window.pbCloseFar117PasteModal();">Cancel</button>' +
             '<button class="btn btn--primary btn--sm" onclick="window.pbProcessFar117PastedText()">Import Rotation Text</button>' +
           '</div>' +
         '</div>' +
@@ -5468,8 +5514,7 @@ PB.legacy.far117 = (function() {
     var txtEl = document.getElementById('f117-paste-input');
     var txt = txtEl ? txtEl.value : '';
     if (!txt || !txt.trim()) { toast('Please paste rotation text first', 'error'); return; }
-    var modal = document.getElementById('pb-fb-modal');
-    if (modal) modal.removeAttribute('data-open');
+    window.pbCloseFar117PasteModal();
 
     window._f117LastOcrText = txt;
     var parsed = parseEzioText(txt);
@@ -5481,10 +5526,15 @@ PB.legacy.far117 = (function() {
       F.reportMins = PB.legacy.far117.parseFlexMins(rptSrc, false);
     }
 
+    // the duty date and the legs' local / Z times, as a screenshot's (the legs had no times: "? → ?")
+    var pastedDate = dutyDateFrom(parsed);
+    if (pastedDate) F.dutyDate = pastedDate;
+    var unknown = [];
     if (parsed.legs && parsed.legs.length > 0) {
-      F.legs = parsed.legs;
+      F.legs = legsFrom(parsed);
       F.depApt = parsed.legs[0].depApt;
       F.segments = parsed.legs.length;
+      unknown = unknownAirports(F.legs);
 
       var totBlk = 0;
       parsed.legs.forEach(function(l) { if (l.blockMins) totBlk += l.blockMins; });
@@ -5500,7 +5550,49 @@ PB.legacy.far117 = (function() {
     doCalc(node, { silent: false });
     if (F.latt.blockRaw) doLATT(node, { silent: true });
     toast('Imported ' + (parsed.legs ? parsed.legs.length : 0) + ' legs from rotation text', 'success');
+    if (unknown.length) promptUnknownAirports(unknown, node);
   };
+
+  // Duty text (screenshot or pasted) → the duty date 'YYYY-MM-DD' (this year), or null.
+  function dutyDateFrom(parsed) {
+    var MO = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',
+              JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+    var mm = parsed && parsed.dateStr ? parsed.dateStr.match(/^(\d{1,2})([A-Z]{3})/) : null;
+    if (!mm || !MO[mm[2]]) return null;
+    return new Date().getFullYear() + '-' + MO[mm[2]] + '-' + String(mm[1]).padStart(2,'0');
+  }
+
+  // Duty text → legs with local and Z times (airport offsets on F.dutyDate).
+  function legsFrom(parsed) {
+    return parsed.legs.map(function(leg) {
+      var depOff = APTTZ.get(leg.depApt, F.dutyDate);
+      var arrOff = APTTZ.get(leg.arrApt, F.dutyDate);
+      var depLocal = leg.depLocalHHMM ? (parseInt(leg.depLocalHHMM.slice(0,2))*60 + parseInt(leg.depLocalHHMM.slice(2,4))) : null;
+      var arrLocal = leg.arrLocalHHMM ? (parseInt(leg.arrLocalHHMM.slice(0,2))*60 + parseInt(leg.arrLocalHHMM.slice(2,4))) : null;
+      return {
+        depApt:    leg.depApt,
+        arrApt:    leg.arrApt,
+        depLocal:  depLocal,
+        arrLocal:  arrLocal,
+        depZ:      (depLocal != null && depOff != null) ? APTTZ.localToZ(depLocal, depOff) : null,
+        arrZ:      (arrLocal != null && arrOff != null) ? APTTZ.localToZ(arrLocal, arrOff) : null,
+        blockMins: leg.blockMins || 0,
+        depOffset: depOff,
+        arrOffset: arrOff,
+        isDH:      !!leg.isDH
+      };
+    });
+  }
+
+  // Airports in the legs whose time zone the app doesn't know (asked one by one).
+  function unknownAirports(legs) {
+    var unknown = [];
+    legs.forEach(function(l) {
+      if (!APTTZ.known(l.depApt)) unknown.push(l.depApt);
+      if (!APTTZ.known(l.arrApt)) unknown.push(l.arrApt);
+    });
+    return unknown.filter(function(v,i,a){return a.indexOf(v)===i;});
+  }
 
   function setOcrStatus(root, text, hide) {
     var el = root.querySelector('#f117-ocr-status');
@@ -5749,37 +5841,15 @@ PB.legacy.far117 = (function() {
       }
 
       // Date
-      if (parsed.dateStr) {
-        var MO = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',
-                  JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
-        var mm = parsed.dateStr.match(/^(\d{1,2})([A-Z]{3})/);
-        if (mm && MO[mm[2]]) {
-          var yr = new Date().getFullYear();
-          F.dutyDate = yr + '-' + MO[mm[2]] + '-' + String(mm[1]).padStart(2,'0');
-          applied.push('date ' + F.dutyDate);
-        }
+      var ocrDate = dutyDateFrom(parsed);
+      if (ocrDate) {
+        F.dutyDate = ocrDate;
+        applied.push('date ' + F.dutyDate);
       }
 
       // Legs — compute Z times if airport known
       if (parsed.legs.length) {
-        F.legs = parsed.legs.map(function(leg) {
-          var depOff = APTTZ.get(leg.depApt, F.dutyDate);
-          var arrOff = APTTZ.get(leg.arrApt, F.dutyDate);
-          var depLocal = leg.depLocalHHMM ? (parseInt(leg.depLocalHHMM.slice(0,2))*60 + parseInt(leg.depLocalHHMM.slice(2,4))) : null;
-          var arrLocal = leg.arrLocalHHMM ? (parseInt(leg.arrLocalHHMM.slice(0,2))*60 + parseInt(leg.arrLocalHHMM.slice(2,4))) : null;
-          return {
-            depApt:    leg.depApt,
-            arrApt:    leg.arrApt,
-            depLocal:  depLocal,
-            arrLocal:  arrLocal,
-            depZ:      (depLocal != null && depOff != null) ? APTTZ.localToZ(depLocal, depOff) : null,
-            arrZ:      (arrLocal != null && arrOff != null) ? APTTZ.localToZ(arrLocal, arrOff) : null,
-            blockMins: leg.blockMins || 0,
-            depOffset: depOff,
-            arrOffset: arrOff,
-            isDH:      !!leg.isDH
-          };
-        });
+        F.legs = legsFrom(parsed);
 
         // Set departure airport from first leg
         if (F.legs[0] && F.legs[0].depApt && !F.depApt) {
@@ -5789,13 +5859,7 @@ PB.legacy.far117 = (function() {
         applied.push(F.legs.length + ' legs (' + F.legs.map(function(l){return l.depApt+'→'+l.arrApt;}).join(', ') + ')');
 
         // Check for unknown airports
-        var unknown = [];
-        F.legs.forEach(function(l) {
-          if (!APTTZ.known(l.depApt)) unknown.push(l.depApt);
-          if (!APTTZ.known(l.arrApt)) unknown.push(l.arrApt);
-        });
-        // De-dup
-        unknown = unknown.filter(function(v,i,a){return a.indexOf(v)===i;});
+        var unknown = unknownAirports(F.legs);
         if (unknown.length) promptUnknownAirports(unknown, root);
       }
 
@@ -6779,7 +6843,8 @@ PB.legacy.far117 = (function() {
     title: 'FAR 117',
     icon: 'clock',
     init: function() { loadState(); return Promise.resolve(); },
-    render: render
+    render: render,
+    destroy: function() { if (window.pb168Module && rest168Ready) window.pb168Module.destroy(); }
   });
 
 })();
