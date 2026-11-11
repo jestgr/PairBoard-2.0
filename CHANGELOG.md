@@ -21,3 +21,4 @@
 - 2026-11-10 — Calendar heat map uses all shades (was all darkest) (task/web-bugs) — roll back: git revert fc9d680
 - 2026-11-10 — Sidebar shows the loaded package's base and equipment (was always ATL / 73N) (task/sidebar-base) — roll back: git revert 328094a
 - 2026-11-11 — FAR 117: Paste Text window works (own #pb-f117-modal); pasted legs get duty date + local/Z times like a screenshot; 30/168 Rest shown as a second FAR 117 page; CACHE_VERSION v2.0.14 → v2.0.15 (task/far117-fixes) — roll back: git revert 14369ca
+- 2026-11-11 — Calendar day view: switch 'Starts this day' / 'Touches this day' (default Touches, remembered); Touches lists starting trips first, then a 'Touches this day' divider, other trips tagged 'Day X of Y'; CACHE_VERSION v2.0.15 → v2.0.16 (task/discuss-current-plan) — roll back: git revert 561803b

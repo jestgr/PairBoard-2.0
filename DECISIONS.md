@@ -83,3 +83,15 @@
   give the same legs.
 - 30/168 Rest is a page inside FAR 117 (as its code comment intended), not a new sidebar item.
 
+
+## 2026-11-11 — Calendar day view switch (task/discuss-current-plan)
+- Jeff's design (user request): switch "Starts this day" / "Touches this day", default Touches. Touches lists the
+  trips starting that day first, then a light "Touches this day" divider, then the rest. There was no deliberate
+  sort before (package order), so package order is kept inside each group.
+- A trip that starts this day AND is still flying from an earlier start counts as starting here (it can be
+  awarded on this day). Others get a "Day X of Y" tag (the earliest matching day).
+- The trip-length pills count the trips the switch shows. The pre-award / Avoid warning still looks at every trip
+  flying that day (a day off removes all of them).
+- The choice is kept in localStorage 'pb.calendar.dayView' (a view preference, not in the reset list).
+- Existing drawer class names are unchanged (the Android bridge may read them).
+- Alternative considered: a sort only, or two sections with no switch; Jeff chose the combination.

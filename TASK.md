@@ -14,14 +14,26 @@ agree with Jeff on the next task(s).
      screen, debug build) — that's in the pairboard-android app, not here.
   c. Saved bids: one saved bid per device for now; named bids / PBS-style Current/Default "later".
 
+## Next step (Jeff, 11 Nov): Calendar day view — "starts" vs "touches"
+A user asked to see only the trips that START on a day (for Award requests); today's day view shows every trip
+that TOUCHES the day (good for days off). Jeff's design: a switch "Starts this day" / "Touches this day",
+default Touches; in Touches the starting trips come first, then a light "Touches this day" divider, then the rest,
+each tagged "Day X of Y".
+
 ## Done when
-- [ ] Jeff has said what the next step is (written below), or that this branch can be dropped.
+- [x] Switch + grouped list + tags built; checks green; browser-checked on the real NYC DEC package
+- [ ] Jeff tries it in the preview and OKs → merge to main → Jeff pushes
 
 ## Progress
 - [x] TASK.md written from the brief and the recent history
+- [x] Day view switch (561803b), CACHE v2.0.16. Check: /home/dev/data/pairboard-android/tools/ui_dayview.py —
+      Dec 10: Starts 10 / Touches 38, 10 first then divider then 28 tagged; length pills follow the switch;
+      choice kept after reload; phone width OK; no page errors. (First run found the switch squeezed to 0 height
+      by a long list: fixed with flex-shrink:0.)
 
 ## Open questions
-1. What do you want to do next: (a) check FAR 117 live, (b) Android work, (c) named saved bids, or something else?
+1. In the calendar's "Filtered" or "Favs" mode the day view still lists ALL trips (it always did). Should it
+   follow the calendar mode? (Not changed.)
 
 ---
 
