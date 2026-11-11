@@ -22,7 +22,7 @@ each tagged "Day X of Y".
 
 ## Done when
 - [x] Switch + grouped list + tags built; checks green; browser-checked on the real NYC DEC package
-- [ ] Jeff tries it in the preview and OKs → merge to main → Jeff pushes
+- [x] Jeff tried it in the preview and OK'd (11 Nov) → merged to main 4a6b81d (fast-forward) → Jeff pushes
 
 ## Progress
 - [x] TASK.md written from the brief and the recent history
@@ -31,9 +31,21 @@ each tagged "Day X of Y".
       choice kept after reload; phone width OK; no page errors. (First run found the switch squeezed to 0 height
       by a long list: fixed with flex-shrink:0.)
 
+## Next (proposed 11 Nov, waiting for Jeff)
+A. Day view follows the calendar's Favs / All Trips / Filtered buttons (no new control); one line under the
+   date says which trips are shown. Today it mixes: in All Trips it already hides departures that filters removed
+   from surviving trips, but shows trips filters removed completely.
+B. Trip window filter box (screenshot 11 Nov: text runs out of the box, whole window scrolls sideways — the box
+   sits inside the <pre> of the raw rotation). Move the boxes above the <pre>; list only the filters that grey
+   out THIS trip's departures, one line each with the dates: "Dec 6 — Prefer Off SU…"; long text cut with "…",
+   tap the line for the full text.
+C. Tap a greyed (filtered) day in the trip's calendar → a line under the calendar says which filter removed it.
+   (Today that tap marks it crossed out by hand, on top of the grey — confusing.)
+
 ## Open questions
-1. In the calendar's "Filtered" or "Favs" mode the day view still lists ALL trips (it always did). Should it
-   follow the calendar mode? (Not changed.)
+1. A: OK for the day view to follow the calendar buttons? In All Trips, should filtered-out trips be dimmed
+   with a "Filtered" tag, or shown normally?
+2. B + C: OK to do both?
 
 ---
 
