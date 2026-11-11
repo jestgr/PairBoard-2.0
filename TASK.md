@@ -42,7 +42,14 @@ each tagged "Day X of Y".
   #3375 box: old listed every filter, text past the box → new "Dec 6 — Avoid … Sunday", fits; tap Dec 6 →
   "Dec 6: removed by Avoid Pairings If Departing On Sunday", nothing crossed out; 5-day trip: "All departures —
   Avoid … Length = 5 Days", its days grey (old: shown active). No page errors.
-- [ ] Jeff tries it in the preview and OKs → merge → Jeff pushes
+- [x] Jeff tried it (11 Nov): "functionally this is correct"; grey bars hard to tap → every box showing a grey
+      bar now explains it on tap (b2f7213, CACHE v2.0.18). Check: #3605 + Avoid Sunday: tap 13 and 14 → "Departure
+      Dec 13: removed by …"; tap 2 still crosses out; no errors.
+- [x] Jeff: "change the tappable region, then let's push" → merged to main and pushed (11 Nov)
+
+## Next (Jeff, 11 Nov)
+- The day view is getting crowded / unattractive: find a better layout (later).
+- Then: work on the Android app and how its UI works (pairboard-android, a separate applab task).
 
 ## Open questions
 None.
