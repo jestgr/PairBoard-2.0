@@ -9135,6 +9135,7 @@ function ensureDayDrawerInBody() {
         '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;">Quick Pre-Award Placement</div>' +
         '<div class="pb-day-drawer__pa-section" style="display:flex;gap:6px;flex-wrap:wrap;"></div>' +
         '<div class="pb-day-drawer__banner" style="display:none;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;color:#b45309;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;"></div>' +
+        '<div class="pb-day-drawer__view"></div>' +
         '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;">Filter by Trip Length</div>' +
         '<div class="pb-day-drawer__cat-filter" style="display:flex;gap:4px;flex-wrap:wrap;"></div>' +
         '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;">Operating Trips</div>' +
@@ -9160,6 +9161,12 @@ function setDrawerCategoryFilter(dateKey, catId) {
   openDayInspectorDrawer(dateKey, catId);
 }
 window.setDrawerCategoryFilter = setDrawerCategoryFilter;
+
+function setDrawerDayView(dateKey, view) {
+  PB.storage.set('calendar.dayView', view === 'starts' ? 'starts' : 'touches');
+  openDayInspectorDrawer(dateKey);
+}
+window.setDrawerDayView = setDrawerDayView;
 
 function openDayInspectorDrawer(dateKey, catFilter) {
   var els = ensureDayDrawerInBody();
@@ -9211,24 +9218,59 @@ function openDayInspectorDrawer(dateKey, catFilter) {
   var ancY = anchor.getFullYear(), ancM = anchor.getMonth(), ancD = anchor.getDate();
   var survMap = appState.survivingMap || new Map();
 
+  // dayOfTrip[p.number] = which day of the trip this date is (1 = it starts here). A trip that both starts
+  // here and is still flying from an earlier start counts as starting here.
+  var dayOfTrip = {};
   var operatingTrips = appState.pairings.filter(function(p) {
     var startDays = survMap.has(p.number)
       ? (function(s){ var a=[]; s.forEach(function(v){a.push(v);}); return a; })(survMap.get(p.number))
       : computeOccurrences(p);
     var tripLen = Math.max(1, p.days || 1);
-    return startDays.some(function(sd) {
+    var best = 0;
+    startDays.forEach(function(sd) {
       for (var o = 0; o < tripLen; o++) {
         var d = new Date(ancY, ancM, ancD + (sd - 1) + o);
-        if (localDKey(d.getFullYear(), d.getMonth(), d.getDate()) === dateKey) return true;
+        if (localDKey(d.getFullYear(), d.getMonth(), d.getDate()) === dateKey) {
+          if (!best || o + 1 < best) best = o + 1;
+        }
       }
-      return false;
     });
+    if (best) dayOfTrip[p.number] = best;
+    return best > 0;
   });
+  var startingTrips = operatingTrips.filter(function(p) { return dayOfTrip[p.number] === 1; });
 
-  // Calculate category counts
-  var cAll = operatingTrips.length;
+  // Switch: 'starts' (trips starting this day) | 'touches' (every trip flying this day). Remembered.
+  var dayView = PB.storage.get('calendar.dayView', 'touches') === 'starts' ? 'starts' : 'touches';
+  var viewEl = drawer.querySelector('.pb-day-drawer__view');
+  if (!viewEl) {
+    var catLabel = drawer.querySelector('.pb-day-drawer__cat-filter');
+    if (catLabel && catLabel.previousElementSibling) {
+      viewEl = document.createElement('div');
+      viewEl.className = 'pb-day-drawer__view';
+      catLabel.parentNode.insertBefore(viewEl, catLabel.previousElementSibling);
+    }
+  }
+  if (viewEl) {
+    viewEl.style.cssText = 'display:flex;flex-shrink:0;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;margin-top:4px;';
+    viewEl.innerHTML = [
+      { id: 'starts',  label: 'Starts this day (' + startingTrips.length + ')' },
+      { id: 'touches', label: 'Touches this day (' + operatingTrips.length + ')' }
+    ].map(function(v) {
+      var on = dayView === v.id;
+      return '<button type="button" data-view="' + v.id + '" aria-pressed="' + on + '" ' +
+        'onclick="setDrawerDayView(\'' + dateKey + '\', \'' + v.id + '\')" ' +
+        'style="flex:1;cursor:pointer;padding:8px 6px;font-size:12px;font-weight:700;border:0;' +
+        'background:' + (on ? 'var(--accent, #3b82f6)' : 'transparent') + ';' +
+        'color:' + (on ? '#ffffff' : 'var(--text-secondary)') + ';">' + v.label + '</button>';
+    }).join('');
+  }
+  var viewTrips = dayView === 'starts' ? startingTrips : operatingTrips;
+
+  // Calculate category counts (for the trips the switch shows)
+  var cAll = viewTrips.length;
   var c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0;
-  operatingTrips.forEach(function(p) {
+  viewTrips.forEach(function(p) {
     var len = p.days || 1;
     if (len === 1) c1++;
     else if (len === 2) c2++;
@@ -9260,7 +9302,7 @@ function openDayInspectorDrawer(dateKey, catFilter) {
   }
 
   // Filter trips by selected category
-  var displayTrips = operatingTrips.filter(function(p) {
+  var displayTrips = viewTrips.filter(function(p) {
     if (selectedCat === 'all') return true;
     var len = p.days || 1;
     if (selectedCat === '1d') return len === 1;
@@ -9292,14 +9334,43 @@ function openDayInspectorDrawer(dateKey, catFilter) {
     if (displayTrips.length === 0) {
       listEl.innerHTML = '<div style="color:var(--pb-text-muted);font-size:12px;text-align:center;padding:20px 0;">No trips match this filter for this date.</div>';
     } else {
-      displayTrips.forEach(function(p) {
+      var addCard = function(p, tag) {
         try {
           var card = buildPairingCard(p);
-          if (card) listEl.appendChild(card);
+          if (!card) return;
+          if (tag) {
+            var t = document.createElement('div');
+            t.className = 'pb-day-drawer__daytag';
+            t.style.cssText = 'font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:4px;';
+            t.textContent = tag;
+            card.insertBefore(t, card.firstChild);
+          }
+          listEl.appendChild(card);
         } catch (cardErr) {
           PB.log.warn('Failed to build pairing card for drawer', { pairing: p.number, error: String(cardErr) });
         }
-      });
+      };
+      if (dayView === 'starts') {
+        displayTrips.forEach(function(p) { addCard(p, null); });
+      } else {
+        // Starting trips first, then a light divider, then the trips already flying (package order in each).
+        var first = displayTrips.filter(function(p) { return dayOfTrip[p.number] === 1; });
+        var rest  = displayTrips.filter(function(p) { return dayOfTrip[p.number] !== 1; });
+        first.forEach(function(p) { addCard(p, null); });
+        if (rest.length) {
+          var div = document.createElement('div');
+          div.className = 'pb-day-drawer__divider';
+          div.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;' +
+            'color:var(--pb-text-muted);text-transform:uppercase;letter-spacing:.05em;margin:6px 0 2px;';
+          div.innerHTML = '<span style="flex:1;border-top:1px solid var(--border-color);"></span>' +
+            '<span>Touches this day</span>' +
+            '<span style="flex:1;border-top:1px solid var(--border-color);"></span>';
+          listEl.appendChild(div);
+          rest.forEach(function(p) {
+            addCard(p, 'Day ' + dayOfTrip[p.number] + ' of ' + Math.max(1, p.days || 1));
+          });
+        }
+      }
     }
   }
 
