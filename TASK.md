@@ -31,21 +31,21 @@ each tagged "Day X of Y".
       choice kept after reload; phone width OK; no page errors. (First run found the switch squeezed to 0 height
       by a long list: fixed with flex-shrink:0.)
 
-## Next (proposed 11 Nov, waiting for Jeff)
-A. Day view follows the calendar's Favs / All Trips / Filtered buttons (no new control); one line under the
-   date says which trips are shown. Today it mixes: in All Trips it already hides departures that filters removed
-   from surviving trips, but shows trips filters removed completely.
-B. Trip window filter box (screenshot 11 Nov: text runs out of the box, whole window scrolls sideways — the box
-   sits inside the <pre> of the raw rotation). Move the boxes above the <pre>; list only the filters that grey
-   out THIS trip's departures, one line each with the dates: "Dec 6 — Prefer Off SU…"; long text cut with "…",
-   tap the line for the full text.
-C. Tap a greyed (filtered) day in the trip's calendar → a line under the calendar says which filter removed it.
-   (Today that tap marks it crossed out by hand, on top of the grey — confusing.)
+## Step 2 (Jeff, 11 Nov): "faded option with a Filtered tag; go ahead with 2 and 3 together"
+- [x] A. Day view follows Favs / All Trips / Filtered; filtered trips faded + tagged (3d52dd9)
+- [x] B. Trip window filter box: only this trip's filters, one line each, tap for full text, out of the raw text
+- [x] C. Tap a greyed day → "Dec 6: removed by …"
+- Checks: npm run check (38) + npm test (55, new test for occurrenceRemovalReasons). Browser, real NYC DEC package,
+  filters "Avoid departing Sunday" + "Avoid length 5", old (main) vs new, phone width
+  (script: /tmp/claude-1000/-home-dev-apps-pairboard/711c1e77-cdd1-4e3a-b963-7d8823c8c3d7/scratchpad/ui_dayfilters.py):
+  Dec 6 All: old 26 trips (Sunday starts silently gone) → new 39, 23 faded "Filtered"; Filtered 16 of 39;
+  #3375 box: old listed every filter, text past the box → new "Dec 6 — Avoid … Sunday", fits; tap Dec 6 →
+  "Dec 6: removed by Avoid Pairings If Departing On Sunday", nothing crossed out; 5-day trip: "All departures —
+  Avoid … Length = 5 Days", its days grey (old: shown active). No page errors.
+- [ ] Jeff tries it in the preview and OKs → merge → Jeff pushes
 
 ## Open questions
-1. A: OK for the day view to follow the calendar buttons? In All Trips, should filtered-out trips be dimmed
-   with a "Filtered" tag, or shown normally?
-2. B + C: OK to do both?
+None.
 
 ---
 

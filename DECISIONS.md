@@ -95,3 +95,19 @@
 - The choice is kept in localStorage 'pb.calendar.dayView' (a view preference, not in the reset list).
 - Existing drawer class names are unchanged (the Android bridge may read them).
 - Alternative considered: a sort only, or two sections with no switch; Jeff chose the combination.
+
+## 2026-11-11 — Day view follows the calendar buttons; "why is this day grey" (task/discuss-current-plan)
+- Jeff: no extra All/Favs/Filtered control in the day view — it uses the calendar's buttons, and one line under
+  the date says which ("All trips · 39 (23 filtered, faded)", "Filtered trips · 16 of 39", "Favorites · 3").
+- All Trips / Favs show every trip on the day; a trip whose departures covering the day were all removed is
+  faded with a "Filtered" tag ("Crossed out" if only your own cross-out removed it), last in its group.
+  Before, All Trips was half-filtered (filtered-out departures of kept trips vanished, trips removed whole stayed).
+- One helper, occurrenceRemovalReasons(p), runs the filters one at a time top-down (same steps as applyFilters)
+  and puts each removed departure on the FIRST filter that removes it. A trip-level filter (e.g. length) puts all
+  departures on itself. The trip window box and the tap-a-grey-day line both use it, so they always agree.
+- The box shows only filters that touch this trip; each line is cut with "…" and opens on tap, so a long filter
+  never pushes the rotation text far down and never scrolls sideways.
+- Tapping a filter-greyed day explains it instead of crossing it out (crossing out an already removed day did
+  nothing useful). Normal days still cross out / restore on tap.
+- Trips removed whole by a filter used to show all departures as active in their calendar; now grey.
+- Not changed: favorites / search / pre-award toggles that hide trips are not named in the box.
