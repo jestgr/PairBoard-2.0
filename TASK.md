@@ -1,4 +1,20 @@
-# TASK: Discuss the current plan (task/discuss-current-plan) — CURRENT
+# TASK: FAR 117 screenshot — header without the dash (task/far117-ocr-dash) — CURRENT
+
+## Goal
+Jeff (11 Nov, from the Android app): a crew-app duty screenshot imported report time and date but no flights.
+Phone OCR reads the header "DL2723 : TPA-LGA" as "DL2723: TPALGA"; the FAR 117 reader needed a separator between
+the airports. Make it accept the header without the dash, nothing else changed.
+
+## Done when
+- [x] parseEzioText reads "DL1234: AAABBB" as AAA→BBB; the other header forms still work; other lines of the
+      screen are not taken for flights (tests/far117/ezio_reader.test.js, made-up flights)
+- [x] Jeff's real screenshot through the real OCR (headless, served from this branch): 2 legs with local + zulu
+      times, block times (not in git)
+- [x] npm run check (38) + npm test (58) pass; CACHE_VERSION v2.0.19
+- [ ] Jeff tries it in the preview (http://192.168.68.85:5103 → FAR 117 → Screenshot) and OKs; merge + push to main
+- [ ] Android app: scripts/sync-web.sh <commit> when Jeff says
+
+# TASK: Discuss the current plan (task/discuss-current-plan) — done
 
 ## Goal
 Brief (11 Nov): "discuss current plan". A talk, not code: lay out where PairBoard stands and what's next, and

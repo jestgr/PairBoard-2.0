@@ -5669,8 +5669,9 @@ PB.legacy.far117 = (function() {
     ];
 
     // Find all flight header positions in the full text.
-    // Header formats: DL2404 : LGA-TPA, DL2404 LGA-TPA, DL 2404 LGA TPA, 2404 LGA-TPA
-    var hdrRe = /[A-Z]{2}\s*[0-9IO]{2,4}\s*[:\.\s-]*\s*([A-Z]{3})\s*[-–\s:]+\s*([A-Z]{3})/gi;
+    // Header formats: DL2404 : LGA-TPA, DL2404 LGA-TPA, DL 2404 LGA TPA, 2404 LGA-TPA,
+    // and DL2404: LGATPA — phone OCR often drops the dash between the airports (11 Nov 2026)
+    var hdrRe = /[A-Z]{2}\s*[0-9IO]{2,4}\s*[:\.\s-]*\s*([A-Z]{3})\s*[-–\s:]*\s*([A-Z]{3})\b/gi;
     var headers = [];
     var hm;
     while ((hm = hdrRe.exec(text)) !== null) {

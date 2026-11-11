@@ -111,3 +111,8 @@
   nothing useful). Normal days still cross out / restore on tap.
 - Trips removed whole by a filter used to show all departures as active in their calendar; now grey.
 - Not changed: favorites / search / pre-award toggles that hide trips are not named in the box.
+
+## 2026-11-11 — FAR 117 screenshot header without the dash (task/far117-ocr-dash)
+- The header pattern's separator between the airports is now optional (`[-–\s:]*`), with a word boundary after
+  the second airport so 3+3 letters can't be cut out of a longer word. The existing reserved-word check still
+  drops RPT/DEP/… pairs. Alternative (insert the dash before parsing) would also touch text shown as raw OCR.
