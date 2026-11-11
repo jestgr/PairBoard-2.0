@@ -1,4 +1,31 @@
-# TASK: FAR 117 fixes (task/far117-fixes) — CURRENT
+# TASK: Discuss the current plan (task/discuss-current-plan) — CURRENT
+
+## Goal
+Brief (11 Nov): "discuss current plan". A talk, not code: lay out where PairBoard stands and what's next, and
+agree with Jeff on the next task(s).
+
+## Where things stand (11 Nov)
+- main = origin/main = 5c5c0bc (live, CACHE v2.0.15). Nothing waiting to merge.
+- Done lately: PBS bid lines + saved bid (v2.0.12), web bugs 1–8 (v2.0.13), sidebar base (v2.0.14),
+  FAR 117 fixes (v2.0.15).
+- Still open:
+  a. Jeff: quick look on the live site at FAR 117 → Paste Text and the new 30 / 168 Rest page wording.
+  b. Android app work (sync web copy, golden.py, "+ If" / report options / Prefer Off on the native Filters
+     screen, debug build) — that's in the pairboard-android app, not here.
+  c. Saved bids: one saved bid per device for now; named bids / PBS-style Current/Default "later".
+
+## Done when
+- [ ] Jeff has said what the next step is (written below), or that this branch can be dropped.
+
+## Progress
+- [x] TASK.md written from the brief and the recent history
+
+## Open questions
+1. What do you want to do next: (a) check FAR 117 live, (b) Android work, (c) named saved bids, or something else?
+
+---
+
+# PREVIOUS TASK (merged 5c5c0bc): FAR 117 fixes (task/far117-fixes)
 
 ## Goal
 Found while building the Android Tools tab (10 Nov); Jeff (11 Nov): "do the three small fixes, instruct me to push".
