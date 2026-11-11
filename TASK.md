@@ -11,8 +11,8 @@ the airports. Make it accept the header without the dash, nothing else changed.
 - [x] Jeff's real screenshot through the real OCR (headless, served from this branch): 2 legs with local + zulu
       times, block times (not in git)
 - [x] npm run check (38) + npm test (58) pass; CACHE_VERSION v2.0.19
-- [ ] Jeff tries it in the preview (http://192.168.68.85:5103 → FAR 117 → Screenshot) and OKs; merge + push to main
-- [ ] Android app: scripts/sync-web.sh <commit> when Jeff says
+- [x] Jeff tried it in the preview and OK'd (11 Nov); merged into main (fast-forward) — Jeff pushes
+- [x] Android app: synced (Jeff, 11 Nov)
 
 # TASK: Discuss the current plan (task/discuss-current-plan) — done
 
