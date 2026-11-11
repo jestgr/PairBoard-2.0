@@ -9119,11 +9119,23 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
     var dayStartKey = dateKey(cur);
     var isStartDay = occDates.some(function(od) { return dateKey(od) === dayStartKey; });
     var cellCursor = isStartDay ? 'cursor:pointer;' : 'cursor:default;';
+    // A tap on any box where a grey (filter-removed) bar shows explains it — not only the departure day, the
+    // bar's later days too (a late check-in leaves only a sliver on the departure day). A departure day of an
+    // active departure keeps crossing out / restoring.
     var isFilteredStart = isStartDay && !survivingSet.has(cur.getDate()) &&
       !(excludedDateKeys && excludedDateKeys.has(dayStartKey));
-    var clickAttr = isFilteredStart
-      ? ' onclick="if(window.pbShowGreyReason) window.pbShowGreyReason(event, \'' + p.number + '\', ' + cur.getDate() + ')"'
-      : isStartDay ? ' onclick="if(window.pbToggleOccurrence) window.pbToggleOccurrence(event, \'' + p.number + '\', \'' + dayStartKey + '\')"' : '';
+    var greyStarts = [];
+    segments.forEach(function(seg) {
+      if (seg.isAlive || seg.isExcluded) return;
+      var sdg = occDates[seg.occIdx].getDate();
+      if (greyStarts.indexOf(sdg) < 0) greyStarts.push(sdg);
+    });
+    var greyClick = ' onclick="if(window.pbShowGreyReason) window.pbShowGreyReason(event, \'' + p.number + '\', \'' +
+      (isFilteredStart ? String(cur.getDate()) : greyStarts.join(',')) + '\')"';
+    var clickAttr = isFilteredStart ? greyClick
+      : isStartDay ? ' onclick="if(window.pbToggleOccurrence) window.pbToggleOccurrence(event, \'' + p.number + '\', \'' + dayStartKey + '\')"'
+      : greyStarts.length ? greyClick : '';
+    if (!isStartDay && greyStarts.length) cellCursor = 'cursor:pointer;';
 
     html += '<div style="position:relative;background:' + bgColor + ';border:1px solid ' + borderColor + ';' +
       'border-radius:3px;height:' + cellH + 'px;overflow:hidden;min-width:0;opacity:' + opacity + ';' + cellCursor + '"' + clickAttr + '>' +
@@ -9154,18 +9166,20 @@ function renderPairingCalendar(p, survivingDays, excludedDateKeys) {
 }
 
 // Tap on a departure a filter greyed out: say which filter (the trip window's calendar).
-window.pbShowGreyReason = function(event, pNum, startDay) {
+window.pbShowGreyReason = function(event, pNum, startDays) {
   if (event) { event.preventDefault(); event.stopPropagation(); }
   var line = document.getElementById('pb-pairing-cal-reason');
   var p = (appState.pairings || []).find(function(x) { return x.number === pNum; });
   if (!line || !p) return;
   var why = occurrenceRemovalReasons(p);
-  var i = why.dayFilter.get(startDay);
-  var label = occurrenceDayLabel(startDay, why.cx);
-  var text = i == null ? label + ': not removed by a filter'
-    : label + ': removed by ' + (window.filterDescription ? window.filterDescription(why.byFilter.filter(function(r) {
-        return r.index === i; })[0].filter) : 'a filter');
-  line.textContent = text;
+  // startDays: one start day, or several 'a,b' (a box where more than one grey departure shows)
+  line.textContent = String(startDays).split(',').map(function(x) {
+    var sd = parseInt(x, 10), i = why.dayFilter.get(sd), label = 'Departure ' + occurrenceDayLabel(sd, why.cx);
+    return i == null ? label + ': not removed by a filter'
+      : label + ': removed by ' + (window.filterDescription ? window.filterDescription(why.byFilter.filter(function(r) {
+          return r.index === i; })[0].filter) : 'a filter');
+  }).join('\n');
+  line.style.whiteSpace = 'pre-line';
 };
 
 // ============================================================
