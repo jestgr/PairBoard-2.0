@@ -1,4 +1,33 @@
-# TASK: sidebar base / equipment (task/sidebar-base) — CURRENT
+# TASK: FAR 117 fixes (task/far117-fixes) — CURRENT
+
+## Goal
+Found while building the Android Tools tab (10 Nov); Jeff (11 Nov): "do the three small fixes, instruct me to push".
+1. FAR 117 "📝 Paste Text" did nothing (pbOpenFar117PasteModal called ensureModal, which only exists inside the
+   filter builder). Now FAR 117's own window #pb-f117-modal, emptied when closed (no stale paste box on the page).
+2. Pasted text gave legs without times ("? → ?": no leg markers on the timeline, wrong trailing-DH local time).
+   Now the same as a screenshot: duty date + legs' local/Z times + unknown-airport question (shared helpers
+   dutyDateFrom / legsFrom / unknownAirports; the screenshot path uses them too, same results).
+3. The 30/168 rest check (window.pb168Module) was built "for the combined FAR 117 module" but never shown. Now a
+   second FAR 117 page: switch "FDP / LATT | 30 / 168 Rest" at the top, remembered in far117.tab (already in the
+   app's reset list); its 30 s clock stops when not shown (FAR 117 module destroy).
+Fix 14369ca, CACHE v2.0.15.
+
+## Checks
+- npm run check (38) + npm test (54 pass)
+- /home/dev/data/pairboard-android/tools/ui_far117.py (old vs new): old = no window + "ensureModal is not defined";
+  new = window opens/closes, legs "06:15 L 11:15Z → 08:00 L 13:00Z", date 2026-12-06, unknown QQX asked, leg
+  markers on the timeline, 30/168 calculates, page remembered, FDP values kept, no page errors
+- Android golden smoke run against this web app: all OK (the phone's bridge still works with it)
+
+## Progress
+- [x] fixes + checks
+- [x] merged to main on Jeff's word (11 Nov) — Jeff pushes
+- [ ] Jeff: quick look on the live site (FAR 117 → Paste Text, and the 30 / 168 Rest page wording; it was never
+      shown before, so its texts have not been read by a pilot)
+
+---
+
+# PREVIOUS TASK (merged bd2f3f1): sidebar base / equipment (task/sidebar-base)
 
 ## Goal
 Jeff (10 Nov, phone): NYC package loaded and NYC in Settings, sidebar still said "Base: ATL".

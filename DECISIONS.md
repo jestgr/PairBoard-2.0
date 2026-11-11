@@ -76,3 +76,10 @@
 - An empty base box means "not given": the base then comes from the PDF header, never from a guess.
 - Crossed-out departures stay tied to the bid package: loading a new package clears them (as before).
 
+## 2026-11-11 — FAR 117 fixes (task/far117-fixes)
+- FAR 117's Paste window has its own id (#pb-f117-modal), not the filter builder's #pb-fb-modal: two modules
+  making the same id would make getElementById find the wrong one.
+- Pasted duty text is handled exactly like a screenshot's text (same date, time and time-zone steps), so both
+  give the same legs.
+- 30/168 Rest is a page inside FAR 117 (as its code comment intended), not a new sidebar item.
+
